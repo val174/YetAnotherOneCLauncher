@@ -11,6 +11,9 @@ public enum VersionMaskSource
 
     /// <summary><c>DefaultVersion</c> из 1cestart.cfg.</summary>
     StarterDefault,
+
+    /// <summary>Версия, выбранная пользователем для базы в лаунчере.</summary>
+    UserOverride,
 }
 
 public enum PlatformSelectionStatus
@@ -51,14 +54,15 @@ public static class PlatformSelector
         PlatformExecutable executable,
         string? infoBaseVersion,
         string? starterDefaultVersion,
-        PlatformArchitecture preferredArchitecture = PlatformArchitecture.X64)
+        PlatformArchitecture preferredArchitecture = PlatformArchitecture.X64,
+        string? userOverrideVersion = null)
     {
         ArgumentNullException.ThrowIfNull(installations);
 
         var warnings = new List<string>();
         var candidates = installations.Where(i => i.Has(executable)).ToList();
 
-        var (mask, source) = ResolveMask(infoBaseVersion, starterDefaultVersion, warnings);
+        var (mask, source) = ResolveMask(userOverrideVersion, infoBaseVersion, starterDefaultVersion, warnings);
         if (candidates.Count == 0)
         {
             return new PlatformSelection(PlatformSelectionStatus.NothingInstalled, null, mask, source, warnings);
@@ -100,10 +104,21 @@ public static class PlatformSelector
     }
 
     private static (VersionMask? Mask, VersionMaskSource Source) ResolveMask(
+        string? userOverrideVersion,
         string? infoBaseVersion,
         string? starterDefaultVersion,
         List<string> warnings)
     {
+        if (!string.IsNullOrWhiteSpace(userOverrideVersion))
+        {
+            if (VersionMask.TryParse(userOverrideVersion, out var mask))
+            {
+                return (mask, VersionMaskSource.UserOverride);
+            }
+
+            warnings.Add($"Выбранная для базы версия платформы «{userOverrideVersion}» не распознана и не учитывается.");
+        }
+
         if (!string.IsNullOrWhiteSpace(infoBaseVersion))
         {
             if (VersionMask.TryParse(infoBaseVersion, out var mask))

@@ -19,6 +19,9 @@ public sealed record LaunchRequest(InfoBase InfoBase, LaunchMode Mode)
     /// <summary>Клиент вместо указанного в базе (ключ <c>App</c>).</summary>
     public ClientApp? ClientOverride { get; init; }
 
+    /// <summary>Версия платформы, выбранная пользователем в лаунчере; важнее ключа <c>Version</c> базы.</summary>
+    public string? PlatformVersionOverride { get; init; }
+
     /// <summary>Пользователь 1С (<c>/N</c>).</summary>
     public string? UserName { get; init; }
 

@@ -60,7 +60,7 @@ public static class LaunchPlanner
 
         var executable = client == ClientApp.ThinClient ? PlatformExecutable.ThinClient : PlatformExecutable.ThickClient;
         var selection = PlatformSelector.Select(
-            installations, executable, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture);
+            installations, executable, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture, request.PlatformVersionOverride);
 
         // При App=Auto тонкий клиент необязателен: если его нет, подойдёт толстый.
         var clientIsAutomatic = request.ClientOverride is null && infoBase.App == ClientApp.Auto;
@@ -69,7 +69,7 @@ public static class LaunchPlanner
             && clientIsAutomatic)
         {
             var thick = PlatformSelector.Select(
-                installations, PlatformExecutable.ThickClient, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture);
+                installations, PlatformExecutable.ThickClient, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture, request.PlatformVersionOverride);
             if (thick.Status == PlatformSelectionStatus.Selected || selection.Status == PlatformSelectionStatus.NothingInstalled)
             {
                 (selection, executable) = (thick, PlatformExecutable.ThickClient);
@@ -226,6 +226,7 @@ public static class LaunchPlanner
     {
         VersionMaskSource.InfoBase => "указана у базы",
         VersionMaskSource.StarterDefault => "версия по умолчанию из 1cestart.cfg",
+        VersionMaskSource.UserOverride => "выбрана в лаунчере",
         _ => "не задана",
     };
 }

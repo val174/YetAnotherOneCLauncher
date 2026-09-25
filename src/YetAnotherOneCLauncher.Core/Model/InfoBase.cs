@@ -54,7 +54,10 @@ public sealed class InfoBase : CatalogEntry
     /// </summary>
     public string IdentityKey => Id is { } id
         ? "id:" + id.Trim().ToLowerInvariant()
-        : "conn:" + Connection.ToNormalizedKey();
+        : ConnectionKey;
+
+    /// <summary>Ключ по нормализованной строке подключения — запасной, когда <c>ID</c> нет или он изменился.</summary>
+    public string ConnectionKey => "conn:" + Connection.ToNormalizedKey();
 
     public override string ToString() => $"{Name} ({Connection.ToDisplayString()})";
 
