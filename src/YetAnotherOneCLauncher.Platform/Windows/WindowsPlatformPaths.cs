@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.Platform.Windows;
@@ -50,6 +51,8 @@ public sealed class WindowsPlatformPaths : IPlatformPaths
     public IReadOnlyList<string> StarterConfigPaths { get; }
 
     public IReadOnlyList<string> DefaultPlatformInstallRoots { get; }
+
+    public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
     public IReadOnlyList<string> InfoBaseCacheRoots { get; }
 

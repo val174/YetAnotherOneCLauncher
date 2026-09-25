@@ -14,6 +14,15 @@
       </StackPanel>
     </Border>
 
+    <Expander x:Name="PlatformsExpander"
+              DockPanel.Dock="Bottom"
+              Header="Платформы"
+              HorizontalAlignment="Stretch">
+      <ScrollViewer MaxHeight="180">
+        <SelectableTextBlock x:Name="PlatformsText" FontFamily="Consolas, DejaVu Sans Mono, monospace" />
+      </ScrollViewer>
+    </Expander>
+
     <Expander x:Name="WarningsExpander"
               DockPanel.Dock="Bottom"
               Header="Предупреждения"

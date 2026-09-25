@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.Platform.Linux;
@@ -11,6 +12,8 @@ namespace YetAnotherOneCLauncher.Platform.Linux;
 /// <item>/opt/1cv8/&lt;arch&gt;/&lt;версия&gt; и старый вариант /opt/1C/v8.3/&lt;arch&gt; — платформы.</item>
 /// </list>
 /// Пути нужно сверить на реальных установках разных версий платформы.
+/// Старую раскладку /opt/1C/v8.3/&lt;arch&gt; поиск пока не находит: в пути нет каталога с версией,
+/// и нужно выяснить, откуда её брать.
 /// </summary>
 [SupportedOSPlatform("linux")]
 public sealed class LinuxPlatformPaths : IPlatformPaths
@@ -39,6 +42,8 @@ public sealed class LinuxPlatformPaths : IPlatformPaths
     public IReadOnlyList<string> StarterConfigPaths { get; }
 
     public IReadOnlyList<string> DefaultPlatformInstallRoots { get; }
+
+    public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Linux;
 
     public IReadOnlyList<string> InfoBaseCacheRoots { get; }
 

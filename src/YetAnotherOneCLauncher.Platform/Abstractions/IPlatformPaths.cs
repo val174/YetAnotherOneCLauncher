@@ -1,4 +1,5 @@
 using YetAnotherOneCLauncher.Core.Catalog;
+using YetAnotherOneCLauncher.Core.Platforms;
 
 namespace YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -13,6 +14,9 @@ public interface IPlatformPaths
 
     /// <summary>Каталоги, в которых по умолчанию ищутся установленные платформы 1С.</summary>
     IReadOnlyList<string> DefaultPlatformInstallRoots { get; }
+
+    /// <summary>Имена исполняемых файлов платформы на этой ОС.</summary>
+    PlatformExecutableNames PlatformExecutableNames { get; }
 
     /// <summary>Корневые каталоги кэша баз (внутри — подкаталоги с именами по ID базы).</summary>
     IReadOnlyList<string> InfoBaseCacheRoots { get; }

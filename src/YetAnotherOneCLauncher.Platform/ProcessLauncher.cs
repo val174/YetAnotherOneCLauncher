@@ -1,0 +1,68 @@
+using System.ComponentModel;
+using System.Diagnostics;
+using YetAnotherOneCLauncher.Core.Launching;
+using YetAnotherOneCLauncher.Platform.Abstractions;
+
+namespace YetAnotherOneCLauncher.Platform;
+
+/// <summary>
+/// Запуск платформы. В Windows командная строка собирается по правилам 1С
+/// (<see cref="LaunchCommand.ToWindowsArguments"/>): стандартное экранирование .NET (<c>\"</c>) 1С не понимает.
+/// В Linux аргументы передаются по одному, без оболочки.
+/// </summary>
+public sealed class ProcessLauncher : IProcessLauncher
+{
+    public int Start(LaunchCommand command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+
+        var startInfo = new ProcessStartInfo(command.ExecutablePath)
+        {
+            UseShellExecute = false,
+            WorkingDirectory = command.Platform.BinDirectory,
+        };
+
+        if (OperatingSystem.IsWindows())
+        {
+            startInfo.Arguments = command.ToWindowsArguments();
+        }
+        else
+        {
+            foreach (var argument in command.ToArgumentVector())
+            {
+                startInfo.ArgumentList.Add(argument);
+            }
+        }
+
+        return StartDetached(startInfo, $"Не удалось запустить {command.ExecutablePath}");
+    }
+
+    public void OpenUrl(Uri url)
+    {
+        ArgumentNullException.ThrowIfNull(url);
+
+        var startInfo = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo(url.AbsoluteUri) { UseShellExecute = true }
+            : new ProcessStartInfo("xdg-open") { UseShellExecute = false, ArgumentList = { url.AbsoluteUri } };
+
+        StartDetached(startInfo, $"Не удалось открыть {url} в браузере");
+    }
+
+    private static int StartDetached(ProcessStartInfo startInfo, string errorPrefix)
+    {
+        try
+        {
+            using var process = Process.Start(startInfo)
+                                ?? throw new LaunchFailedException(errorPrefix + ": процесс не создан.");
+            return process.Id;
+        }
+        catch (Win32Exception ex)
+        {
+            throw new LaunchFailedException($"{errorPrefix}: {ex.Message}", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new LaunchFailedException($"{errorPrefix}: {ex.Message}", ex);
+        }
+    }
+}

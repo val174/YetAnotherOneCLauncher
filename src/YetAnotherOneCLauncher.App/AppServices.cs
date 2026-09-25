@@ -5,6 +5,7 @@ using Serilog;
 using Serilog.Core;
 using Serilog.Events;
 using YetAnotherOneCLauncher.Core.Catalog;
+using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Platform;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -33,10 +34,14 @@ internal static class AppServices
         if (paths is not null)
         {
             services.AddSingleton(paths);
+            services.AddSingleton<IPlatformLocator, PlatformLocator>();
         }
 
         services.AddSingleton(new CatalogLoadOptions());
         services.AddSingleton<InfoBaseCatalogLoader>();
+        services.AddSingleton(new LaunchOptions());
+        services.AddSingleton<IProcessLauncher, ProcessLauncher>();
+        services.AddSingleton<LaunchCoordinator>();
         services.AddTransient<MainWindow>();
 
         return services.BuildServiceProvider(new ServiceProviderOptions
