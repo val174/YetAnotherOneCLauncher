@@ -21,3 +21,8 @@ charset = unset
 end_of_line = unset
 insert_final_newline = unset
 trim_trailing_whitespace = unset
+
+# Тесты: имена вида Does_something_when_condition и массивы-константы в Assert — принятый стиль xUnit.
+[tests/**.cs]
+dotnet_diagnostic.CA1707.severity = none
+dotnet_diagnostic.CA1861.severity = none

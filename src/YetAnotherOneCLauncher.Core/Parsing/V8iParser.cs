@@ -35,7 +35,7 @@ internal static class V8iParser
 
     internal static string[] SplitLines(string text, out bool endsWithNewLine)
     {
-        if (text.Length > 0 && text[0] == '﻿')
+        if (text.Length > 0 && text[0] == '\uFEFF')
         {
             text = text[1..]; // BOM, оставшийся в тексте (например, двойной)
         }

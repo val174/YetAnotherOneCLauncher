@@ -5,7 +5,7 @@
 
 ## Состояние
 
-Этап 1 из плана: ядро чтения списков баз.
+Сделаны этап 1 (ядро чтения списков баз) и этап 0 (порядок в проекте: git, CI, DI, логирование, анализаторы). Следующий — этап 2, поиск платформ и запуск. Подробности — в [docs/ROADMAP.md](docs/ROADMAP.md).
 
 - [x] Каркас решения (Core, Platform, App, тесты)
 - [x] Чтение и запись `ibases.v8i` без потери данных (порядок секций, неизвестные ключи, комментарии, кодировка, переводы строк)
@@ -27,6 +27,11 @@ dotnet test
 dotnet run --project src/YetAnotherOneCLauncher.App
 ```
 
+Предупреждения компилятора и анализаторов считаются ошибками (`TreatWarningsAsErrors`, `AnalysisLevel=latest-recommended`).
+CI (GitHub Actions, `.github/workflows/ci.yml`) собирает решение и запускает тесты на Windows и Linux.
+
+Лог приложения: `<каталог настроек>/logs/launcher-<дата>.log`, то есть `%APPDATA%\YetAnotherOneCLauncher\logs` в Windows и `~/.config/YetAnotherOneCLauncher/logs` в Linux. В отладочной сборке пишутся и сообщения уровня Debug.
+
 ## Структура
 
 ```
@@ -40,12 +45,12 @@ src/
   YetAnotherOneCLauncher.Platform/   всё, что зависит от ОС
     Abstractions/  IPlatformPaths
     Windows/, Linux/
-  YetAnotherOneCLauncher.App/        Avalonia UI
+  YetAnotherOneCLauncher.App/        Avalonia UI; AppServices — контейнер зависимостей и лог (Serilog)
 tests/
   YetAnotherOneCLauncher.Core.Tests/ xUnit; образцы файлов в Fixtures/
 ```
 
-Правило: **Core ничего не знает об ОС и UI**. Пути 1С передаются в ядро из `Platform`.
+Правило: **Core ничего не знает об ОС и UI**. Пути 1С передаются в ядро из `Platform`. Из инфраструктуры Core зависит только от `Microsoft.Extensions.Logging.Abstractions`; классы Core работают и без логгера.
 
 ## Принятые решения
 

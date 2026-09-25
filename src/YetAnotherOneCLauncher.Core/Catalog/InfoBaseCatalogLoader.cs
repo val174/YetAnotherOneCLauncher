@@ -1,3 +1,6 @@
+using System.Diagnostics;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Parsing;
 using YetAnotherOneCLauncher.Core.Text;
@@ -18,13 +21,15 @@ namespace YetAnotherOneCLauncher.Core.Catalog;
 /// <item>Веб-сервис списков (<c>InternetService</c>) пока не читается — выдаётся информационное сообщение.</item>
 /// </list>
 /// </remarks>
-public sealed class InfoBaseCatalogLoader
+public sealed partial class InfoBaseCatalogLoader
 {
     private readonly CatalogLoadOptions _options;
+    private readonly ILogger _logger;
 
-    public InfoBaseCatalogLoader(CatalogLoadOptions? options = null)
+    public InfoBaseCatalogLoader(CatalogLoadOptions? options = null, ILogger<InfoBaseCatalogLoader>? logger = null)
     {
         _options = options ?? new CatalogLoadOptions();
+        _logger = logger ?? NullLogger<InfoBaseCatalogLoader>.Instance;
     }
 
     private static StringComparer PathComparer =>
@@ -34,6 +39,7 @@ public sealed class InfoBaseCatalogLoader
     {
         ArgumentNullException.ThrowIfNull(sources);
         var warnings = new List<CatalogWarning>();
+        var startedAt = Stopwatch.GetTimestamp();
 
         // 1. Настройки стартера.
         var configs = new List<StarterConfig>();
@@ -154,12 +160,26 @@ public sealed class InfoBaseCatalogLoader
             }
         }
 
+        foreach (var warning in warnings)
+        {
+            var level = ToLogLevel(warning.Level);
+            LogCatalogWarning(_logger, level, warning.Message, warning.Location);
+        }
+
+        if (_logger.IsEnabled(LogLevel.Information))
+        {
+            var availableLists = lists.Count(l => l.IsAvailable);
+            var elapsedMs = (long)Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
+            LogCatalogLoaded(_logger, infoBases.Count, folders.Count, availableLists, lists.Length, elapsedMs);
+        }
+
         return new InfoBaseCatalog(lists, infoBases, folders, starterConfig, warnings);
     }
 
     private async Task<LoadedList> LoadListAsync(ListSource source, CancellationToken cancellationToken)
     {
         var result = await ReadFileAsync(source.Location, cancellationToken).ConfigureAwait(false);
+        LogListRead(_logger, source.Kind, source.Location, result.Status);
         return result.Status switch
         {
             ReadStatus.Ok => new LoadedList(
@@ -229,6 +249,30 @@ public sealed class InfoBaseCatalogLoader
             return path;
         }
     }
+
+    private static LogLevel ToLogLevel(CatalogWarningLevel level) => level switch
+    {
+        CatalogWarningLevel.Error => LogLevel.Error,
+        CatalogWarningLevel.Warning => LogLevel.Warning,
+        _ => LogLevel.Information,
+    };
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Список {Kind} {Location}: {Status}")]
+    private static partial void LogListRead(ILogger logger, ListSourceKind kind, string location, ReadStatus status);
+
+    [LoggerMessage(Message = "Каталог: {Message} ({Location})")]
+    private static partial void LogCatalogWarning(ILogger logger, LogLevel level, string message, string? location);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Каталог загружен: баз {InfoBaseCount}, папок {FolderCount}, списков {AvailableLists} из {TotalLists}, {ElapsedMs} мс")]
+    private static partial void LogCatalogLoaded(
+        ILogger logger,
+        int infoBaseCount,
+        int folderCount,
+        int availableLists,
+        int totalLists,
+        long elapsedMs);
 
     private enum ReadStatus
     {

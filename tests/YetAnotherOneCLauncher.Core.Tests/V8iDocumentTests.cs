@@ -172,6 +172,17 @@ public class V8iDocumentTests
     }
 
     [Fact]
+    public void Double_bom_does_not_break_first_section_header()
+    {
+        byte[] bom = [0xEF, 0xBB, 0xBF];
+        var bytes = bom.Concat(bom).Concat(System.Text.Encoding.UTF8.GetBytes("[База]\r\nConnect=File=\"C:\\B\";\r\n")).ToArray();
+
+        var document = V8iDocument.Parse(bytes);
+
+        Assert.Equal("База", Assert.Single(document.Sections).Name);
+    }
+
+    [Fact]
     public async Task Save_writes_atomically_and_keeps_backup()
     {
         using var temp = new TempDirectory();

@@ -46,7 +46,7 @@ public sealed class StarterConfig
             .Select(e => e.Value)
             .ToList();
 
-    public string? GetLast(string key) => GetAll(key).LastOrDefault();
+    public string? GetLast(string key) => GetAll(key) is { Count: > 0 } values ? values[^1] : null;
 
     public static StarterConfig Parse(string text, string? sourcePath = null)
     {

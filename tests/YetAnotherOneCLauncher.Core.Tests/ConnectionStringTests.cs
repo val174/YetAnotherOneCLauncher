@@ -107,12 +107,70 @@ public class ConnectionStringTests
     }
 
     [Fact]
-    public void Normalized_key_ignores_case_slashes_and_trailing_separator()
+    public void Normalized_key_ignores_slashes_and_trailing_separator()
     {
         var a = ConnectionString.Parse("File=\"C:/Bases/Buh/\";");
-        var b = ConnectionString.Parse("File=\"c:\\bases\\buh\";");
+        var b = ConnectionString.Parse("File=\"C:\\Bases\\Buh\";");
 
         Assert.Equal(a.ToNormalizedKey(), b.ToNormalizedKey());
+    }
+
+    [Fact]
+    public void Normalized_key_ignores_file_path_case_when_asked()
+    {
+        var a = ConnectionString.Parse("File=\"C:\\Bases\\Buh\";");
+        var b = ConnectionString.Parse("File=\"c:\\bases\\buh\";");
+
+        Assert.Equal(a.ToNormalizedKey(ignoreFilePathCase: true), b.ToNormalizedKey(ignoreFilePathCase: true));
+    }
+
+    [Fact]
+    public void Normalized_key_keeps_file_path_case_for_case_sensitive_file_systems()
+    {
+        var a = ConnectionString.Parse("File=\"/bases/Buh\";");
+        var b = ConnectionString.Parse("File=\"/bases/buh\";");
+
+        Assert.NotEqual(a.ToNormalizedKey(ignoreFilePathCase: false), b.ToNormalizedKey(ignoreFilePathCase: false));
+    }
+
+    [Fact]
+    public void Normalized_key_follows_current_os_file_path_case_rules()
+    {
+        var a = ConnectionString.Parse("File=\"/bases/Buh\";");
+        var b = ConnectionString.Parse("File=\"/bases/buh\";");
+
+        Assert.Equal(OperatingSystem.IsWindows(), a.ToNormalizedKey() == b.ToNormalizedKey());
+    }
+
+    [Fact]
+    public void Server_and_web_keys_ignore_case_on_any_os()
+    {
+        Assert.Equal(
+            ConnectionString.Parse("Srvr=\"SRV\";Ref=\"Buh\";").ToNormalizedKey(ignoreFilePathCase: false),
+            ConnectionString.Parse("Srvr=\"srv\";Ref=\"buh\";").ToNormalizedKey(ignoreFilePathCase: false));
+        Assert.Equal(
+            ConnectionString.Parse("ws=\"HTTP://Host/Buh/\";").ToNormalizedKey(ignoreFilePathCase: false),
+            ConnectionString.Parse("ws=\"http://host/buh\";").ToNormalizedKey(ignoreFilePathCase: false));
+    }
+
+    [Fact]
+    public void Fragment_without_equals_does_not_swallow_next_key()
+    {
+        var cs = ConnectionString.Parse("foo;File=\"C:\\Bases\\Buh\";");
+
+        Assert.Equal(ConnectionKind.File, cs.Kind);
+        Assert.Equal("C:\\Bases\\Buh", cs.FilePath);
+        Assert.Equal(new[] { "File" }, cs.Parts.Select(p => p.Key).ToArray());
+        Assert.Contains(cs.Errors, e => e.Contains("foo", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Trailing_fragment_without_equals_is_reported()
+    {
+        var cs = ConnectionString.Parse("File=\"C:\\Bases\\Buh\";garbage");
+
+        Assert.Equal("C:\\Bases\\Buh", cs.FilePath);
+        Assert.Single(cs.Errors);
     }
 
     [Fact]

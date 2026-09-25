@@ -159,11 +159,20 @@ public sealed class ConnectionString
                 break;
             }
 
+            // '=' ищем только в пределах текущего фрагмента: иначе "foo;File=..." дало бы ключ "foo;File".
             var eq = s.IndexOf('=', i);
-            if (eq < 0)
+            var fragmentEnd = s.IndexOf(';', i);
+            if (eq < 0 || (fragmentEnd >= 0 && fragmentEnd < eq))
             {
-                errors.Add($"Фрагмент без '=': «{s[i..].Trim()}».");
-                break;
+                var end = fragmentEnd < 0 ? s.Length : fragmentEnd;
+                errors.Add($"Фрагмент без '=': «{s[i..end].Trim()}».");
+                if (fragmentEnd < 0)
+                {
+                    break;
+                }
+
+                i = fragmentEnd + 1;
+                continue;
             }
 
             var key = s[i..eq].Trim();
@@ -265,12 +274,15 @@ public sealed class ConnectionString
     }
 
     /// <summary>
-    /// Нормализованный ключ для поиска дубликатов: регистр, направление слэшей
-    /// и завершающие разделители не учитываются.
+    /// Нормализованный ключ для поиска дубликатов: направление слэшей и завершающие разделители
+    /// не учитываются. Регистр пути файловой базы не учитывается только в Windows:
+    /// в Linux "/bases/Buh" и "/bases/buh" — разные каталоги.
     /// </summary>
-    public string ToNormalizedKey() => Kind switch
+    public string ToNormalizedKey() => ToNormalizedKey(ignoreFilePathCase: OperatingSystem.IsWindows());
+
+    internal string ToNormalizedKey(bool ignoreFilePathCase) => Kind switch
     {
-        ConnectionKind.File => "file:" + NormalizePath(FilePath!),
+        ConnectionKind.File => "file:" + NormalizePath(FilePath!, ignoreFilePathCase),
         ConnectionKind.Server => "srvr:" + (Server ?? string.Empty).Trim().ToLowerInvariant()
                                  + "|" + (InfobaseName ?? string.Empty).Trim().ToLowerInvariant(),
         ConnectionKind.Web => "ws:" + WebUrl!.Trim().TrimEnd('/').ToLowerInvariant(),
@@ -286,6 +298,9 @@ public sealed class ConnectionString
         _ => ToString(),
     };
 
-    private static string NormalizePath(string path) =>
-        path.Trim().Replace('/', '\\').TrimEnd('\\').ToLowerInvariant();
+    private static string NormalizePath(string path, bool ignoreCase)
+    {
+        var normalized = path.Trim().Replace('/', '\\').TrimEnd('\\');
+        return ignoreCase ? normalized.ToLowerInvariant() : normalized;
+    }
 }

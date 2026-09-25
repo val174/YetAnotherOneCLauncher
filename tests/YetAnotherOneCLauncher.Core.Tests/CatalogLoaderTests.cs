@@ -102,7 +102,7 @@ public class CatalogLoaderTests
             "[Первая]",
             "Connect=File=\"C:\\Bases\\Same\";",
             "[Вторая]",
-            "Connect=File=\"c:/bases/same/\";");
+            "Connect=File=\"C:/Bases/Same/\";");
 
         var catalog = await new InfoBaseCatalogLoader().LoadAsync(new CatalogSources(personalPath, []));
 

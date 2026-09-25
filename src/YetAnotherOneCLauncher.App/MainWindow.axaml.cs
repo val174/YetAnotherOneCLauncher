@@ -1,8 +1,11 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Styling;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Platform;
+using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -19,8 +22,23 @@ public partial class MainWindow : Window
         ("Тема: тёмная", ThemeVariant.Dark),
     ];
 
+    private readonly InfoBaseCatalogLoader _loader;
+    private readonly ILogger _logger;
+    private readonly IPlatformPaths? _paths;
+
+    // Нужен дизайнеру XAML; в приложении окно создаётся из контейнера.
     public MainWindow()
+        : this(new InfoBaseCatalogLoader(), NullLogger<MainWindow>.Instance)
     {
+    }
+
+    /// <param name="paths"><c>null</c> на неподдерживаемой ОС.</param>
+    public MainWindow(InfoBaseCatalogLoader loader, ILogger<MainWindow> logger, IPlatformPaths? paths = null)
+    {
+        _loader = loader;
+        _logger = logger;
+        _paths = paths;
+
         InitializeComponent();
 
         ThemeBox.ItemsSource = Themes.Select(t => t.Title).ToList();
@@ -46,14 +64,15 @@ public partial class MainWindow : Window
         StatusText.Text = "Загрузка…";
         try
         {
-            if (!PlatformServices.IsSupported)
+            if (_paths is null)
             {
-                StatusText.Text = "Эта ОС пока не поддерживается.";
+                StatusText.Text = PlatformServices.IsSupported
+                    ? "Пути 1С не заданы."
+                    : "Эта ОС пока не поддерживается.";
                 return;
             }
 
-            var paths = PlatformServices.CreatePaths();
-            var catalog = await new InfoBaseCatalogLoader().LoadAsync(paths.ToCatalogSources());
+            var catalog = await _loader.LoadAsync(_paths.ToCatalogSources());
 
             CatalogTree.ItemsSource = null;
             CatalogTree.Items.Clear();
@@ -73,6 +92,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            LogLoadFailed(_logger, ex);
             StatusText.Text = "Ошибка загрузки: " + ex.Message;
         }
         finally
@@ -112,4 +132,7 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Не удалось загрузить каталог баз")]
+    private static partial void LogLoadFailed(ILogger logger, Exception exception);
 }
