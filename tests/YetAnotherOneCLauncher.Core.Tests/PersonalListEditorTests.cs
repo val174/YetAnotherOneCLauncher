@@ -38,6 +38,19 @@ public class PersonalListEditorTests
     }
 
     [Fact]
+    public void Next_order_is_integer_after_fractional_and_ignores_minus_one()
+    {
+        var document = V8iDocument.Parse(string.Join("\r\n",
+            "[Старая]", "Connect=File=\"C:\\A\";", "OrderInList=-1", "Folder=/", "OrderInTree=18590.9903978051",
+            "[Другая]", "Connect=File=\"C:\\B\";", "OrderInList=573440", "Folder=/", "OrderInTree=202.27"));
+
+        var section = PersonalListEditor.AddBase(document, new InfoBaseDraft { Name = "Новая", FilePath = @"C:\C" });
+
+        Assert.Equal("589824", section.Get("OrderInList"));
+        Assert.Equal("34974", section.Get("OrderInTree")); // floor(18590.99) + 16384
+    }
+
+    [Fact]
     public void Adding_does_not_touch_existing_text()
     {
         var original = Fixtures.Read("ibases_sample.v8i");

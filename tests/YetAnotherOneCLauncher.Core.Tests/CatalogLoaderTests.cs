@@ -135,6 +135,28 @@ public class CatalogLoaderTests
         Assert.Equal("Бухгалтерия (копия)", archive.InfoBases.Single().Name);
     }
 
+    [Fact]
+    public async Task Fractional_order_from_starter_sorts_like_starter()
+    {
+        // После перетаскивания штатный стартер пишет дробный OrderInTree.
+        using var temp = new TempDirectory();
+        var personalPath = temp.Combine("ibases.v8i");
+        await WriteV8iAsync(personalPath,
+            "[Вторая]",
+            "Connect=File=\"C:\\B\";",
+            "OrderInTree=18876.4005486968",
+            "[Первая]",
+            "Connect=File=\"C:\\A\";",
+            "OrderInTree=202.271604938272",
+            "[Третья]",
+            "Connect=File=\"C:\\C\";",
+            "OrderInTree=36408.8888888888");
+
+        var catalog = await new InfoBaseCatalogLoader().LoadAsync(new CatalogSources(personalPath, []));
+
+        Assert.Equal(new[] { "Первая", "Вторая", "Третья" }, catalog.BuildTree().Items.Select(i => i.Name).ToArray());
+    }
+
     private static Task WriteV8iAsync(string path, params string[] lines) =>
         File.WriteAllBytesAsync(path, TextFileCodec.Encode(
             string.Join("\r\n", lines) + "\r\n",

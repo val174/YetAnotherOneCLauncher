@@ -26,14 +26,16 @@ public abstract class CatalogEntry
     /// <summary>Папка, в которой лежит запись: "/" — корень, "/Бухгалтерия/Архив" — вложенная.</summary>
     public string FolderPath => FolderPaths.Normalize(Section.Get(V8iKeys.Folder));
 
-    public long? OrderInList => ParseLong(Section.Get(V8iKeys.OrderInList));
+    public double? OrderInList => ParseOrder(Section.Get(V8iKeys.OrderInList));
 
-    public long? OrderInTree => ParseLong(Section.Get(V8iKeys.OrderInTree));
+    public double? OrderInTree => ParseOrder(Section.Get(V8iKeys.OrderInTree));
 
     protected static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
-    private static long? ParseLong(string? value) =>
-        long.TryParse(value, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var result)
+    /// <summary>Порядок; после перетаскивания в штатном стартере бывает дробным (18590.9903978051).</summary>
+    internal static double? ParseOrder(string? value) =>
+        double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var result)
+        && double.IsFinite(result)
             ? result
             : null;
 }

@@ -8,7 +8,7 @@ public abstract class CatalogTreeItem
     public abstract string Name { get; }
 
     /// <summary>Порядок из <c>OrderInTree</c>; записи без порядка идут в конце.</summary>
-    public abstract long? SortOrder { get; }
+    public abstract double? SortOrder { get; }
 }
 
 /// <summary>Узел-папка. Корень дерева — папка с путём "/".</summary>
@@ -32,7 +32,7 @@ public sealed class CatalogFolderNode : CatalogTreeItem
 
     public bool IsRoot => Path == FolderPaths.Root;
 
-    public override long? SortOrder => Folder?.OrderInTree;
+    public override double? SortOrder => Folder?.OrderInTree;
 
     /// <summary>Вложенные папки и базы вперемешку, отсортированные как в штатном стартере.</summary>
     public List<CatalogTreeItem> Items { get; } = [];
@@ -58,7 +58,7 @@ public sealed class CatalogInfoBaseItem : CatalogTreeItem
 
     public override string Name => InfoBase.Name;
 
-    public override long? SortOrder => InfoBase.OrderInTree;
+    public override double? SortOrder => InfoBase.OrderInTree;
 }
 
 /// <summary>Строит дерево по путям <c>Folder</c>; недостающие промежуточные папки создаются автоматически.</summary>
@@ -124,7 +124,7 @@ public static class CatalogTreeBuilder
 
     private static int CompareItems(CatalogTreeItem a, CatalogTreeItem b)
     {
-        var byOrder = (a.SortOrder ?? long.MaxValue).CompareTo(b.SortOrder ?? long.MaxValue);
+        var byOrder = (a.SortOrder ?? double.MaxValue).CompareTo(b.SortOrder ?? double.MaxValue);
         return byOrder != 0
             ? byOrder
             : StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name);

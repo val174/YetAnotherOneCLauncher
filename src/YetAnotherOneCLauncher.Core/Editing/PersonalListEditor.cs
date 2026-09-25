@@ -411,7 +411,7 @@ public static class PersonalListEditor
         var personal = new ListSource(ListSourceKind.Personal, string.Empty);
         return document.Sections
             .Where(s => !string.IsNullOrWhiteSpace(s.Name) && FolderPaths.Normalize(s.Get(V8iKeys.Folder)) == folder)
-            .OrderBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? long.MaxValue)
+            .OrderBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? double.MaxValue)
             .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
     }
@@ -482,17 +482,16 @@ public static class PersonalListEditor
     }
 
     private static long NextOrderInList(V8iDocument document) =>
-        document.Sections.Select(s => ParseOrder(s.Get(V8iKeys.OrderInList))).DefaultIfEmpty(0).Max() + OrderStep;
+        NextAfter(document.Sections.Select(s => s.Get(V8iKeys.OrderInList)));
 
     private static long NextOrderInTree(V8iDocument document, string folder, V8iSection? except = null) =>
-        document.Sections
+        NextAfter(document.Sections
             .Where(s => !ReferenceEquals(s, except) && FolderPaths.Normalize(s.Get(V8iKeys.Folder)) == FolderPaths.Normalize(folder))
-            .Select(s => ParseOrder(s.Get(V8iKeys.OrderInTree)))
-            .DefaultIfEmpty(0)
-            .Max() + OrderStep;
+            .Select(s => s.Get(V8iKeys.OrderInTree)));
 
-    private static long ParseOrder(string? value) =>
-        long.TryParse(value, NumberStyles.Integer, CultureInfo.InvariantCulture, out var result) ? result : 0;
+    /// <summary>Следующий порядок после всех существующих — целый, даже если у соседей дробный.</summary>
+    private static long NextAfter(IEnumerable<string?> values) =>
+        (long)Math.Floor(Math.Max(0, values.Select(CatalogEntry.ParseOrder).Max() ?? 0)) + OrderStep;
 
     private static string Format(long value) => value.ToString(CultureInfo.InvariantCulture);
 

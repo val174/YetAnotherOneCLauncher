@@ -42,7 +42,7 @@ public class V8iDocumentTests
         Assert.Equal("3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b12", infoBase.Id);
         Assert.Equal(ConnectionKind.Server, infoBase.ConnectionKind);
         Assert.Equal("/Бухгалтерия", infoBase.FolderPath);
-        Assert.Equal(16384L, infoBase.OrderInTree);
+        Assert.Equal(16384d, infoBase.OrderInTree);
         Assert.Equal(ClientApp.ThinClient, infoBase.App);
         Assert.True(infoBase.WindowsAuthentication);
         Assert.Equal("8.3", infoBase.Version);
