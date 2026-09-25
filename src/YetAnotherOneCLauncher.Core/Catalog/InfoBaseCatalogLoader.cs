@@ -95,72 +95,9 @@ public sealed partial class InfoBaseCatalogLoader
         }
 
         // 4. Базы и папки без дубликатов.
-        var infoBases = new List<InfoBase>();
-        var folders = new List<InfoBaseFolder>();
-        var seenBases = new Dictionary<string, InfoBase>(StringComparer.Ordinal);
-        var seenFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var catalog = InfoBaseCatalog.Build(lists, starterConfig, warnings);
 
-        foreach (var list in lists)
-        {
-            if (list.Document is null)
-            {
-                continue;
-            }
-
-            foreach (var section in list.Document.Sections)
-            {
-                if (string.IsNullOrWhiteSpace(section.Name))
-                {
-                    warnings.Add(new CatalogWarning(
-                        CatalogWarningLevel.Warning,
-                        "Секция без названия пропущена.",
-                        list.Source.Location));
-                    continue;
-                }
-
-                if (string.IsNullOrWhiteSpace(section.Get(V8iKeys.Connect)))
-                {
-                    var folder = new InfoBaseFolder(section, list.Source);
-                    if (seenFolders.Add(folder.FullPath))
-                    {
-                        folders.Add(folder);
-                    }
-
-                    continue;
-                }
-
-                var infoBase = new InfoBase(section, list.Source);
-                if (infoBase.Connection.HasErrors)
-                {
-                    warnings.Add(new CatalogWarning(
-                        CatalogWarningLevel.Warning,
-                        $"«{infoBase.Name}»: {string.Join(" ", infoBase.Connection.Errors)}",
-                        list.Source.Location));
-                }
-
-                if (infoBase.ConnectionKind == ConnectionKind.Unknown)
-                {
-                    warnings.Add(new CatalogWarning(
-                        CatalogWarningLevel.Info,
-                        $"«{infoBase.Name}»: тип подключения не распознан ({infoBase.Connection}).",
-                        list.Source.Location));
-                }
-
-                if (seenBases.TryGetValue(infoBase.IdentityKey, out var existing))
-                {
-                    warnings.Add(new CatalogWarning(
-                        CatalogWarningLevel.Info,
-                        $"Дубликат «{infoBase.Name}» пропущен: база уже есть в списке «{existing.Source.Location}».",
-                        list.Source.Location));
-                    continue;
-                }
-
-                seenBases.Add(infoBase.IdentityKey, infoBase);
-                infoBases.Add(infoBase);
-            }
-        }
-
-        foreach (var warning in warnings)
+        foreach (var warning in catalog.Warnings)
         {
             var level = ToLogLevel(warning.Level);
             LogCatalogWarning(_logger, level, warning.Message, warning.Location);
@@ -170,10 +107,10 @@ public sealed partial class InfoBaseCatalogLoader
         {
             var availableLists = lists.Count(l => l.IsAvailable);
             var elapsedMs = (long)Stopwatch.GetElapsedTime(startedAt).TotalMilliseconds;
-            LogCatalogLoaded(_logger, infoBases.Count, folders.Count, availableLists, lists.Length, elapsedMs);
+            LogCatalogLoaded(_logger, catalog.InfoBases.Count, catalog.Folders.Count, availableLists, lists.Length, elapsedMs);
         }
 
-        return new InfoBaseCatalog(lists, infoBases, folders, starterConfig, warnings);
+        return catalog;
     }
 
     private async Task<LoadedList> LoadListAsync(ListSource source, CancellationToken cancellationToken)
