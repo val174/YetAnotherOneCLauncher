@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Всё, что зависит от ОС: пути 1С, поиск платформ, процессы, секреты, корзина. -->
+  <PropertyGroup>
+    <RootNamespace>YetAnotherOneCLauncher.Platform</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\YetAnotherOneCLauncher.Core\YetAnotherOneCLauncher.Core.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Ядро: логика без UI и без привязки к ОС. -->
+  <PropertyGroup>
+    <RootNamespace>YetAnotherOneCLauncher.Core</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="YetAnotherOneCLauncher.Core.Tests" />
+  </ItemGroup>
+
+</Project>

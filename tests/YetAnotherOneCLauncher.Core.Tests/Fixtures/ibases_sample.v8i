@@ -1,0 +1,50 @@
+﻿[Бухгалтерия]
+ID=0b1e2a3c-0000-4000-8000-000000000001
+OrderInList=16384
+Folder=/
+OrderInTree=16384
+External=0
+[Бухгалтерия (рабочая)]
+Connect=Srvr="srv1c:1541";Ref="buh_prod";
+ID=3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b12
+OrderInList=16384
+Folder=/Бухгалтерия
+OrderInTree=16384
+External=0
+ClientConnectionSpeed=Normal
+App=ThinClient
+WA=1
+Version=8.3
+DefaultApp=ThinClient
+AdditionalParameters=/UseHwLicenses-
+[Бухгалтерия (копия)]
+Connect=File="C:\Bases\Buh copy";
+ID=3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b13
+OrderInList=32768
+Folder=/Бухгалтерия/Архив
+OrderInTree=32768
+External=0
+App=ThickClient
+WA=0
+Version=8.3.24
+[Тест]
+Connect=File="D:\Test";
+ID=3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b14
+OrderInList=8192
+Folder=/
+OrderInTree=8192
+External=0
+[Тест]
+Connect=ws="http://web.local/test";
+ID=3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b15
+OrderInList=65536
+Folder=/
+OrderInTree=65536
+External=0
+UnknownKey=значение неизвестного ключа сохраняется
+
+[База с "кавычками"]
+Connect=File="C:\Bases\Say ""hello""";
+ID=3f2a1c7e-8d4b-4e6a-9b1f-0c5d7e8a9b16
+Folder=/
+External=0

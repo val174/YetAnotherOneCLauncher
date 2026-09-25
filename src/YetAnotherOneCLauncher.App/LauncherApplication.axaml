@@ -1,0 +1,9 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="YetAnotherOneCLauncher.App.LauncherApplication"
+             RequestedThemeVariant="Default">
+  <!-- Default = как в системе; переключается на лету из главного окна. -->
+  <Application.Styles>
+    <FluentTheme />
+  </Application.Styles>
+</Application>
