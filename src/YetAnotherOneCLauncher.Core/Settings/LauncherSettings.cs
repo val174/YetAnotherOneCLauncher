@@ -54,6 +54,37 @@ public sealed record PlatformVersionOverride
     public string Version { get; init; } = string.Empty;
 }
 
+/// <summary>Параметры запуска и пользователь базы — хранятся в лаунчере, список баз не меняется.</summary>
+public sealed record InfoBaseLaunchProfile
+{
+    public InfoBaseRef InfoBase { get; init; } = new();
+
+    /// <summary>Параметры командной строки: дописываются после параметров папок.</summary>
+    public string? Parameters { get; init; }
+
+    /// <summary>Пользователь 1С (<c>/N</c>).</summary>
+    public string? UserName { get; init; }
+
+    /// <summary>
+    /// Ключ пароля в хранилище ОС (Credential Manager, libsecret); <c>null</c> — пароль не сохранён.
+    /// Сам пароль в настройках не хранится.
+    /// </summary>
+    public string? PasswordKey { get; init; }
+
+    [System.Text.Json.Serialization.JsonIgnore]
+    public bool IsEmpty =>
+        string.IsNullOrWhiteSpace(Parameters) && string.IsNullOrWhiteSpace(UserName) && PasswordKey is null;
+}
+
+/// <summary>Параметры запуска папки: действуют на все базы в ней и во вложенных папках.</summary>
+public sealed record FolderLaunchProfile
+{
+    /// <summary>Путь папки: "/Бухгалтерия/Архив".</summary>
+    public string FolderPath { get; init; } = string.Empty;
+
+    public string? Parameters { get; init; }
+}
+
 public enum ThemeMode
 {
     System,
@@ -132,6 +163,13 @@ public sealed class LauncherSettings
     public List<LaunchHistoryEntry> History { get; set; } = [];
 
     public List<PlatformVersionOverride> PlatformOverrides { get; set; } = [];
+
+    public List<InfoBaseLaunchProfile> InfoBaseProfiles { get; set; } = [];
+
+    public List<FolderLaunchProfile> FolderProfiles { get; set; } = [];
+
+    /// <summary>Свои шаблоны параметров — в дополнение к встроенным.</summary>
+    public List<ParameterTemplate> ParameterTemplates { get; set; } = [];
 
     public UiSettings Ui { get; set; } = new();
 

@@ -62,6 +62,18 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
         Task.FromResult(InfoBaseEditor(editor) && editor.TryAccept());
+
+    /// <summary>Что «пользователь» сделает в форме параметров запуска: режим разового запуска или <c>null</c> для сохранения; <c>false</c> в ответе — отмена.</summary>
+    public Func<LaunchParametersViewModel, (bool Accept, LaunchMode? Mode)> LaunchParameters { get; set; } = _ => (false, null);
+
+    public List<LaunchParametersViewModel> LaunchParameterForms { get; } = [];
+
+    public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters)
+    {
+        LaunchParameterForms.Add(parameters);
+        var (accept, mode) = LaunchParameters(parameters);
+        return Task.FromResult(accept && parameters.TryAccept(mode));
+    }
 }
 
 internal sealed class FakeFiles : IFileDialogService
@@ -75,6 +87,8 @@ internal sealed class FakeFiles : IFileDialogService
     public Task<string?> PickFolderAsync(string title) => Task.FromResult(FolderAnswer);
 
     public Task<string?> OpenListFileAsync(string title) => Task.FromResult(OpenAnswer);
+
+    public Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns) => Task.FromResult(OpenAnswer);
 
     public Task<string?> SaveListFileAsync(string title, string suggestedName) => Task.FromResult(SaveAnswer);
 }
@@ -120,6 +134,20 @@ internal sealed class FakePaths : IPlatformPaths
     public IReadOnlyList<string> InfoBaseCacheRoots { get; } = [];
 
     public string AppDataDirectory => Path.GetDirectoryName(PersonalInfoBaseListPath)!;
+}
+
+/// <summary>Хранилище паролей в памяти.</summary>
+internal sealed class FakeCredentials : ICredentialStore
+{
+    public Dictionary<string, (string UserName, string Password)> Entries { get; } = [];
+
+    public string? UnavailableReason { get; set; }
+
+    public string? Read(string key) => Entries.TryGetValue(key, out var entry) ? entry.Password : null;
+
+    public void Write(string key, string label, string userName, string password) => Entries[key] = (userName, password);
+
+    public void Delete(string key) => Entries.Remove(key);
 }
 
 internal sealed class FakeLocator(IReadOnlyList<PlatformInstallation> installations) : IPlatformLocator
@@ -199,7 +227,9 @@ internal sealed class ViewModelFixture : IDisposable
             NullLogger<MainWindowViewModel>.Instance,
             new FakePaths(ListPath),
             new FakeLocator(Installations),
-            Store);
+            Store,
+            watcher: null,
+            credentials: Credentials);
     }
 
     public string ListPath { get; }
@@ -207,6 +237,8 @@ internal sealed class ViewModelFixture : IDisposable
     public string Directory => _directory;
 
     public FakeFiles Files { get; } = new();
+
+    public FakeCredentials Credentials { get; } = new();
 
     public PersonalListStore Store => _store ??= new PersonalListStore(ListPath);
 

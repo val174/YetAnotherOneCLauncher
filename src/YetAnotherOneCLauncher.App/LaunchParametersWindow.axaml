@@ -1,0 +1,73 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        x:Class="YetAnotherOneCLauncher.App.LaunchParametersWindow"
+        x:DataType="vm:LaunchParametersViewModel"
+        Title="{Binding Title}"
+        Width="600" SizeToContent="Height"
+        CanResize="False" ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="16" Spacing="8">
+    <StackPanel Spacing="2" IsVisible="{Binding HasInherited}">
+      <TextBlock Classes="secondary" Text="Уже применяются (из списка баз и папок):" />
+      <SelectableTextBlock Text="{Binding InheritedText}" TextWrapping="Wrap" FontFamily="Consolas, DejaVu Sans Mono, monospace" FontSize="12" />
+    </StackPanel>
+
+    <TextBlock Text="Параметры командной строки" Margin="0,4,0,0" />
+    <TextBox x:Name="ParametersBox" Text="{Binding Parameters}" TextWrapping="Wrap" AcceptsReturn="False"
+             FontFamily="Consolas, DejaVu Sans Mono, monospace"
+             PlaceholderText="например, /DisableStartupMessages /UC 123" />
+    <TextBlock Classes="secondary" Text="{Binding ParametersHint}" />
+
+    <DockPanel Margin="0,4,0,0">
+      <Button DockPanel.Dock="Right" Content="Добавить" Command="{Binding InsertTemplateCommand}" Margin="6,0,0,0"
+              ToolTip.Tip="Добавить параметр в конец строки" />
+      <Button DockPanel.Dock="Right" Content="Обзор…" Command="{Binding BrowseTemplateFileCommand}" Margin="6,0,0,0"
+              IsVisible="{Binding TemplateNeedsFile}" />
+      <TextBox DockPanel.Dock="Right" Width="150" Margin="6,0,0,0" Text="{Binding TemplateValue}"
+               PlaceholderText="значение" IsVisible="{Binding TemplateNeedsValue}" />
+      <ComboBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" HorizontalAlignment="Stretch" />
+    </DockPanel>
+    <TextBlock Classes="secondary" Text="{Binding TemplateDescription}" />
+
+    <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto" Margin="0,6,0,0" IsVisible="{Binding ShowCredentials}">
+      <TextBlock Text="Пользователь 1С" Margin="0,0,0,6" />
+      <TextBox Grid.Row="1" x:Name="UserNameBox" Text="{Binding UserName}" PlaceholderText="пусто — выбрать при входе" />
+      <TextBlock Grid.Column="2" Text="Пароль" Margin="0,0,0,6" />
+      <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding Password}" PasswordChar="●"
+               PlaceholderText="{Binding PasswordPlaceholder}" />
+    </Grid>
+
+    <StackPanel Spacing="2" IsVisible="{Binding ShowSavePassword}">
+      <CheckBox IsChecked="{Binding SavePassword}" IsEnabled="{Binding CanSavePassword}"
+                Content="Сохранить пароль в хранилище учётных данных системы" />
+      <TextBlock Classes="secondary" Text="{Binding SavePasswordUnavailableReason}"
+                 IsVisible="{Binding !CanSavePassword}" />
+    </StackPanel>
+
+    <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding IsOneOff}" Margin="0,4,0,0">
+      <TextBlock Text="Клиент" VerticalAlignment="Center" Margin="0,0,12,0" />
+      <ComboBox Grid.Column="1" ItemsSource="{Binding ClientNames}" SelectedIndex="{Binding ClientIndex}" HorizontalAlignment="Stretch" />
+    </Grid>
+
+    <Border IsVisible="{Binding HasErrors}" Padding="8" CornerRadius="4" Background="#33E81123">
+      <TextBlock Text="{Binding Errors}" TextWrapping="Wrap" />
+    </Border>
+
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
+      <Button x:Name="EnterpriseButton" Classes="accent" Content="Предприятие" IsDefault="True" MinWidth="110"
+              IsVisible="{Binding IsOneOff}" />
+      <Button x:Name="DesignerButton" Content="Конфигуратор" MinWidth="110" IsVisible="{Binding IsOneOff}" />
+      <Button x:Name="SaveButton" Classes="accent" Content="Сохранить" MinWidth="100" IsVisible="{Binding !IsOneOff}" />
+      <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
+    </StackPanel>
+  </StackPanel>
+</Window>

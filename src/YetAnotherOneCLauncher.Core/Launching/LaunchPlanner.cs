@@ -140,14 +140,16 @@ public static class LaunchPlanner
             arguments.Add(request.Password);
         }
 
-        // Дополнительные аргументы запроса идут после AdditionalParameters, поэтому в Windows их нельзя
-        // поставить в общий список до сырого хвоста: они добавляются к хвосту в экранированном виде.
-        var raw = infoBase.AdditionalParameters;
-        if (request.ExtraArguments.Count > 0)
-        {
-            raw = string.Join(' ', new[] { raw, OneCCommandLine.Format(request.ExtraArguments) }
-                .Where(s => !string.IsNullOrWhiteSpace(s)));
-        }
+        // Порядок: AdditionalParameters базы, параметры лаунчера (папки, база, разовые), дополнительные аргументы.
+        // Всё это идёт после сырого AdditionalParameters, поэтому в Windows аргументы нельзя поставить в общий
+        // список до хвоста: они добавляются к хвосту в экранированном виде.
+        IEnumerable<string?> parts =
+        [
+            infoBase.AdditionalParameters,
+            .. request.ParameterFragments,
+            request.ExtraArguments.Count > 0 ? OneCCommandLine.Format(request.ExtraArguments) : null,
+        ];
+        var raw = string.Join(' ', parts.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!.Trim()));
 
         return new LaunchCommand(executablePath, arguments, string.IsNullOrWhiteSpace(raw) ? null : raw, installation);
     }

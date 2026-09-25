@@ -67,6 +67,9 @@ public sealed class SettingsStore
         settings.Favorites ??= [];
         settings.History ??= [];
         settings.PlatformOverrides ??= [];
+        settings.InfoBaseProfiles ??= [];
+        settings.FolderProfiles ??= [];
+        settings.ParameterTemplates ??= [];
         settings.Ui ??= new UiSettings();
         settings.Ui.CollapsedFolders ??= [];
         settings.Launch ??= new LaunchSettings();

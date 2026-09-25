@@ -88,4 +88,93 @@ public sealed class LauncherUserData
             Settings.PlatformOverrides.Add(new PlatformVersionOverride { InfoBase = InfoBaseRef.From(infoBase), Version = version.Trim() });
         }
     }
+
+    public InfoBaseLaunchProfile? LaunchProfile(InfoBase infoBase) =>
+        Settings.InfoBaseProfiles.Find(p => p.InfoBase.Matches(infoBase));
+
+    /// <summary>Сохраняет профиль базы; пустой профиль удаляется.</summary>
+    public void SetLaunchProfile(InfoBase infoBase, InfoBaseLaunchProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        Settings.InfoBaseProfiles.RemoveAll(p => p.InfoBase.Matches(infoBase));
+        profile = profile with
+        {
+            InfoBase = InfoBaseRef.From(infoBase),
+            Parameters = NullIfBlank(profile.Parameters),
+            UserName = NullIfBlank(profile.UserName),
+        };
+        if (!profile.IsEmpty)
+        {
+            Settings.InfoBaseProfiles.Add(profile);
+        }
+    }
+
+    public string? FolderParameters(string folderPath)
+    {
+        var path = FolderPaths.Normalize(folderPath);
+        return Settings.FolderProfiles.Find(p => SamePath(p.FolderPath, path))?.Parameters;
+    }
+
+    /// <param name="folderPath">Папка.</param>
+    /// <param name="parameters">Пусто — убрать параметры папки.</param>
+    public void SetFolderParameters(string folderPath, string? parameters)
+    {
+        var path = FolderPaths.Normalize(folderPath);
+        Settings.FolderProfiles.RemoveAll(p => SamePath(p.FolderPath, path));
+        if (NullIfBlank(parameters) is { } text)
+        {
+            Settings.FolderProfiles.Add(new FolderLaunchProfile { FolderPath = path, Parameters = text });
+        }
+    }
+
+    /// <summary>Папку переименовали или перенесли в лаунчере — параметры переходят вместе с ней и вложенными.</summary>
+    public void MoveFolderParameters(string oldPath, string newPath)
+    {
+        var from = FolderPaths.Normalize(oldPath);
+        var to = FolderPaths.Normalize(newPath);
+        for (var i = 0; i < Settings.FolderProfiles.Count; i++)
+        {
+            var path = Settings.FolderProfiles[i].FolderPath;
+            if (SamePath(path, from))
+            {
+                Settings.FolderProfiles[i] = Settings.FolderProfiles[i] with { FolderPath = to };
+            }
+            else if (path.StartsWith(from + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                Settings.FolderProfiles[i] = Settings.FolderProfiles[i] with { FolderPath = to + path[from.Length..] };
+            }
+        }
+    }
+
+    /// <summary>
+    /// Параметры лаунчера для базы в порядке применения: папки от верхней к вложенной, затем сама база.
+    /// </summary>
+    public IReadOnlyList<string> ParameterChain(InfoBase infoBase)
+    {
+        ArgumentNullException.ThrowIfNull(infoBase);
+        var result = new List<string>();
+        var path = FolderPaths.Root;
+        foreach (var segment in FolderPaths.Split(infoBase.FolderPath))
+        {
+            path = FolderPaths.Combine(path, segment);
+            if (NullIfBlank(FolderParameters(path)) is { } folderParameters)
+            {
+                result.Add(folderParameters);
+            }
+        }
+
+        if (NullIfBlank(LaunchProfile(infoBase)?.Parameters) is { } own)
+        {
+            result.Add(own);
+        }
+
+        return result;
+    }
+
+    /// <summary>Свои и встроенные шаблоны: свои — первыми.</summary>
+    public IReadOnlyList<ParameterTemplate> ParameterTemplates() => [.. Settings.ParameterTemplates, .. ParameterLibrary.BuiltIn];
+
+    private static bool SamePath(string a, string b) => string.Equals(a, b, StringComparison.OrdinalIgnoreCase);
+
+    private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 }

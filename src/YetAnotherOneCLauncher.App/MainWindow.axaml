@@ -57,6 +57,7 @@
                   <TextBlock TextWrapping="Wrap" Text="Файловые базы с клиентом «Автоматически» открывать в толстом клиенте" />
                 </CheckBox>
                 <CheckBox IsChecked="{Binding ShowDetails}" Content="Панель подробностей" />
+                <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
               </StackPanel>
             </Flyout>
           </Button.Flyout>
@@ -128,9 +129,10 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button Classes="accent" Content="Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="Enter или двойной щелчок" />
               <Button Content="Конфигуратор" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="Ctrl+Enter" />
+              <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (Ctrl+Shift+Enter)" />
             </StackPanel>
 
-            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
               <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionText}" />
               <TextBlock Grid.Row="1" Classes="label" Text="Тип" />
@@ -143,6 +145,10 @@
               <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
                         ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding SelectedPlatformChoice}"
                         ToolTip.Tip="Версия для запуска из лаунчера; список баз не меняется" />
+              <TextBlock Grid.Row="9" Classes="label" Text="Параметры" />
+              <SelectableTextBlock Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchParametersText}" />
+              <TextBlock Grid.Row="10" Classes="label" Text="Пользователь" />
+              <SelectableTextBlock Grid.Row="10" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.UserText}" />
               <TextBlock Grid.Row="5" Classes="label" Text="Папка" />
               <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}" />
               <TextBlock Grid.Row="6" Classes="label" Text="Последний запуск" />
@@ -155,6 +161,8 @@
             </Grid>
 
             <WrapPanel>
+              <Button Content="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" Margin="0,0,6,6"
+                      ToolTip.Tip="Параметры командной строки, пользователь и пароль — хранятся в лаунчере" />
               <Button Content="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" Margin="0,0,6,6" />
               <Button Content="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" Margin="0,0,6,6"
                       IsVisible="{Binding SelectedInfoBase.IsFileBase, FallbackValue=False}" />
@@ -170,6 +178,8 @@
         <ContextMenu>
           <MenuItem Header="Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
           <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="Ctrl+Enter" />
+          <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="Ctrl+Shift+Enter" />
+          <MenuItem Header="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" />
           <Separator />
           <MenuItem Header="Изменить…" Command="{Binding EditCommand}" InputGesture="F2" />
           <MenuItem Header="Изменить как текст…" Command="{Binding EditAsTextCommand}" />

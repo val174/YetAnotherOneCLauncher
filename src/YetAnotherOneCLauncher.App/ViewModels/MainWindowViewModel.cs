@@ -52,6 +52,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly IFileDialogService _files;
     private readonly PersonalListStore? _store;
     private readonly IListChangeWatcher? _watcher;
+    private readonly ICredentialStore? _credentials;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -76,11 +77,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IPlatformPaths? paths = null,
         IPlatformLocator? locator = null,
         PersonalListStore? store = null,
-        IListChangeWatcher? watcher = null)
+        IListChangeWatcher? watcher = null,
+        ICredentialStore? credentials = null)
     {
         _files = files;
         _store = store;
         _watcher = watcher;
+        _credentials = credentials;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
         _launcher = launcher;
@@ -153,6 +156,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [NotifyCanExecuteChangedFor(
         nameof(LaunchEnterpriseCommand),
         nameof(LaunchDesignerCommand),
+        nameof(LaunchWithParametersCommand),
+        nameof(EditLaunchSettingsCommand),
         nameof(ToggleFavoriteCommand),
         nameof(CopyConnectionStringCommand),
         nameof(OpenBaseFolderCommand),
@@ -169,14 +174,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Выделенная обычная папка дерева (не «Избранное» и не «Недавние»).</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]
     public partial PlatformChoice? SelectedPlatformChoice { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand), nameof(LaunchWithParametersCommand))]
     public partial bool IsLaunching { get; private set; }
 
     [ObservableProperty]
@@ -492,7 +497,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _settings.RequestSave();
     }
 
-    private async Task LaunchAsync(InfoBaseViewModel? target, LaunchMode mode)
+    private async Task LaunchAsync(InfoBaseViewModel? target, LaunchMode mode, OneOffLaunch? oneOff = null)
     {
         if (target is null || IsLaunching)
         {
@@ -502,7 +507,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsLaunching = true;
         try
         {
-            var request = new LaunchRequest(target.InfoBase, mode) { PlatformVersionOverride = target.PlatformVersionOverride };
+            var (request, credentialWarning) = BuildRequest(target, mode, oneOff);
             var outcome = await _launcher.LaunchAsync(
                 request,
                 _installations,
@@ -511,6 +516,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 question => _dialogs.ConfirmAsync("Нет нужной версии платформы", question, "Запустить"));
 
             StatusText = outcome.Message;
+            if (credentialWarning is not null && outcome.Started)
+            {
+                StatusText += " " + credentialWarning;
+            }
+
             if (outcome.Started)
             {
                 OnLaunched(target, mode);

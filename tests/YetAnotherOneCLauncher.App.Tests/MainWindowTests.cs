@@ -140,6 +140,32 @@ public class MainWindowTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public void Launch_parameters_window_snapshot()
+    {
+        var form = new ViewModels.LaunchParametersViewModel(
+            ViewModels.LaunchParametersKind.InfoBase,
+            "Бухгалтерия",
+            Core.Launching.ParameterLibrary.BuiltIn,
+            ["/DisableStartupMessages", "/L ru"],
+            new FakeFiles())
+        {
+            Parameters = "/UC 42",
+            UserName = "Бухгалтер",
+            HasSavedPassword = true,
+            SavePassword = true,
+        };
+        form.SelectedTemplate = form.Templates.Single(t => t.Text == "/Execute");
+        var window = new LaunchParametersWindow(form);
+        window.Show();
+        Render();
+
+        Assert.True(window.FindControl<TextBox>("ParametersBox")!.IsFocused);
+        Assert.False(window.FindControl<Button>("EnterpriseButton")!.IsVisible);
+        Snapshot(window, "06-launch-parameters");
+        window.Close();
+    }
+
     private static async Task<MainWindow> OpenAsync(ViewModelFixture fixture)
     {
         // Настоящее окно применяет тему через Application; в тестах — через подделку, поэтому ставим вручную.

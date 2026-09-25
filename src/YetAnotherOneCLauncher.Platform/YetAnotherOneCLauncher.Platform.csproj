@@ -4,6 +4,8 @@
   <PropertyGroup>
     <RootNamespace>YetAnotherOneCLauncher.Platform</RootNamespace>
     <IsAotCompatible>true</IsAotCompatible>
+    <!-- Вызовы Credential Manager через LibraryImport. -->
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>

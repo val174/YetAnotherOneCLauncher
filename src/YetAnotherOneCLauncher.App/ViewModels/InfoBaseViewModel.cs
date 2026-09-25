@@ -74,12 +74,30 @@ public sealed partial class InfoBaseViewModel : ObservableObject
     [ObservableProperty]
     public partial string? PlatformVersionOverride { get; private set; }
 
+    /// <summary>Параметры запуска: <c>AdditionalParameters</c> из списка, затем параметры папок и базы из лаунчера.</summary>
+    [ObservableProperty]
+    public partial string LaunchParametersText { get; private set; } = string.Empty;
+
+    /// <summary>Пользователь 1С из настроек лаунчера и сохранён ли пароль.</summary>
+    [ObservableProperty]
+    public partial string UserText { get; private set; } = string.Empty;
+
     /// <summary>Перечитать избранное, историю и выбранную версию из настроек.</summary>
     public void Refresh()
     {
         IsFavorite = _userData.IsFavorite(InfoBase);
         LaunchCount = _userData.LaunchCount(InfoBase);
         PlatformVersionOverride = _userData.PlatformVersionOverride(InfoBase);
+
+        var parameters = new[] { InfoBase.AdditionalParameters }.Concat(_userData.ParameterChain(InfoBase))
+            .Where(p => !string.IsNullOrWhiteSpace(p))
+            .Select(p => OneCCommandLine.MaskPasswords(p!.Trim()));
+        LaunchParametersText = string.Join(" ", parameters) is { Length: > 0 } text ? text : "не заданы";
+
+        var profile = _userData.LaunchProfile(InfoBase);
+        UserText = profile?.UserName is { } user
+            ? profile.PasswordKey is null ? user : user + " (пароль сохранён)"
+            : "выбирается при входе";
 
         var last = _userData.LastLaunch(InfoBase);
         LastLaunchText = last is null

@@ -28,6 +28,12 @@ public sealed record LaunchRequest(InfoBase InfoBase, LaunchMode Mode)
     /// <summary>Пароль (<c>/P</c>). В логи и на экран попадает только замаскированным.</summary>
     public string? Password { get; init; }
 
+    /// <summary>
+    /// Параметры из лаунчера — у папок, у базы, разовые — в порядке применения. Это текст, как в
+    /// <c>AdditionalParameters</c>: дописывается после него как есть.
+    /// </summary>
+    public IReadOnlyList<string> ParameterFragments { get; init; } = [];
+
     /// <summary>Дополнительные аргументы, добавляются после <c>AdditionalParameters</c> базы.</summary>
     public IReadOnlyList<string> ExtraArguments { get; init; } = [];
 

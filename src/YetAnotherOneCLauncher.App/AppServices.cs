@@ -40,6 +40,7 @@ internal static class AppServices
             services.AddSingleton<IPlatformLocator, PlatformLocator>();
             services.AddSingleton(_ => new PersonalListStore(paths.PersonalInfoBaseListPath));
             services.AddSingleton<IListChangeWatcher, ListChangeWatcher>();
+            services.AddSingleton(_ => PlatformServices.CreateCredentialStore());
         }
 
         // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.

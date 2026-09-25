@@ -92,10 +92,14 @@ public sealed partial class MainWindowViewModel
             }
 
             var parent = ParentPath(folder.Path);
-            await EditListAsync(
-                document => PersonalListEditor.RenameFolder(document, FolderRef(folder), name),
-                $"Папка переименована в «{name.Trim()}».",
-                () => FolderSelectionKey(FolderPaths.Combine(parent, name)));
+            var newPath = FolderPaths.Combine(parent, name);
+            if (await EditListAsync(
+                    document => PersonalListEditor.RenameFolder(document, FolderRef(folder), name),
+                    $"Папка переименована в «{name.Trim()}».",
+                    () => FolderSelectionKey(newPath)))
+            {
+                MoveFolderParameters(folder.Path, newPath);
+            }
         }
     }
 
@@ -289,10 +293,14 @@ public sealed partial class MainWindowViewModel
         var key = source is FolderNodeViewModel movedFolder
             ? FolderSelectionKey(FolderPaths.Combine(place.Folder, movedFolder.Name))
             : ((BaseNodeViewModel)source).Base.InfoBase.IdentityKey;
-        await EditListAsync(
+        var moved = await EditListAsync(
             document => PersonalListEditor.Move(document, moving, place.Folder, place.Before),
             $"«{source.Name}» перемещена в «{place.Folder}».",
             () => key);
+        if (moved && source is FolderNodeViewModel folderSource)
+        {
+            MoveFolderParameters(folderSource.Path, FolderPaths.Combine(place.Folder, folderSource.Name));
+        }
     }
 
     private bool HasEditableSelection() =>

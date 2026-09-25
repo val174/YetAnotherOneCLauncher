@@ -11,6 +11,22 @@ public static class PlatformServices
 
     public static bool IsSupported => OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
 
+    /// <summary>Хранилище паролей ОС.</summary>
+    public static ICredentialStore CreateCredentialStore()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new WindowsCredentialStore();
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return new SecretToolCredentialStore();
+        }
+
+        throw new PlatformNotSupportedException("Хранилище паролей есть только для Windows и Linux.");
+    }
+
     public static IPlatformPaths CreatePaths()
     {
         if (OperatingSystem.IsWindows())

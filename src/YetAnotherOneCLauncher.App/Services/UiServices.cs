@@ -24,6 +24,9 @@ public interface IDialogService
 
     /// <summary>Форма базы; <c>true</c> — пользователь нажал «Сохранить» и данные прошли проверку.</summary>
     Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor);
+
+    /// <summary>Параметры запуска; <c>true</c> — пользователь подтвердил, данные прошли проверку.</summary>
+    Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -32,6 +35,9 @@ public interface IFileDialogService
     Task<string?> PickFolderAsync(string title);
 
     Task<string?> OpenListFileAsync(string title);
+
+    /// <summary>Выбор файла по маскам, например <c>*.epf</c>.</summary>
+    Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns);
 
     Task<string?> SaveListFileAsync(string title, string suggestedName);
 }
@@ -79,6 +85,25 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
         MainWindow is { } owner ? new InfoBaseEditorWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters) =>
+        MainWindow is { } owner ? new LaunchParametersWindow(parameters).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
+    {
+        if (MainWindow?.StorageProvider is not { } storage)
+        {
+            return null;
+        }
+
+        var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = title,
+            AllowMultiple = false,
+            FileTypeFilter = [new FilePickerFileType(typeName) { Patterns = [.. patterns] }, FilePickerFileTypes.All],
+        });
+        return files.Count > 0 ? files[0].TryGetLocalPath() : null;
+    }
 
     public async Task<string?> PickFolderAsync(string title)
     {

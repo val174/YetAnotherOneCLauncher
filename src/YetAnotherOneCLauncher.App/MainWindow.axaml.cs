@@ -310,7 +310,12 @@ public partial class MainWindow : Window
             return;
         }
 
-        var command = modifiers.HasFlag(KeyModifiers.Control) ? vm.LaunchDesignerCommand : vm.LaunchEnterpriseCommand;
+        ICommand command = modifiers switch
+        {
+            KeyModifiers.Control | KeyModifiers.Shift => vm.LaunchWithParametersCommand,
+            _ when modifiers.HasFlag(KeyModifiers.Control) => vm.LaunchDesignerCommand,
+            _ => vm.LaunchEnterpriseCommand,
+        };
         if (command.CanExecute(null))
         {
             command.Execute(null);
