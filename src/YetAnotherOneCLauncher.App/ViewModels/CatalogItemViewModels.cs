@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using YetAnotherOneCLauncher.Core.Model;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
@@ -40,6 +41,12 @@ public sealed class FolderNodeViewModel : TreeNodeViewModel
     public string Path { get; }
 
     public FolderKind Kind { get; }
+
+    /// <summary>Запись папки в списке; <c>null</c> — папка есть только в путях баз (или специальная).</summary>
+    public InfoBaseFolder? Record { get; init; }
+
+    /// <summary>Папку можно переименовать, удалить, перемещать: она из личного списка.</summary>
+    public bool IsEditable { get; init; }
 
     public override string Icon => Kind switch
     {

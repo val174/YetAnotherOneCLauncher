@@ -6,6 +6,7 @@ using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.App.Tests;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Catalog;
+using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Parsing;
 using YetAnotherOneCLauncher.Core.Platforms;
@@ -45,6 +46,37 @@ internal sealed class FakeDialogs : IDialogService
         Messages.Add(text);
         return Task.CompletedTask;
     }
+
+    /// <summary>Ответ на запрос строки; <c>null</c> — отмена.</summary>
+    public string? PromptAnswer { get; set; }
+
+    /// <summary>Что «пользователь» введёт в редакторе текста: получает исходный текст.</summary>
+    public Func<string, string?> TextEditor { get; set; } = _ => null;
+
+    /// <summary>Что «пользователь» сделает в форме базы; <c>false</c> — отмена.</summary>
+    public Func<InfoBaseEditorViewModel, bool> InfoBaseEditor { get; set; } = _ => false;
+
+    public Task<string?> PromptAsync(string title, string label, string initialText) => Task.FromResult(PromptAnswer);
+
+    public Task<string?> EditTextAsync(string title, string hint, string text) => Task.FromResult(TextEditor(text));
+
+    public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
+        Task.FromResult(InfoBaseEditor(editor) && editor.TryAccept());
+}
+
+internal sealed class FakeFiles : IFileDialogService
+{
+    public string? FolderAnswer { get; set; }
+
+    public string? OpenAnswer { get; set; }
+
+    public string? SaveAnswer { get; set; }
+
+    public Task<string?> PickFolderAsync(string title) => Task.FromResult(FolderAnswer);
+
+    public Task<string?> OpenListFileAsync(string title) => Task.FromResult(OpenAnswer);
+
+    public Task<string?> SaveListFileAsync(string title, string suggestedName) => Task.FromResult(SaveAnswer);
 }
 
 internal sealed class FakeShell : IClipboardService, IWindowService, IThemeService
@@ -144,11 +176,12 @@ internal sealed class ViewModelFixture : IDisposable
         """;
 
     private readonly string _directory;
+    private PersonalListStore? _store;
 
     public ViewModelFixture(string list = SampleList)
     {
         _directory = Path.Combine(Path.GetTempPath(), "yaocl-app-tests-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(_directory);
+        System.IO.Directory.CreateDirectory(_directory);
         ListPath = Path.Combine(_directory, "ibases.v8i");
         File.WriteAllBytes(ListPath, TextFileCodec.Encode(list.ReplaceLineEndings("\r\n") + "\r\n", TextFormat.V8iDefault));
 
@@ -162,12 +195,23 @@ internal sealed class ViewModelFixture : IDisposable
             Shell,
             Shell,
             Processes,
+            Files,
             NullLogger<MainWindowViewModel>.Instance,
             new FakePaths(ListPath),
-            new FakeLocator(Installations));
+            new FakeLocator(Installations),
+            Store);
     }
 
     public string ListPath { get; }
+
+    public string Directory => _directory;
+
+    public FakeFiles Files { get; } = new();
+
+    public PersonalListStore Store => _store ??= new PersonalListStore(ListPath);
+
+    /// <summary>Файл списка как документ — чтобы проверить, что записано.</summary>
+    public V8iDocument SavedList() => V8iDocument.Parse(File.ReadAllBytes(ListPath));
 
     public FakeDialogs Dialogs { get; } = new();
 
@@ -193,14 +237,27 @@ internal sealed class ViewModelFixture : IDisposable
         ViewModel.Apply(catalog, new PlatformScanResult(Installations, []));
     }
 
+    /// <summary>Загрузить личный список и один общий (из 1cestart.cfg).</summary>
+    public async Task LoadWithCommonListAsync(string commonList)
+    {
+        var commonPath = Path.Combine(_directory, "common.v8i");
+        File.WriteAllBytes(commonPath, TextFileCodec.Encode(commonList.ReplaceLineEndings("\r\n") + "\r\n", TextFormat.V8iDefault));
+        var cfgPath = Path.Combine(_directory, "1cestart.cfg");
+        File.WriteAllText(cfgPath, $"CommonInfoBases={commonPath}\r\n");
+
+        var catalog = await new InfoBaseCatalogLoader().LoadAsync(new CatalogSources(ListPath, [cfgPath]));
+        ViewModel.Apply(catalog, new PlatformScanResult(Installations, []));
+    }
+
     public InfoBaseViewModel Base(string name) => ViewModel.InfoBases.Single(b => b.Name == name);
 
     public void Dispose()
     {
         Settings.Dispose();
+        _store?.Dispose();
         try
         {
-            Directory.Delete(_directory, recursive: true);
+            System.IO.Directory.Delete(_directory, recursive: true);
         }
         catch (IOException)
         {

@@ -91,6 +91,55 @@ public class MainWindowTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Editing_keys_in_tree_keep_focus_after_rebuild()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        var retail = fixture.ViewModel.TreeItems.Single(n => n.Name == "Розница (тест)");
+        fixture.ViewModel.SelectedTreeItem = retail;
+        Render();
+        tree.ContainerFromItem(retail)!.Focus(); // как после щелчка по элементу
+        Render();
+
+        window.KeyPress(Key.Up, RawInputModifiers.Alt, PhysicalKey.ArrowUp, null);
+        await WaitAsync(() => fixture.ViewModel.TreeItems[1].Name == "Розница (тест)");
+        Render();
+
+        // Дерево перестроено — фокус вернулся на ту же базу, Del работает сразу.
+        Assert.True(tree.IsKeyboardFocusWithin);
+        fixture.Dialogs.ConfirmAnswer = false;
+        window.KeyPress(Key.Delete, RawInputModifiers.None, PhysicalKey.Delete, null);
+        await WaitAsync(() => fixture.Dialogs.Questions.Count == 1);
+        Assert.Contains("Розница (тест)", fixture.Dialogs.Questions[0], StringComparison.Ordinal);
+
+        var opened = false;
+        fixture.Dialogs.InfoBaseEditor = _ => opened = true;
+        window.KeyPress(Key.F2, RawInputModifiers.None, PhysicalKey.F2, null);
+        await WaitAsync(() => opened);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Editor_window_snapshot()
+    {
+        var editor = new ViewModels.InfoBaseEditorViewModel(
+            new Core.Editing.InfoBaseDraft { Name = "Бухгалтерия", Kind = Core.Parsing.ConnectionKind.Server, Server = "srv-1c", InfobaseName = "buh", FolderPath = "/Рабочие", Version = "8.3" },
+            ["/Рабочие", "/Архив"],
+            isNew: false,
+            new FakeFiles());
+        var window = new InfoBaseEditorWindow(editor);
+        window.Show();
+        editor.InfobaseName = string.Empty;
+        editor.TryAccept(); // показать ошибку проверки
+        Render();
+
+        Assert.True(editor.HasErrors);
+        Snapshot(window, "05-editor");
+        window.Close();
+    }
+
     private static async Task<MainWindow> OpenAsync(ViewModelFixture fixture)
     {
         // Настоящее окно применяет тему через Application; в тестах — через подделку, поэтому ставим вручную.

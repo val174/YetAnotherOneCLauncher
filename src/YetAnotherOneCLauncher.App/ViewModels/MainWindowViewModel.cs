@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.Core.Catalog;
+using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Platforms;
@@ -28,6 +29,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Сколько баз показывать в «Недавних».</summary>
     public const int RecentCount = 10;
 
+    private const string FolderKeyPrefix = "folder:";
     private const string FavoritesFolderKey = ":favorites";
     private const string RecentFolderKey = ":recent";
     // Надбавки меньше разрыва между «начало имени» и «начало слова» (20): точность совпадения важнее.
@@ -47,10 +49,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly ILogger _logger;
     private readonly IPlatformPaths? _paths;
     private readonly IPlatformLocator? _locator;
+    private readonly IFileDialogService _files;
+    private readonly PersonalListStore? _store;
+    private readonly IListChangeWatcher? _watcher;
+    private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
     private InfoBaseCatalog? _catalog;
     private IReadOnlyList<PlatformInstallation> _installations = [];
+    private IReadOnlyList<string> _platformWarnings = [];
+    private bool _watching;
     private string? _starterDefaultVersion;
     private bool _suppressSettingsSync = true;
 
@@ -63,10 +71,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IWindowService window,
         IThemeService theme,
         IProcessLauncher processLauncher,
+        IFileDialogService files,
         ILogger<MainWindowViewModel> logger,
         IPlatformPaths? paths = null,
-        IPlatformLocator? locator = null)
+        IPlatformLocator? locator = null,
+        PersonalListStore? store = null,
+        IListChangeWatcher? watcher = null)
     {
+        _files = files;
+        _store = store;
+        _watcher = watcher;
+        _uiContext = SynchronizationContext.Current;
         _loader = loader;
         _launcher = launcher;
         _settings = settings;
@@ -140,10 +155,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(LaunchDesignerCommand),
         nameof(ToggleFavoriteCommand),
         nameof(CopyConnectionStringCommand),
-        nameof(OpenBaseFolderCommand))]
+        nameof(OpenBaseFolderCommand),
+        nameof(EditCommand),
+        nameof(EditAsTextCommand),
+        nameof(DeleteCommand),
+        nameof(MoveUpCommand),
+        nameof(MoveDownCommand),
+        nameof(CopyToPersonalCommand),
+        nameof(ExportCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 
     public bool HasSelection => SelectedInfoBase is not null;
+
+    /// <summary>Выделенная обычная папка дерева (не «Избранное» и не «Недавние»).</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand))]
+    public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]
     public partial PlatformChoice? SelectedPlatformChoice { get; set; }
@@ -190,10 +217,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial bool UseThickClientForFileBases { get; set; }
 
     /// <summary>Первая загрузка при открытии окна.</summary>
-    public Task InitializeAsync()
+    public async Task InitializeAsync()
     {
         _theme.Apply((ThemeMode)ThemeIndex);
-        return ReloadAsync();
+        await ReloadAsync();
+
+        if (_watcher is not null && _paths is not null && !_watching)
+        {
+            _watching = true;
+            _watcher.Changed += OnListFileChanged;
+            _watcher.Start(_paths.PersonalInfoBaseListPath, _paths.StarterConfigPaths);
+        }
     }
 
     /// <summary>Сохранить всё при закрытии окна.</summary>
@@ -230,13 +264,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Показать загруженный каталог и платформы. Отдельно от загрузки — для тестов.</summary>
     internal void Apply(InfoBaseCatalog catalog, PlatformScanResult platforms)
     {
-        var selectedKey = SelectedInfoBase?.InfoBase.IdentityKey;
-
         _installations = platforms.Installations;
+        _platformWarnings = platforms.Warnings;
         _starterDefaultVersion = catalog.StarterConfig.DefaultVersion;
-        _catalog = catalog;
-        _bases.Clear();
-        _bases.AddRange(catalog.InfoBases.Select(b => new InfoBaseViewModel(b, _settings.UserData)));
 
         PlatformChoices.Clear();
         PlatformChoices.Add(AsInListChoice);
@@ -254,8 +284,22 @@ public sealed partial class MainWindowViewModel : ObservableObject
             PlatformsText += $"{Environment.NewLine}Версия по умолчанию (1cestart.cfg): {_starterDefaultVersion}";
         }
 
+        ShowCatalog(catalog, CurrentSelectionKey());
+
+        StatusText =
+            $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
+            $"платформ: {_installations.Count}";
+    }
+
+    /// <summary>Показать каталог (после загрузки или правки) и выделить запись по ключу.</summary>
+    private void ShowCatalog(InfoBaseCatalog catalog, string? selectionKey)
+    {
+        _catalog = catalog;
+        _bases.Clear();
+        _bases.AddRange(catalog.InfoBases.Select(b => new InfoBaseViewModel(b, _settings.UserData)));
+
         var warnings = catalog.Warnings.Select(w => w.ToString())
-            .Concat(platforms.Warnings)
+            .Concat(_platformWarnings)
             .Concat(_settings.LoadWarning is { } w ? [w] : [])
             .ToList();
         WarningCount = warnings.Count;
@@ -263,11 +307,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         RebuildTree();
         RebuildList();
-        Reselect(selectedKey);
-
-        StatusText =
-            $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
-            $"платформ: {_installations.Count}";
+        Reselect(selectionKey);
     }
 
     [RelayCommand(CanExecute = nameof(CanLaunch))]
@@ -287,7 +327,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
-        var key = SelectedInfoBase?.InfoBase.IdentityKey;
+        var key = CurrentSelectionKey();
         _settings.UserData.SetFavorite(target.InfoBase, !target.IsFavorite);
         target.Refresh();
         _settings.RequestSave();
@@ -342,7 +382,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     partial void OnSearchTextChanged(string value)
     {
-        var key = SelectedInfoBase?.InfoBase.IdentityKey;
+        var key = CurrentSelectionKey();
         RebuildList();
 
         // При поиске выделяется лучший результат, чтобы Enter сразу его запускал.
@@ -358,7 +398,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _settings.Settings.Ui.ViewMode = value ? CatalogViewMode.Tree : CatalogViewMode.List;
         _settings.RequestSave();
-        Reselect(SelectedInfoBase?.InfoBase.IdentityKey);
+        Reselect(CurrentSelectionKey());
     }
 
     partial void OnSelectedTreeItemChanged(TreeNodeViewModel? value)
@@ -366,6 +406,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (ShowTree)
         {
             SelectedInfoBase = (value as BaseNodeViewModel)?.Base;
+            SelectedFolder = value as FolderNodeViewModel is { Kind: FolderKind.Regular } folder ? folder : null;
         }
     }
 
@@ -496,7 +537,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         target.Refresh();
         _settings.RequestSave();
 
-        var key = SelectedInfoBase?.InfoBase.IdentityKey;
+        var key = CurrentSelectionKey();
         RebuildTree(); // обновить «Недавние»
         Reselect(key);
 
@@ -567,8 +608,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         var folderNode = (CatalogFolderNode)item;
+        // Папку можно менять, если это запись личного списка или (без записи) в ней есть базы личного списка.
+        var isEditable = folderNode.Folder is { } record
+            ? !record.IsReadOnly
+            : folderNode.DescendantInfoBases.Any(b => !b.IsReadOnly);
         var folder = new FolderNodeViewModel(
-            folderNode.Name, folderNode.Path, FolderKind.Regular, !collapsed.Contains(folderNode.Path), OnFolderExpansionChanged);
+            folderNode.Name, folderNode.Path, FolderKind.Regular, !collapsed.Contains(folderNode.Path), OnFolderExpansionChanged)
+        {
+            Record = folderNode.Folder,
+            IsEditable = isEditable,
+        };
         foreach (var child in folderNode.Items)
         {
             folder.Children.Add(ToNode(child, byInfoBase, collapsed));
@@ -623,21 +672,53 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private static int SearchBoost(InfoBaseViewModel infoBase) =>
         (infoBase.IsFavorite ? FavoriteSearchBoost : 0) + Math.Min(infoBase.LaunchCount, MaxUsageSearchBoost);
 
-    /// <summary>Выделить базу по ключу в текущем представлении; без ключа (или если её нет) — первую в списке.</summary>
+    /// <summary>Ключ выделенной записи: <see cref="InfoBase.IdentityKey"/> базы или «folder:путь» папки.</summary>
+    private string? CurrentSelectionKey() =>
+        SelectedInfoBase?.InfoBase.IdentityKey ?? (SelectedFolder is { } folder ? FolderSelectionKey(folder.Path) : null);
+
+    private static string FolderSelectionKey(string path) => FolderKeyPrefix + path;
+
+    /// <summary>Выделить запись по ключу в текущем представлении; без ключа (или если её нет) — первую в списке.</summary>
     private void Reselect(string? identityKey)
     {
         if (ShowTree)
         {
             SelectedListItem = null;
-            SelectedTreeItem = identityKey is null ? null : FindNode(TreeItems, identityKey);
+            SelectedTreeItem = identityKey switch
+            {
+                null => null,
+                _ when identityKey.StartsWith(FolderKeyPrefix, StringComparison.Ordinal) =>
+                    FindFolder(TreeItems, identityKey[FolderKeyPrefix.Length..]),
+                _ => FindNode(TreeItems, identityKey),
+            };
             SelectedInfoBase = (SelectedTreeItem as BaseNodeViewModel)?.Base;
+            SelectedFolder = SelectedTreeItem as FolderNodeViewModel;
             return;
         }
 
         SelectedTreeItem = null;
+        SelectedFolder = null;
         SelectedListItem = (identityKey is null ? null : ListItems.FirstOrDefault(i => i.Base.InfoBase.IdentityKey == identityKey))
                            ?? ListItems.FirstOrDefault();
         SelectedInfoBase = SelectedListItem?.Base;
+    }
+
+    private static FolderNodeViewModel? FindFolder(IEnumerable<TreeNodeViewModel> nodes, string path)
+    {
+        foreach (var folder in nodes.OfType<FolderNodeViewModel>().Where(f => f.Kind == FolderKind.Regular))
+        {
+            if (string.Equals(folder.Path, path, StringComparison.OrdinalIgnoreCase))
+            {
+                return folder;
+            }
+
+            if (FindFolder(folder.Children, path) is { } found)
+            {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     private static BaseNodeViewModel? FindNode(IEnumerable<TreeNodeViewModel> nodes, string identityKey)

@@ -7,6 +7,7 @@ using Serilog.Events;
 using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Catalog;
+using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Platform;
 using YetAnotherOneCLauncher.Platform.Abstractions;
@@ -37,6 +38,8 @@ internal static class AppServices
         {
             services.AddSingleton(paths);
             services.AddSingleton<IPlatformLocator, PlatformLocator>();
+            services.AddSingleton(_ => new PersonalListStore(paths.PersonalInfoBaseListPath));
+            services.AddSingleton<IListChangeWatcher, ListChangeWatcher>();
         }
 
         // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.
@@ -50,6 +53,7 @@ internal static class AppServices
 
         services.AddSingleton<DesktopUiServices>();
         services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DesktopUiServices>());
+        services.AddSingleton<IFileDialogService>(sp => sp.GetRequiredService<DesktopUiServices>());
         services.AddSingleton<IClipboardService>(sp => sp.GetRequiredService<DesktopUiServices>());
         services.AddSingleton<IWindowService>(sp => sp.GetRequiredService<DesktopUiServices>());
         services.AddSingleton<IThemeService>(sp => sp.GetRequiredService<DesktopUiServices>());

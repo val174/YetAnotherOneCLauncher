@@ -1,7 +1,9 @@
+using System.Windows.Input;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Settings;
@@ -14,11 +16,20 @@ namespace YetAnotherOneCLauncher.App;
 /// </summary>
 /// <remarks>
 /// Клавиши: Ctrl+F — поиск; Esc — очистить поиск; ↓ из поиска — к списку; Enter — Предприятие;
-/// Ctrl+Enter — Конфигуратор; Ctrl+D — избранное; F5 — обновить. Набор текста в списке уходит в поиск.
+/// Ctrl+Enter — Конфигуратор; Ctrl+D — избранное; F5 — обновить; Ctrl+N / Ins — новая база; Ctrl+Shift+N — папка;
+/// F2 — изменить; Del — удалить; Alt+↑/↓ — порядок. Набор текста в списке уходит в поиск.
 /// </remarks>
 public partial class MainWindow : Window
 {
     private const double MinRestoredSize = 200;
+    private const double DragThreshold = 6;
+
+    private static readonly DataFormat<TreeNodeViewModel> TreeNodeFormat =
+        DataFormat.CreateInProcessFormat<TreeNodeViewModel>("YetAnotherOneCLauncher.TreeNode");
+
+    private PointerPressedEventArgs? _dragStart;
+    private bool _focusRestorePending;
+    private Control? _focusedList;
 
     // Нужен дизайнеру XAML; в приложении окно создаётся из контейнера.
     public MainWindow()
@@ -37,9 +48,23 @@ public partial class MainWindow : Window
         foreach (var list in new Control[] { CatalogTree, CatalogList })
         {
             list.KeyDown += OnListKeyDown;
+            list.AddHandler(KeyDownEvent, OnListPreviewKeyDown, RoutingStrategies.Tunnel);
             list.DoubleTapped += OnListDoubleTapped;
             list.TextInput += OnListTextInput;
         }
+
+        // Перетаскивание в дереве: папки и базы личного списка — в папку или перед базой; базу — в «Избранное».
+        CatalogTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        CatalogTree.AddHandler(PointerMovedEvent, OnTreePointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        CatalogTree.AddHandler(PointerReleasedEvent, (_, _) => _dragStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
+        CatalogTree.AddHandler(DragDrop.DragOverEvent, OnTreeDragOver);
+        CatalogTree.AddHandler(DragDrop.DropEvent, OnTreeDrop);
+
+        // После правки дерево и список перестраиваются, и фокус клавиатуры теряется вместе со старыми элементами.
+        // Возвращаем его на выделенную запись, чтобы можно было сразу продолжать с клавиатуры (Alt+↑, Del…).
+        AddHandler(GotFocusEvent, OnAnyGotFocus, RoutingStrategies.Bubble, handledEventsToo: true);
+        viewModel.TreeItems.CollectionChanged += (_, _) => RestoreFocusLater(CatalogTree, () => viewModel.SelectedTreeItem);
+        viewModel.ListItems.CollectionChanged += (_, _) => RestoreFocusLater(CatalogList, () => viewModel.SelectedListItem);
 
         Opened += async (_, _) =>
         {
@@ -79,15 +104,154 @@ public partial class MainWindow : Window
                 break;
 
             case Key.D when e.KeyModifiers == KeyModifiers.Control:
-                if (vm.ToggleFavoriteCommand.CanExecute(null))
-                {
-                    vm.ToggleFavoriteCommand.Execute(null);
-                }
+                Execute(vm.ToggleFavoriteCommand);
+                e.Handled = true;
+                break;
 
+            case Key.N when e.KeyModifiers == KeyModifiers.Control:
+                Execute(vm.AddBaseCommand);
+                e.Handled = true;
+                break;
+
+            case Key.N when e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift):
+                Execute(vm.AddFolderCommand);
                 e.Handled = true;
                 break;
         }
     }
+
+    /// <summary>Клавиши правки — раньше, чем их обработает дерево (стрелки оно забирает себе).</summary>
+    private void OnListPreviewKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        ICommand? command = (e.Key, e.KeyModifiers) switch
+        {
+            (Key.F2, KeyModifiers.None) => vm.EditCommand,
+            (Key.Delete, KeyModifiers.None) => vm.DeleteCommand,
+            (Key.Insert, KeyModifiers.None) => vm.AddBaseCommand,
+            (Key.Up, KeyModifiers.Alt) => vm.MoveUpCommand,
+            (Key.Down, KeyModifiers.Alt) => vm.MoveDownCommand,
+            _ => null,
+        };
+
+        if (command is not null)
+        {
+            Execute(command);
+            e.Handled = true;
+        }
+    }
+
+    /// <summary>Запоминает, в дереве или в списке фокус; при удалении элемента <c>GotFocus</c> не приходит — значение сохраняется.</summary>
+    private void OnAnyGotFocus(object? sender, FocusChangedEventArgs e)
+    {
+        var visual = e.Source as Visual;
+        _focusedList = visual?.FindAncestorOfType<TreeView>(includeSelf: true) == CatalogTree ? CatalogTree
+            : visual?.FindAncestorOfType<ListBox>(includeSelf: true) == CatalogList ? CatalogList
+            : null;
+    }
+
+    private void RestoreFocusLater(Control list, Func<object?> selected)
+    {
+        if (_focusRestorePending || !ReferenceEquals(_focusedList, list))
+        {
+            return;
+        }
+
+        _focusRestorePending = true;
+        Dispatcher.UIThread.Post(
+            () =>
+            {
+                _focusRestorePending = false;
+                if (!list.IsEffectivelyVisible || selected() is not { } item)
+                {
+                    list.Focus();
+                    return;
+                }
+
+                var container = list is TreeView tree ? tree.TreeContainerFromItem(item) : ((ItemsControl)list).ContainerFromItem(item);
+                (container ?? list).Focus(NavigationMethod.Directional);
+            },
+            DispatcherPriority.Background);
+    }
+
+    private static void Execute(ICommand command)
+    {
+        if (command.CanExecute(null))
+        {
+            command.Execute(null);
+        }
+    }
+
+    private void OnTreePointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        _dragStart = e.GetCurrentPoint(CatalogTree).Properties.IsLeftButtonPressed && NodeFrom(e.Source) is { } node && CanDrag(node)
+            ? e
+            : null;
+    }
+
+    private async void OnTreePointerMoved(object? sender, PointerEventArgs e)
+    {
+        if (_dragStart is not { } start || NodeFrom(start.Source) is not { } node)
+        {
+            return;
+        }
+
+        var delta = e.GetPosition(CatalogTree) - start.GetPosition(CatalogTree);
+        if (Math.Abs(delta.X) < DragThreshold && Math.Abs(delta.Y) < DragThreshold)
+        {
+            return;
+        }
+
+        _dragStart = null;
+        var data = new DataTransfer();
+        data.Add(DataTransferItem.Create(TreeNodeFormat, node));
+        await DragDrop.DoDragDropAsync(start, data, DragDropEffects.Move);
+    }
+
+    private void OnTreeDragOver(object? sender, DragEventArgs e)
+    {
+        var source = e.DataTransfer.TryGetValue(TreeNodeFormat);
+        var target = NodeFrom(e.Source);
+        e.DragEffects = source is not null && target is not null && !ReferenceEquals(source, target) && CanDropOn(source, target)
+            ? DragDropEffects.Move
+            : DragDropEffects.None;
+        e.Handled = true;
+    }
+
+    private async void OnTreeDrop(object? sender, DragEventArgs e)
+    {
+        if (ViewModel is not { } vm
+            || e.DataTransfer.TryGetValue(TreeNodeFormat) is not { } source
+            || NodeFrom(e.Source) is not { } target)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        await vm.MoveNodeAsync(source, target);
+    }
+
+    private static TreeNodeViewModel? NodeFrom(object? source) =>
+        (source as Visual)?.FindAncestorOfType<TreeViewItem>(includeSelf: true)?.DataContext as TreeNodeViewModel;
+
+    private static bool CanDrag(TreeNodeViewModel node) => node switch
+    {
+        BaseNodeViewModel => true, // базу из общего списка можно бросить в «Избранное»
+        FolderNodeViewModel folder => folder.IsEditable,
+        _ => false,
+    };
+
+    private static bool CanDropOn(TreeNodeViewModel source, TreeNodeViewModel target) => target switch
+    {
+        FolderNodeViewModel { Kind: FolderKind.Favorites } => source is BaseNodeViewModel,
+        FolderNodeViewModel { Kind: FolderKind.Regular } => source is BaseNodeViewModel { Base.InfoBase.IsReadOnly: false } or FolderNodeViewModel,
+        BaseNodeViewModel => source is BaseNodeViewModel { Base.InfoBase.IsReadOnly: false } or FolderNodeViewModel,
+        _ => false,
+    };
 
     private void OnSearchBoxKeyDown(object? sender, KeyEventArgs e)
     {
