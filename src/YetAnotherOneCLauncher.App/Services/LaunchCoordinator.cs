@@ -3,12 +3,13 @@ using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
-namespace YetAnotherOneCLauncher.App;
+namespace YetAnotherOneCLauncher.App.Services;
 
 /// <summary>Итог попытки запуска для показа пользователю.</summary>
 /// <param name="Started">Процесс или браузер запущен.</param>
 /// <param name="Message">Что произошло: для строки состояния или сообщения об ошибке.</param>
-public sealed record LaunchOutcome(bool Started, string Message);
+/// <param name="Cancelled">Пользователь отказался от запуска — это не ошибка.</param>
+public sealed record LaunchOutcome(bool Started, string Message, bool Cancelled = false);
 
 /// <summary>
 /// Связывает план запуска из Core с запуском процесса из Platform:
@@ -17,27 +18,27 @@ public sealed record LaunchOutcome(bool Started, string Message);
 public sealed partial class LaunchCoordinator
 {
     private readonly IProcessLauncher _processLauncher;
-    private readonly LaunchOptions _options;
     private readonly ILogger _logger;
 
-    public LaunchCoordinator(IProcessLauncher processLauncher, LaunchOptions options, ILogger<LaunchCoordinator> logger)
+    public LaunchCoordinator(IProcessLauncher processLauncher, ILogger<LaunchCoordinator> logger)
     {
         _processLauncher = processLauncher;
-        _options = options;
         _logger = logger;
     }
 
     /// <param name="request">Что запускать.</param>
     /// <param name="installations">Найденные платформы.</param>
     /// <param name="starterDefaultVersion"><c>DefaultVersion</c> из 1cestart.cfg.</param>
+    /// <param name="options">Выбор клиента и разрядности.</param>
     /// <param name="confirm">Вопрос пользователю; <c>true</c> — согласен.</param>
     public async Task<LaunchOutcome> LaunchAsync(
         LaunchRequest request,
         IReadOnlyList<PlatformInstallation> installations,
         string? starterDefaultVersion,
+        LaunchOptions options,
         Func<string, Task<bool>> confirm)
     {
-        var plan = LaunchPlanner.Plan(request, installations, starterDefaultVersion, _options);
+        var plan = LaunchPlanner.Plan(request, installations, starterDefaultVersion, options);
         var name = request.InfoBase.Name;
 
         switch (plan)
@@ -53,7 +54,7 @@ public sealed partial class LaunchCoordinator
                 LogWarnings(fallback.Warnings);
                 if (!await confirm(fallback.Question).ConfigureAwait(true))
                 {
-                    return new LaunchOutcome(false, "Запуск отменён.");
+                    return new LaunchOutcome(false, "Запуск отменён.", Cancelled: true);
                 }
 
                 return Start(name, request.Mode, fallback.Command);

@@ -48,6 +48,23 @@ public sealed class ProcessLauncher : IProcessLauncher
         StartDetached(startInfo, $"Не удалось открыть {url} в браузере");
     }
 
+    public void OpenFolder(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        // Без завершающего разделителя: иначе .NET экранирует его перед закрывающей кавычкой, а explorer.exe этого не понимает.
+        path = Path.TrimEndingDirectorySeparator(path);
+        if (!Directory.Exists(path))
+        {
+            throw new LaunchFailedException($"Каталог не найден: {path}");
+        }
+
+        var startInfo = OperatingSystem.IsWindows()
+            ? new ProcessStartInfo("explorer.exe") { UseShellExecute = false, ArgumentList = { path } }
+            : new ProcessStartInfo("xdg-open") { UseShellExecute = false, ArgumentList = { path } };
+
+        StartDetached(startInfo, $"Не удалось открыть каталог {path}");
+    }
+
     private static int StartDetached(ProcessStartInfo startInfo, string errorPrefix)
     {
         try

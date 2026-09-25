@@ -13,6 +13,10 @@ public interface IProcessLauncher
     /// <summary>Открывает адрес в браузере по умолчанию.</summary>
     /// <exception cref="LaunchFailedException">Браузер не удалось запустить.</exception>
     void OpenUrl(Uri url);
+
+    /// <summary>Открывает каталог в проводнике (Windows) или файловом менеджере (Linux).</summary>
+    /// <exception cref="LaunchFailedException">Каталог не удалось открыть.</exception>
+    void OpenFolder(string path);
 }
 
 /// <summary>Процесс не удалось запустить: файла нет, нет прав, не найден браузер и т. п.</summary>

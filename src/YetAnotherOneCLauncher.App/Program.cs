@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Avalonia;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using YetAnotherOneCLauncher.App.Services;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -29,6 +30,10 @@ internal static partial class Program
             RuntimeInformation.FrameworkDescription,
             AppServices.LogDirectory);
 
+        // Настройки нужны до показа окна (положение, тема). Контекста синхронизации ещё нет — ждать безопасно.
+        var settings = services.GetRequiredService<UserSettingsService>();
+        settings.LoadAsync().GetAwaiter().GetResult();
+
         try
         {
             return BuildAvaloniaApp(services).StartWithClassicDesktopLifetime(args);
@@ -40,6 +45,7 @@ internal static partial class Program
         }
         finally
         {
+            settings.FlushAsync().GetAwaiter().GetResult();
             LogStopped(logger);
         }
     }

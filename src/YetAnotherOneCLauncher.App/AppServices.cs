@@ -4,8 +4,10 @@ using Microsoft.Extensions.Logging;
 using Serilog;
 using Serilog.Core;
 using Serilog.Events;
+using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Catalog;
-using YetAnotherOneCLauncher.Core.Launching;
+using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Platform;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -37,11 +39,22 @@ internal static class AppServices
             services.AddSingleton<IPlatformLocator, PlatformLocator>();
         }
 
+        // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.
+        var settingsStore = paths is null ? null : new SettingsStore(paths.AppDataDirectory);
+        services.AddSingleton(sp => new UserSettingsService(settingsStore, sp.GetRequiredService<ILogger<UserSettingsService>>()));
+
         services.AddSingleton(new CatalogLoadOptions());
         services.AddSingleton<InfoBaseCatalogLoader>();
-        services.AddSingleton(new LaunchOptions());
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
         services.AddSingleton<LaunchCoordinator>();
+
+        services.AddSingleton<DesktopUiServices>();
+        services.AddSingleton<IDialogService>(sp => sp.GetRequiredService<DesktopUiServices>());
+        services.AddSingleton<IClipboardService>(sp => sp.GetRequiredService<DesktopUiServices>());
+        services.AddSingleton<IWindowService>(sp => sp.GetRequiredService<DesktopUiServices>());
+        services.AddSingleton<IThemeService>(sp => sp.GetRequiredService<DesktopUiServices>());
+
+        services.AddTransient<MainWindowViewModel>();
         services.AddTransient<MainWindow>();
 
         return services.BuildServiceProvider(new ServiceProviderOptions

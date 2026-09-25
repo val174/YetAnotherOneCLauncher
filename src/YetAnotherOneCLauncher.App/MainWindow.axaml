@@ -1,38 +1,218 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.MainWindow"
+        x:DataType="vm:MainWindowViewModel"
         Title="YetAnotherOneCLauncher"
-        Width="900" Height="600"
-        MinWidth="500" MinHeight="300">
-  <!-- Временное окно для проверки чтения списков на реальных машинах. -->
+        Width="1040" Height="660"
+        MinWidth="560" MinHeight="360">
+
+  <Window.Styles>
+    <Style Selector="TextBlock.label">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="Margin" Value="0,0,12,6" />
+    </Style>
+    <Style Selector="SelectableTextBlock.value">
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.6" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+  </Window.Styles>
+
   <DockPanel>
-    <Border DockPanel.Dock="Top" Padding="8">
-      <StackPanel Orientation="Horizontal" Spacing="8">
-        <Button x:Name="ReloadButton" Content="Обновить" />
-        <ComboBox x:Name="ThemeBox" Width="170" />
-        <TextBlock x:Name="StatusText" VerticalAlignment="Center" />
+    <!-- Верх: поиск, вид, обновление, настройки. -->
+    <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
+        <ToggleButton IsChecked="{Binding IsTreeMode}"
+                      ToolTip.Tip="Дерево папок или плоский список">
+          <Panel>
+            <TextBlock Text="Дерево" IsVisible="{Binding IsTreeMode}" />
+            <TextBlock Text="Список" IsVisible="{Binding !IsTreeMode}" />
+          </Panel>
+        </ToggleButton>
+        <Button Content="Обновить" Command="{Binding ReloadCommand}" ToolTip.Tip="Перечитать списки баз и платформы (F5)" />
+        <Button Content="⚙" ToolTip.Tip="Настройки">
+          <Button.Flyout>
+            <Flyout Placement="BottomEdgeAlignedRight">
+              <StackPanel Spacing="6" Width="300">
+                <TextBlock Text="Тема" />
+                <ComboBox ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
+                <TextBlock Text="После запуска базы" Margin="0,6,0,0" />
+                <ComboBox ItemsSource="{Binding AfterLaunchNames}" SelectedIndex="{Binding AfterLaunchIndex}" HorizontalAlignment="Stretch" />
+                <CheckBox IsChecked="{Binding UseThickClientForFileBases}" Margin="0,6,0,0">
+                  <TextBlock TextWrapping="Wrap" Text="Файловые базы с клиентом «Автоматически» открывать в толстом клиенте" />
+                </CheckBox>
+                <CheckBox IsChecked="{Binding ShowDetails}" Content="Панель подробностей" />
+              </StackPanel>
+            </Flyout>
+          </Button.Flyout>
+        </Button>
       </StackPanel>
+
+      <TextBox x:Name="SearchBox"
+               Text="{Binding SearchText}"
+               PlaceholderText="Поиск: имя, сервер, путь — можно в любой раскладке (Ctrl+F)">
+        <TextBox.InnerRightContent>
+          <Button Content="✕" Command="{Binding ClearSearchCommand}" IsVisible="{Binding HasSearch}"
+                  Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc)" />
+        </TextBox.InnerRightContent>
+      </TextBox>
+    </DockPanel>
+
+    <!-- Низ: строка состояния и диагностика. -->
+    <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+          <ToggleButton x:Name="PlatformsToggle" Padding="8,2" FontSize="12">
+            <TextBlock>
+              <Run Text="Платформы: " /><Run Text="{Binding PlatformCount}" />
+            </TextBlock>
+          </ToggleButton>
+          <ToggleButton x:Name="WarningsToggle" Padding="8,2" FontSize="12" IsVisible="{Binding HasWarnings}">
+            <TextBlock>
+              <Run Text="Предупреждения: " /><Run Text="{Binding WarningCount}" />
+            </TextBlock>
+          </ToggleButton>
+        </StackPanel>
+        <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
     </Border>
 
-    <Expander x:Name="PlatformsExpander"
-              DockPanel.Dock="Bottom"
-              Header="Платформы"
-              HorizontalAlignment="Stretch">
-      <ScrollViewer MaxHeight="180">
-        <SelectableTextBlock x:Name="PlatformsText" FontFamily="Consolas, DejaVu Sans Mono, monospace" />
+    <Border DockPanel.Dock="Bottom" Padding="8" IsVisible="{Binding #PlatformsToggle.IsChecked}"
+            BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <ScrollViewer MaxHeight="160">
+        <SelectableTextBlock Text="{Binding PlatformsText}" FontFamily="Consolas, DejaVu Sans Mono, monospace" FontSize="12" />
       </ScrollViewer>
-    </Expander>
+    </Border>
 
-    <Expander x:Name="WarningsExpander"
-              DockPanel.Dock="Bottom"
-              Header="Предупреждения"
-              HorizontalAlignment="Stretch"
-              IsVisible="False">
-      <ScrollViewer MaxHeight="180">
-        <SelectableTextBlock x:Name="WarningsText" TextWrapping="Wrap" />
+    <Border DockPanel.Dock="Bottom" Padding="8" IsVisible="{Binding #WarningsToggle.IsChecked}"
+            BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <ScrollViewer MaxHeight="160">
+        <SelectableTextBlock Text="{Binding WarningsText}" TextWrapping="Wrap" FontSize="12" />
       </ScrollViewer>
-    </Expander>
+    </Border>
 
-    <TreeView x:Name="CatalogTree" Margin="8,0,8,8" />
+    <!-- Справа: подробности выбранной базы. -->
+    <Border DockPanel.Dock="Right" Width="340" IsVisible="{Binding ShowDetails}" Padding="12,4,12,8"
+            BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
+      <Panel>
+        <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <ScrollViewer IsVisible="{Binding HasSelection}">
+          <StackPanel Spacing="10">
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Command="{Binding ToggleFavoriteCommand}" Padding="8,4"
+                      VerticalAlignment="Top" ToolTip.Tip="Избранное (Ctrl+D)">
+                <Panel>
+                  <TextBlock Text="★ В избранном" IsVisible="{Binding SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                  <TextBlock Text="☆ В избранное" IsVisible="{Binding !SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                </Panel>
+              </Button>
+              <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
+            </DockPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <Button Classes="accent" Content="Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="Enter или двойной щелчок" />
+              <Button Content="Конфигуратор" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="Ctrl+Enter" />
+            </StackPanel>
+
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
+              <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionText}" />
+              <TextBlock Grid.Row="1" Classes="label" Text="Тип" />
+              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionKindText}" />
+              <TextBlock Grid.Row="2" Classes="label" Text="Клиент" />
+              <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ClientText}" />
+              <TextBlock Grid.Row="3" Classes="label" Text="Версия в списке" />
+              <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ListVersionText}" />
+              <TextBlock Grid.Row="4" Classes="label" Text="Платформа" VerticalAlignment="Center" />
+              <ComboBox Grid.Row="4" Grid.Column="1" Margin="0,0,0,6" HorizontalAlignment="Stretch"
+                        ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding SelectedPlatformChoice}"
+                        ToolTip.Tip="Версия для запуска из лаунчера; список баз не меняется" />
+              <TextBlock Grid.Row="5" Classes="label" Text="Папка" />
+              <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}" />
+              <TextBlock Grid.Row="6" Classes="label" Text="Последний запуск" />
+              <SelectableTextBlock Grid.Row="6" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
+              <TextBlock Grid.Row="7" Classes="label" Text="Запусков" />
+              <SelectableTextBlock Grid.Row="7" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
+              <TextBlock Grid.Row="8" Classes="label" Text="Источник" />
+              <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.SourceText}"
+                                   ToolTip.Tip="{Binding SelectedInfoBase.SourceLocation}" />
+            </Grid>
+
+            <WrapPanel>
+              <Button Content="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" Margin="0,0,6,6" />
+              <Button Content="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" Margin="0,0,6,6"
+                      IsVisible="{Binding SelectedInfoBase.IsFileBase, FallbackValue=False}" />
+            </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
+      </Panel>
+    </Border>
+
+    <!-- Основное: дерево или список. Контекстное меню действует на выделенную базу. -->
+    <Panel Margin="8,4,8,8">
+      <Panel.ContextMenu>
+        <ContextMenu IsVisible="{Binding HasSelection}">
+          <MenuItem Header="Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
+          <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="Ctrl+Enter" />
+          <Separator />
+          <MenuItem Header="Избранное" Command="{Binding ToggleFavoriteCommand}" InputGesture="Ctrl+D" />
+          <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" />
+          <MenuItem Header="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" />
+        </ContextMenu>
+      </Panel.ContextMenu>
+
+      <TreeView x:Name="CatalogTree"
+                ItemsSource="{Binding TreeItems}"
+                SelectedItem="{Binding SelectedTreeItem}"
+                IsVisible="{Binding ShowTree}">
+        <TreeView.Styles>
+          <Style Selector="TreeViewItem" x:DataType="vm:TreeNodeViewModel">
+            <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          </Style>
+        </TreeView.Styles>
+        <TreeView.DataTemplates>
+          <TreeDataTemplate DataType="vm:FolderNodeViewModel" ItemsSource="{Binding Children}">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <TextBlock Text="{Binding Icon}" />
+              <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
+            </StackPanel>
+          </TreeDataTemplate>
+          <DataTemplate DataType="vm:BaseNodeViewModel">
+            <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent">
+              <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
+              <TextBlock Text="{Binding Name}" />
+              <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" />
+            </StackPanel>
+          </DataTemplate>
+        </TreeView.DataTemplates>
+      </TreeView>
+
+      <ListBox x:Name="CatalogList"
+               ItemsSource="{Binding ListItems}"
+               SelectedItem="{Binding SelectedListItem}"
+               IsVisible="{Binding ShowList}"
+               Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:BaseListItemViewModel">
+            <StackPanel Spacing="2" Background="Transparent">
+              <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
+                <c:HighlightTextBlock Segments="{Binding NameSegments}" />
+              </StackPanel>
+              <TextBlock Classes="secondary" Text="{Binding Base.Subtitle}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+
+      <TextBlock Text="Ничего не найдено" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
+                 IsVisible="{Binding ShowNothingFound}" IsHitTestVisible="False" />
+    </Panel>
   </DockPanel>
 </Window>

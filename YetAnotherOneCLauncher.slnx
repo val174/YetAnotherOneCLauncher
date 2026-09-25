@@ -6,6 +6,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/YetAnotherOneCLauncher.Core.Tests/YetAnotherOneCLauncher.Core.Tests.csproj" />
+    <Project Path="tests/YetAnotherOneCLauncher.App.Tests/YetAnotherOneCLauncher.App.Tests.csproj" />
   </Folder>
   <Folder Name="/Solution Items/">
     <File Path="Directory.Build.props" />
