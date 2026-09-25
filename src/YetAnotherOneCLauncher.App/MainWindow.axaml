@@ -57,6 +57,9 @@
                   <TextBlock TextWrapping="Wrap" Text="Файловые базы с клиентом «Автоматически» открывать в толстом клиенте" />
                 </CheckBox>
                 <CheckBox IsChecked="{Binding ShowDetails}" Content="Панель подробностей" />
+                <CheckBox IsChecked="{Binding CheckAvailability}">
+                  <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
+                </CheckBox>
                 <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
                 <Button Content="Кэш баз…" Command="{Binding OpenCacheManagerCommand}" />
               </StackPanel>
@@ -87,6 +90,10 @@
               <Run Text="Платформы: " /><Run Text="{Binding PlatformCount}" />
             </TextBlock>
           </ToggleButton>
+          <TextBlock FontSize="12" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding HasUnavailable}"
+                     ToolTip.Tip="Базы, которые не ответили при проверке, отмечены ⚠">
+            <Run Text="⚠ недоступно: " /><Run Text="{Binding UnavailableCount}" />
+          </TextBlock>
           <ToggleButton x:Name="WarningsToggle" Padding="8,2" FontSize="12" IsVisible="{Binding HasWarnings}">
             <TextBlock>
               <Run Text="Предупреждения: " /><Run Text="{Binding WarningCount}" />
@@ -136,7 +143,7 @@
               <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (Ctrl+Shift+Enter)" />
             </StackPanel>
 
-            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
               <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionText}" />
               <TextBlock Grid.Row="1" Classes="label" Text="Тип" />
@@ -151,6 +158,8 @@
                         ToolTip.Tip="Версия для запуска из лаунчера; список баз не меняется" />
               <TextBlock Grid.Row="9" Classes="label" Text="Параметры" />
               <SelectableTextBlock Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchParametersText}" />
+              <TextBlock Grid.Row="12" Classes="label" Text="Доступность" />
+              <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
               <TextBlock Grid.Row="11" Classes="label" Text="Кэш" />
               <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
               <TextBlock Grid.Row="10" Classes="label" Text="Пользователь" />
@@ -229,9 +238,12 @@
           <DataTemplate DataType="vm:BaseNodeViewModel">
             <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent">
               <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
+              <TextBlock Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}" Foreground="#C57C00" />
               <TextBlock Text="{Binding Name}" />
               <TextBlock Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
                          ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
+              <TextBlock Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
+                         ToolTip.Tip="{Binding Base.SourceText}" />
               <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" />
             </StackPanel>
           </DataTemplate>
@@ -249,6 +261,7 @@
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
                 <c:HighlightTextBlock Segments="{Binding NameSegments}" />
+                <TextBlock Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}" Foreground="#C57C00" />
               </StackPanel>
               <TextBlock Classes="secondary" Text="{Binding Base.Subtitle}" TextTrimming="CharacterEllipsis" />
             </StackPanel>

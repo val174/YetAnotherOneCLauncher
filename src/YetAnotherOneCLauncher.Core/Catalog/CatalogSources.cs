@@ -17,4 +17,7 @@ public sealed class CatalogLoadOptions
     /// недоступный сервер не должен подвешивать запуск приложения.
     /// </summary>
     public TimeSpan FileTimeout { get; init; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>Сколько ждать веб-сервис списков (оба запроса вместе).</summary>
+    public TimeSpan WebServiceTimeout { get; init; } = TimeSpan.FromSeconds(15);
 }

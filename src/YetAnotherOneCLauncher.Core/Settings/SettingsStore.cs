@@ -74,6 +74,7 @@ public sealed class SettingsStore
         settings.Ui.CollapsedFolders ??= [];
         settings.Launch ??= new LaunchSettings();
         settings.Cache ??= new CacheSettings();
+        settings.Network ??= new NetworkSettings();
         return settings;
     }
 

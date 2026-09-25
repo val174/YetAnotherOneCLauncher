@@ -7,6 +7,9 @@ namespace YetAnotherOneCLauncher.Core.Catalog;
 public sealed record LoadedList(ListSource Source, V8iDocument? Document, string? Error)
 {
     public bool IsAvailable => Document is not null;
+
+    /// <summary>Список ещё читается (при постепенной загрузке).</summary>
+    public bool IsPending { get; init; }
 }
 
 /// <summary>Объединённый каталог баз и папок из всех источников.</summary>

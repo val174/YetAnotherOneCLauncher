@@ -1,5 +1,6 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using YetAnotherOneCLauncher.Core.Availability;
 using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
@@ -48,7 +49,37 @@ public sealed partial class InfoBaseViewModel : ObservableObject
 
     public string FolderText => InfoBase.FolderPath;
 
-    public string SourceText => InfoBase.IsReadOnly ? "Общий список (только чтение)" : "Личный список";
+    public string SourceText => InfoBase.Source switch
+    {
+        { Kind: ListSourceKind.Personal } => "Личный список",
+        { CachedAt: { } savedAt } => string.Create(
+            CultureInfo.CurrentCulture,
+            $"{KindName(InfoBase.Source.Kind)} — список недоступен, показана копия на {savedAt.ToLocalTime():dd.MM.yyyy HH:mm}"),
+        _ => KindName(InfoBase.Source.Kind) + " (только чтение)",
+    };
+
+    public bool IsFromCache => InfoBase.Source.IsFromCache;
+
+    [ObservableProperty]
+    public partial string AvailabilityText { get; private set; } = "не проверялась";
+
+    /// <summary>Проверка показала, что база недоступна (каталога нет, сервер не отвечает).</summary>
+    [ObservableProperty]
+    public partial bool IsUnavailable { get; private set; }
+
+    public void SetAvailability(AvailabilityResult? result)
+    {
+        IsUnavailable = result?.Status == AvailabilityStatus.Unavailable;
+        AvailabilityText = result?.Status switch
+        {
+            AvailabilityStatus.Available => "доступна (" + result.Message + ")",
+            AvailabilityStatus.Unavailable => "недоступна: " + result.Message,
+            AvailabilityStatus.Unknown => "проверить нельзя",
+            _ => "не проверялась",
+        };
+    }
+
+    private static string KindName(ListSourceKind kind) => kind == ListSourceKind.InternetService ? "Веб-сервис списков" : "Общий список";
 
     /// <summary>Файл или адрес списка — для подсказки.</summary>
     public string SourceLocation => InfoBase.Source.Location;

@@ -180,6 +180,20 @@ internal sealed class FakeCacheUsage : ICacheUsageProbe
     public bool IsDirectoryInUse(string path) => InUse.Contains(path);
 }
 
+/// <summary>Проверка доступности без сети: недоступное перечисляет тест.</summary>
+internal sealed class FakeAvailabilityProbe : Core.Availability.IAvailabilityProbe
+{
+    public HashSet<string> MissingDirectories { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public HashSet<string> DeadHosts { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public Task<bool> DirectoryExistsAsync(string path, CancellationToken cancellationToken) =>
+        Task.FromResult(!MissingDirectories.Contains(path));
+
+    public Task<bool> CanConnectAsync(string host, int port, CancellationToken cancellationToken) =>
+        Task.FromResult(!DeadHosts.Contains(host));
+}
+
 internal sealed class FakeLocator(IReadOnlyList<PlatformInstallation> installations) : IPlatformLocator
 {
     public Task<PlatformScanResult> LocateAsync(IEnumerable<string> additionalRoots, CancellationToken cancellationToken = default) =>
@@ -269,7 +283,8 @@ internal sealed class ViewModelFixture : IDisposable
             watcher: null,
             credentials: Credentials,
             recycleBin: RecycleBin,
-            cacheUsage: CacheUsage);
+            cacheUsage: CacheUsage,
+            availabilityChecker: new Core.Availability.AvailabilityChecker(Availability));
     }
 
     public string ListPath { get; }
@@ -281,6 +296,8 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeCredentials Credentials { get; } = new();
 
     public FakeCacheUsage CacheUsage { get; } = new();
+
+    public FakeAvailabilityProbe Availability { get; } = new();
 
     public FakeRecycleBin RecycleBin => _recycleBin ??= new FakeRecycleBin(Path.Combine(_directory, "trash"));
 

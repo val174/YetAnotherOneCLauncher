@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.Core.Availability;
 using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Launching;
@@ -55,6 +56,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly ICredentialStore? _credentials;
     private readonly IRecycleBin? _recycleBin;
     private readonly ICacheUsageProbe? _cacheUsage;
+    private readonly AvailabilityChecker? _availabilityChecker;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -82,7 +84,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IListChangeWatcher? watcher = null,
         ICredentialStore? credentials = null,
         IRecycleBin? recycleBin = null,
-        ICacheUsageProbe? cacheUsage = null)
+        ICacheUsageProbe? cacheUsage = null,
+        AvailabilityChecker? availabilityChecker = null)
     {
         _files = files;
         _store = store;
@@ -90,6 +93,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _credentials = credentials;
         _recycleBin = recycleBin;
         _cacheUsage = cacheUsage;
+        _availabilityChecker = availabilityChecker;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
         _launcher = launcher;
@@ -109,6 +113,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         AfterLaunchIndex = (int)ui.AfterLaunch;
         ShowDetails = ui.ShowDetails;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
+        CheckAvailability = settings.Settings.Network.CheckAvailability;
         _suppressSettingsSync = false;
     }
 
@@ -259,9 +264,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 return;
             }
 
-            var catalog = await _loader.LoadAsync(_paths.ToCatalogSources());
-            var platforms = await _locator.LocateAsync(catalog.StarterConfig.InstalledLocations);
-            Apply(catalog, platforms);
+            await LoadCatalogAsync(_paths, _locator);
         }
         catch (Exception ex)
         {
@@ -299,6 +302,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         ShowCatalog(catalog, CurrentSelectionKey());
         StartCacheScan();
+        StartAvailabilityCheck();
 
         StatusText =
             $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
@@ -320,6 +324,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         WarningsText = string.Join(Environment.NewLine, warnings);
 
         ApplyCacheReport();
+        ApplyAvailability();
         RebuildTree();
         RebuildList();
         Reselect(selectionKey);

@@ -149,6 +149,13 @@ public sealed class LaunchSettings
     };
 }
 
+/// <summary>Сетевые источники и проверки.</summary>
+public sealed class NetworkSettings
+{
+    /// <summary>Проверять в фоне, доступны ли базы: каталог файловой базы, порт сервера, веб-сервер.</summary>
+    public bool CheckAvailability { get; set; } = true;
+}
+
 /// <summary>Очистка кэша баз.</summary>
 public sealed class CacheSettings
 {
@@ -186,4 +193,6 @@ public sealed class LauncherSettings
     public LaunchSettings Launch { get; set; } = new();
 
     public CacheSettings Cache { get; set; } = new();
+
+    public NetworkSettings Network { get; set; } = new();
 }

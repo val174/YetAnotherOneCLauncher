@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Serilog;
@@ -6,6 +7,7 @@ using Serilog.Core;
 using Serilog.Events;
 using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.App.ViewModels;
+using YetAnotherOneCLauncher.Core.Availability;
 using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Settings;
@@ -50,6 +52,23 @@ internal static class AppServices
         services.AddSingleton(sp => new UserSettingsService(settingsStore, sp.GetRequiredService<ILogger<UserSettingsService>>()));
 
         services.AddSingleton(new CatalogLoadOptions());
+        if (paths is not null)
+        {
+            services.AddSingleton(new ListCache(Path.Combine(paths.AppDataDirectory, "list-cache")));
+        }
+
+        // Веб-сервис списков: вход в публикацию — учётной записью Windows (NTLM/Kerberos), как у стартера.
+        services.AddSingleton(_ => new HttpClient(new SocketsHttpHandler
+        {
+            Credentials = CredentialCache.DefaultCredentials,
+            ConnectTimeout = TimeSpan.FromSeconds(5),
+        })
+        {
+            Timeout = TimeSpan.FromSeconds(15),
+            DefaultRequestHeaders = { { "User-Agent", PlatformServices.AppFolderName } },
+        });
+        services.AddSingleton<WebInfoBaseListClient>();
+        services.AddSingleton(new AvailabilityChecker());
         services.AddSingleton<InfoBaseCatalogLoader>();
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();
         services.AddSingleton<LaunchCoordinator>();
