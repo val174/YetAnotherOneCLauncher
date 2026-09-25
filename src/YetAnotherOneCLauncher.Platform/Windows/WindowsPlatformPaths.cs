@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -39,8 +40,8 @@ public sealed class WindowsPlatformPaths : IPlatformPaths
 
         InfoBaseCacheRoots =
         [
-            Path.Combine(roaming, "1C", "1cv8"),
-            Path.Combine(local, "1C", "1cv8"),
+            new CacheRoot(Path.Combine(local, "1C", "1cv8"), CacheLocation.Local),
+            new CacheRoot(Path.Combine(roaming, "1C", "1cv8"), CacheLocation.Roaming),
         ];
 
         AppDataDirectory = Path.Combine(roaming, PlatformServices.AppFolderName);
@@ -54,7 +55,7 @@ public sealed class WindowsPlatformPaths : IPlatformPaths
 
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
-    public IReadOnlyList<string> InfoBaseCacheRoots { get; }
+    public IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
 
     public string AppDataDirectory { get; }
 }

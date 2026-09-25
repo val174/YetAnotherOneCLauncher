@@ -68,6 +68,11 @@ internal sealed class FakeDialogs : IDialogService
 
     public List<LaunchParametersViewModel> LaunchParameterForms { get; } = [];
 
+    /// <summary>Что «пользователь» сделает в окне «Кэш баз».</summary>
+    public Func<CacheManagerViewModel, Task> CacheManager { get; set; } = _ => Task.CompletedTask;
+
+    public Task ShowCacheManagerAsync(CacheManagerViewModel cache) => CacheManager(cache);
+
     public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters)
     {
         LaunchParameterForms.Add(parameters);
@@ -131,7 +136,7 @@ internal sealed class FakePaths : IPlatformPaths
 
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
-    public IReadOnlyList<string> InfoBaseCacheRoots { get; } = [];
+    public IReadOnlyList<Core.Cache.CacheRoot> InfoBaseCacheRoots { get; set; } = [];
 
     public string AppDataDirectory => Path.GetDirectoryName(PersonalInfoBaseListPath)!;
 }
@@ -148,6 +153,31 @@ internal sealed class FakeCredentials : ICredentialStore
     public void Write(string key, string label, string userName, string password) => Entries[key] = (userName, password);
 
     public void Delete(string key) => Entries.Remove(key);
+}
+
+/// <summary>Корзина: каталог переносится в папку «корзины» внутри временного каталога теста.</summary>
+internal sealed class FakeRecycleBin(string trash) : IRecycleBin
+{
+    public List<string> Recycled { get; } = [];
+
+    public void MoveToRecycleBin(string path)
+    {
+        System.IO.Directory.CreateDirectory(trash);
+        System.IO.Directory.Move(path, Path.Combine(trash, Path.GetFileName(path) + "-" + Recycled.Count));
+        Recycled.Add(path);
+    }
+}
+
+/// <summary>Занятые каталоги и запущенные процессы задаются тестом.</summary>
+internal sealed class FakeCacheUsage : ICacheUsageProbe
+{
+    public HashSet<string> InUse { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public List<string> Processes { get; } = [];
+
+    public IReadOnlyList<string> RunningPlatformProcesses() => Processes;
+
+    public bool IsDirectoryInUse(string path) => InUse.Contains(path);
 }
 
 internal sealed class FakeLocator(IReadOnlyList<PlatformInstallation> installations) : IPlatformLocator
@@ -205,6 +235,7 @@ internal sealed class ViewModelFixture : IDisposable
 
     private readonly string _directory;
     private PersonalListStore? _store;
+    private FakeRecycleBin? _recycleBin;
 
     public ViewModelFixture(string list = SampleList)
     {
@@ -225,11 +256,20 @@ internal sealed class ViewModelFixture : IDisposable
             Processes,
             Files,
             NullLogger<MainWindowViewModel>.Instance,
-            new FakePaths(ListPath),
+            new FakePaths(ListPath)
+            {
+                InfoBaseCacheRoots =
+                [
+                    new Core.Cache.CacheRoot(LocalCacheRoot, Core.Cache.CacheLocation.Local),
+                    new Core.Cache.CacheRoot(RoamingCacheRoot, Core.Cache.CacheLocation.Roaming),
+                ],
+            },
             new FakeLocator(Installations),
             Store,
             watcher: null,
-            credentials: Credentials);
+            credentials: Credentials,
+            recycleBin: RecycleBin,
+            cacheUsage: CacheUsage);
     }
 
     public string ListPath { get; }
@@ -239,6 +279,23 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeFiles Files { get; } = new();
 
     public FakeCredentials Credentials { get; } = new();
+
+    public FakeCacheUsage CacheUsage { get; } = new();
+
+    public FakeRecycleBin RecycleBin => _recycleBin ??= new FakeRecycleBin(Path.Combine(_directory, "trash"));
+
+    public string LocalCacheRoot => Path.Combine(_directory, "local");
+
+    public string RoamingCacheRoot => Path.Combine(_directory, "roaming");
+
+    /// <summary>Создать каталог кэша с файлом заданного размера.</summary>
+    public string AddCache(string id, int bytes, bool roaming = false)
+    {
+        var path = Path.Combine(roaming ? RoamingCacheRoot : LocalCacheRoot, id);
+        System.IO.Directory.CreateDirectory(Path.Combine(path, "vrs"));
+        File.WriteAllBytes(Path.Combine(path, "vrs", "data.bin"), new byte[bytes]);
+        return path;
+    }
 
     public PersonalListStore Store => _store ??= new PersonalListStore(ListPath);
 

@@ -5,7 +5,7 @@
 
 ## Состояние
 
-Сделаны этапы 0–5 (правки личного списка проверены штатным стартером): ядро чтения списков, поиск платформ и запуск (Windows), главное окно с поиском, избранным и историей, редактирование личного списка, параметры запуска и сохранённые пароли. Следующий — этап 6, очистка кэша баз. Подробности — в [docs/ROADMAP.md](docs/ROADMAP.md).
+Сделаны этапы 0–6 (правки личного списка проверены штатным стартером): ядро чтения списков, поиск платформ и запуск (Windows), главное окно с поиском, избранным и историей, редактирование личного списка, параметры запуска и сохранённые пароли, очистка кэша баз. Следующий — этап 7, сетевые источники и надёжность. Подробности — в [docs/ROADMAP.md](docs/ROADMAP.md).
 
 - [x] Каркас решения (Core, Platform, App, тесты)
 - [x] Чтение и запись `ibases.v8i` без потери данных (порядок секций, неизвестные ключи, комментарии, кодировка, переводы строк)
@@ -22,6 +22,7 @@
 - [x] Изменения `ibases.v8i` и `1cestart.cfg` другими программами подхватываются автоматически
 - [x] Параметры запуска у базы и у папки, «Запустить с параметрами…», встроенные и свои шаблоны параметров
 - [x] Пользователь и пароль базы; пароль — в Credential Manager (Windows) или связке ключей через `secret-tool` (Linux)
+- [x] Размер кэша у каждой базы, окно «Кэш баз» с кэшем без хозяина, очистка в корзину или насовсем, «Очистить кэш и запустить»; кэш открытой базы не трогается
 - [ ] Проверка поиска и запуска на Linux
 - [ ] Веб-сервис списков (`InternetService`)
 - [ ] Кэш последнего успешно прочитанного общего списка
@@ -53,13 +54,15 @@ src/
     Platforms/   PlatformVersion, VersionMask, PlatformScanner, PlatformSelector, ExecutableHeader
     Launching/   LaunchPlanner (клиент, платформа, командная строка), OneCCommandLine
     Search/      InfoBaseSearch, KeyboardLayout
+    Cache/       CacheScanner, CacheReport (кэш по базам и без хозяина), CacheCleaner
     Settings/    LauncherSettings, SettingsStore (settings.json), LauncherUserData (избранное, история)
     Editing/     PersonalListEditor (правки документа), PersonalListStore (запись без потери чужих изменений), InfoBaseDraft
     IO/          AtomicFileWriter
   YetAnotherOneCLauncher.Platform/   всё, что зависит от ОС
-    Abstractions/  IPlatformPaths, IPlatformLocator, IProcessLauncher, ICredentialStore
+    Abstractions/  IPlatformPaths, IPlatformLocator, IProcessLauncher, ICredentialStore, IRecycleBin, ICacheUsageProbe
     PlatformLocator, ProcessLauncher
-    Windows/, Linux/          WindowsCredentialStore (Credential Manager), SecretToolCredentialStore
+    Windows/, Linux/          WindowsCredentialStore (Credential Manager), SecretToolCredentialStore,
+                 корзина (SHFileOperation, freedesktop Trash), проверка занятости кэша
   YetAnotherOneCLauncher.App/        Avalonia UI; AppServices — контейнер и лог (Serilog)
     ViewModels/  MainWindowViewModel, InfoBaseViewModel, узлы дерева и строки списка
     Services/    LaunchCoordinator, UserSettingsService, диалоги, буфер обмена, тема
@@ -110,6 +113,7 @@ tests/
 - **Новые записи — как у штатного стартера:** те же ключи в том же порядке, `ID` — новый GUID, порядок — с шагом 16384. Меняются только затронутые строки.
 - **Параметры запуска** применяются по порядку: `AdditionalParameters` из списка, параметры папок (от верхней к вложенной), параметры базы, разовые. Хранятся в настройках лаунчера, список баз не меняется.
 - **Пароли — только в хранилище ОС.** В `settings.json` лежит ключ записи, в логе и на экране — `/P ***`. Если пароль не прочитался, база всё равно запускается, и 1С спрашивает пароль сама.
+- **Кэш удаляется только целыми каталогами баз** (имя — GUID); служебные каталоги платформы не трогаются. Каталог, файлы которого открыты, пропускается целиком, а не удаляется наполовину. По умолчанию — в корзину и только кэш, без локальных настроек пользователя (Roaming).
 - **ViewModel не зависят от Avalonia:** окна, диалоги, буфер обмена и тема — за интерфейсами, поэтому логика окна проверяется обычными тестами, а разметка и клавиатура — headless-тестами.
 
 ## Образцы файлов для тестов

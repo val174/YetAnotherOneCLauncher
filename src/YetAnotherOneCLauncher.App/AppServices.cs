@@ -41,6 +41,8 @@ internal static class AppServices
             services.AddSingleton(_ => new PersonalListStore(paths.PersonalInfoBaseListPath));
             services.AddSingleton<IListChangeWatcher, ListChangeWatcher>();
             services.AddSingleton(_ => PlatformServices.CreateCredentialStore());
+            services.AddSingleton(_ => PlatformServices.CreateRecycleBin());
+            services.AddSingleton(_ => PlatformServices.CreateCacheUsageProbe());
         }
 
         // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.

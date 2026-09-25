@@ -1,0 +1,74 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        x:Class="YetAnotherOneCLauncher.App.CacheManagerWindow"
+        x:DataType="vm:CacheManagerViewModel"
+        Title="Кэш баз"
+        Width="820" Height="560" MinWidth="560" MinHeight="320"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.orphan">
+      <Setter Property="FontStyle" Value="Italic" />
+    </Style>
+    <Style Selector="TextBlock.size">
+      <Setter Property="HorizontalAlignment" Value="Right" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+  </Window.Styles>
+
+  <DockPanel Margin="16">
+    <StackPanel DockPanel.Dock="Top" Spacing="6" Margin="0,0,0,8">
+      <TextBlock Text="{Binding TotalText}" TextWrapping="Wrap" />
+      <TextBlock Classes="secondary" TextWrapping="Wrap"
+                 Text="Кэш 1С заполнит заново при следующем запуске базы. «Нет в списках баз» — кэш баз, которых больше нет ни в одном списке." />
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="Без хозяина" Command="{Binding SelectOrphansCommand}" ToolTip.Tip="Выбрать кэш баз, которых нет в списках" />
+        <Button Content="Все" Command="{Binding SelectAllCommand}" />
+        <Button Content="Ничего" Command="{Binding SelectNoneCommand}" />
+        <Button Content="Пересчитать" Command="{Binding RefreshCommand}" />
+      </StackPanel>
+    </StackPanel>
+
+    <StackPanel DockPanel.Dock="Bottom" Spacing="6" Margin="0,8,0,0">
+      <CheckBox IsChecked="{Binding IncludeRoaming}" IsVisible="{Binding HasRoaming}"
+                Content="Удалять и локальные настройки пользователя (Roaming)" />
+      <CheckBox IsChecked="{Binding DeletePermanently}" Content="Удалять насовсем, не в корзину" />
+      <DockPanel Margin="0,4,0,0">
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8">
+          <Button x:Name="CleanButton" Classes="accent" Content="Очистить" Command="{Binding CleanCommand}" MinWidth="110" />
+          <Button x:Name="CloseButton" Content="Закрыть" IsCancel="True" MinWidth="100" />
+        </StackPanel>
+        <TextBlock Text="{Binding SelectedText}" VerticalAlignment="Center" />
+      </DockPanel>
+    </StackPanel>
+
+    <Grid ColumnDefinitions="32,*,110,110,90" DockPanel.Dock="Top" Margin="12,0,12,4">
+      <TextBlock Grid.Column="1" Classes="secondary" Text="База" />
+      <TextBlock Grid.Column="2" Classes="secondary size" Text="Кэш" />
+      <TextBlock Grid.Column="3" Classes="secondary size" Text="Настройки" IsVisible="{Binding HasRoaming}" />
+      <TextBlock Grid.Column="4" Classes="secondary size" Text="Изменён" />
+    </Grid>
+
+    <ListBox x:Name="RowsList" ItemsSource="{Binding Rows}" Background="Transparent">
+      <ListBox.ItemTemplate>
+        <DataTemplate DataType="vm:CacheRowViewModel">
+          <Grid ColumnDefinitions="32,*,110,110,90" Background="Transparent">
+            <CheckBox IsChecked="{Binding IsSelected}" VerticalAlignment="Center" />
+            <StackPanel Grid.Column="1" Spacing="2">
+              <TextBlock Text="{Binding Name}" Classes.orphan="{Binding IsOrphan}" TextTrimming="CharacterEllipsis" />
+              <TextBlock Classes="secondary" Text="{Binding Details}" TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <TextBlock Grid.Column="2" Classes="size" Text="{Binding LocalText}" />
+            <TextBlock Grid.Column="3" Classes="size" Text="{Binding RoamingText}" />
+            <TextBlock Grid.Column="4" Classes="size" Text="{Binding LastWriteText}" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</Window>

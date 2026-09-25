@@ -27,6 +27,9 @@ public interface IDialogService
 
     /// <summary>Параметры запуска; <c>true</c> — пользователь подтвердил, данные прошли проверку.</summary>
     Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters);
+
+    /// <summary>Окно «Кэш баз»; закрывается пользователем.</summary>
+    Task ShowCacheManagerAsync(CacheManagerViewModel cache);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -88,6 +91,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters) =>
         MainWindow is { } owner ? new LaunchParametersWindow(parameters).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task ShowCacheManagerAsync(CacheManagerViewModel cache) =>
+        MainWindow is { } owner ? new CacheManagerWindow(cache).ShowDialog(owner) : Task.CompletedTask;
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {

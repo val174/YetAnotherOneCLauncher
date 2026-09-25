@@ -1,5 +1,6 @@
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Parsing;
@@ -81,6 +82,23 @@ public sealed partial class InfoBaseViewModel : ObservableObject
     /// <summary>Пользователь 1С из настроек лаунчера и сохранён ли пароль.</summary>
     [ObservableProperty]
     public partial string UserText { get; private set; } = string.Empty;
+
+    /// <summary>Размер кэша базы: локальный и Roaming.</summary>
+    [ObservableProperty]
+    public partial string CacheText { get; private set; } = "нет";
+
+    [ObservableProperty]
+    public partial bool HasCache { get; private set; }
+
+    /// <summary>Кэш базы по результатам последнего поиска; <c>null</c> — кэша нет.</summary>
+    public void SetCache(CacheOwner? owner)
+    {
+        HasCache = owner is { Directories.Count: > 0 };
+        var local = owner?.Directories.Any(d => d.Location == CacheLocation.Local) == true ? ByteSize.Format(owner.LocalBytes) : "нет";
+        CacheText = owner?.Directories.Any(d => d.Location == CacheLocation.Roaming) == true
+            ? $"{local} (и настройки {ByteSize.Format(owner.RoamingBytes)})"
+            : local;
+    }
 
     /// <summary>Перечитать избранное, историю и выбранную версию из настроек.</summary>
     public void Refresh()

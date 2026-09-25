@@ -53,6 +53,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly PersonalListStore? _store;
     private readonly IListChangeWatcher? _watcher;
     private readonly ICredentialStore? _credentials;
+    private readonly IRecycleBin? _recycleBin;
+    private readonly ICacheUsageProbe? _cacheUsage;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -78,12 +80,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IPlatformLocator? locator = null,
         PersonalListStore? store = null,
         IListChangeWatcher? watcher = null,
-        ICredentialStore? credentials = null)
+        ICredentialStore? credentials = null,
+        IRecycleBin? recycleBin = null,
+        ICacheUsageProbe? cacheUsage = null)
     {
         _files = files;
         _store = store;
         _watcher = watcher;
         _credentials = credentials;
+        _recycleBin = recycleBin;
+        _cacheUsage = cacheUsage;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
         _launcher = launcher;
@@ -158,6 +164,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(LaunchDesignerCommand),
         nameof(LaunchWithParametersCommand),
         nameof(EditLaunchSettingsCommand),
+        nameof(ClearCacheCommand),
+        nameof(ClearCacheAndLaunchCommand),
         nameof(ToggleFavoriteCommand),
         nameof(CopyConnectionStringCommand),
         nameof(OpenBaseFolderCommand),
@@ -181,7 +189,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial PlatformChoice? SelectedPlatformChoice { get; set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand), nameof(LaunchWithParametersCommand))]
+    [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand), nameof(LaunchWithParametersCommand), nameof(ClearCacheAndLaunchCommand))]
     public partial bool IsLaunching { get; private set; }
 
     [ObservableProperty]
@@ -290,6 +298,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         ShowCatalog(catalog, CurrentSelectionKey());
+        StartCacheScan();
 
         StatusText =
             $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
@@ -310,6 +319,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         WarningCount = warnings.Count;
         WarningsText = string.Join(Environment.NewLine, warnings);
 
+        ApplyCacheReport();
         RebuildTree();
         RebuildList();
         Reselect(selectionKey);

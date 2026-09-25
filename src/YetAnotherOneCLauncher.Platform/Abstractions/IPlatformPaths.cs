@@ -1,3 +1,4 @@
+using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.Platforms;
 
@@ -19,7 +20,7 @@ public interface IPlatformPaths
     PlatformExecutableNames PlatformExecutableNames { get; }
 
     /// <summary>Корневые каталоги кэша баз (внутри — подкаталоги с именами по ID базы).</summary>
-    IReadOnlyList<string> InfoBaseCacheRoots { get; }
+    IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
 
     /// <summary>Каталог настроек самого лаунчера (избранное, история, параметры запуска).</summary>
     string AppDataDirectory { get; }

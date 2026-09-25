@@ -58,6 +58,7 @@
                 </CheckBox>
                 <CheckBox IsChecked="{Binding ShowDetails}" Content="Панель подробностей" />
                 <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
+                <Button Content="Кэш баз…" Command="{Binding OpenCacheManagerCommand}" />
               </StackPanel>
             </Flyout>
           </Button.Flyout>
@@ -78,6 +79,9 @@
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
+          <Button Padding="8,2" FontSize="12" Content="{Binding CacheSummaryText}" Command="{Binding OpenCacheManagerCommand}"
+                  IsVisible="{Binding CacheSummaryText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                  ToolTip.Tip="Кэш всех баз: размеры, кэш без хозяина, очистка" />
           <ToggleButton x:Name="PlatformsToggle" Padding="8,2" FontSize="12">
             <TextBlock>
               <Run Text="Платформы: " /><Run Text="{Binding PlatformCount}" />
@@ -132,7 +136,7 @@
               <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (Ctrl+Shift+Enter)" />
             </StackPanel>
 
-            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
               <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionText}" />
               <TextBlock Grid.Row="1" Classes="label" Text="Тип" />
@@ -147,6 +151,8 @@
                         ToolTip.Tip="Версия для запуска из лаунчера; список баз не меняется" />
               <TextBlock Grid.Row="9" Classes="label" Text="Параметры" />
               <SelectableTextBlock Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchParametersText}" />
+              <TextBlock Grid.Row="11" Classes="label" Text="Кэш" />
+              <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
               <TextBlock Grid.Row="10" Classes="label" Text="Пользователь" />
               <SelectableTextBlock Grid.Row="10" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.UserText}" />
               <TextBlock Grid.Row="5" Classes="label" Text="Папка" />
@@ -163,6 +169,8 @@
             <WrapPanel>
               <Button Content="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" Margin="0,0,6,6"
                       ToolTip.Tip="Параметры командной строки, пользователь и пароль — хранятся в лаунчере" />
+              <Button Content="Очистить кэш" Command="{Binding ClearCacheCommand}" Margin="0,0,6,6"
+                      ToolTip.Tip="Удалить кэш базы (в корзину); 1С заполнит его заново при запуске" />
               <Button Content="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" Margin="0,0,6,6" />
               <Button Content="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" Margin="0,0,6,6"
                       IsVisible="{Binding SelectedInfoBase.IsFileBase, FallbackValue=False}" />
@@ -180,6 +188,7 @@
           <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="Ctrl+Enter" />
           <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="Ctrl+Shift+Enter" />
           <MenuItem Header="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" />
+          <MenuItem Header="Очистить кэш и запустить" Command="{Binding ClearCacheAndLaunchCommand}" />
           <Separator />
           <MenuItem Header="Изменить…" Command="{Binding EditCommand}" InputGesture="F2" />
           <MenuItem Header="Изменить как текст…" Command="{Binding EditAsTextCommand}" />
@@ -194,6 +203,7 @@
           <MenuItem Header="Избранное" Command="{Binding ToggleFavoriteCommand}" InputGesture="Ctrl+D" />
           <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" />
           <MenuItem Header="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" />
+          <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}" />
           <MenuItem Header="Выгрузить в файл…" Command="{Binding ExportCommand}" />
           <MenuItem Header="Загрузить из файла…" Command="{Binding ImportCommand}" />
         </ContextMenu>

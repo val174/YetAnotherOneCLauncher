@@ -73,6 +73,7 @@ public sealed class SettingsStore
         settings.Ui ??= new UiSettings();
         settings.Ui.CollapsedFolders ??= [];
         settings.Launch ??= new LaunchSettings();
+        settings.Cache ??= new CacheSettings();
         return settings;
     }
 

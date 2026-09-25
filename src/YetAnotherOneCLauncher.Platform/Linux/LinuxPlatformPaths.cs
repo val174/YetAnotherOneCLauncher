@@ -1,4 +1,5 @@
 using System.Runtime.Versioning;
+using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -26,7 +27,8 @@ public sealed class LinuxPlatformPaths : IPlatformPaths
         PersonalInfoBaseListPath = Path.Combine(starterDir, "ibases.v8i");
         StarterConfigPaths = [Path.Combine(starterDir, "1cestart.cfg")];
         DefaultPlatformInstallRoots = ["/opt/1cv8", "/opt/1C/v8.3"];
-        InfoBaseCacheRoots = [Path.Combine(home, ".1cv8", "1C", "1cv8")];
+        // В Linux кэш и локальные настройки базы лежат в одном каталоге.
+        InfoBaseCacheRoots = [new CacheRoot(Path.Combine(home, ".1cv8", "1C", "1cv8"), CacheLocation.Local)];
 
         var configHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
         if (string.IsNullOrWhiteSpace(configHome))
@@ -45,7 +47,7 @@ public sealed class LinuxPlatformPaths : IPlatformPaths
 
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Linux;
 
-    public IReadOnlyList<string> InfoBaseCacheRoots { get; }
+    public IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
 
     public string AppDataDirectory { get; }
 }

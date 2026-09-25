@@ -115,7 +115,11 @@ public class MainWindowTests
         Assert.Contains("Розница (тест)", fixture.Dialogs.Questions[0], StringComparison.Ordinal);
 
         var opened = false;
-        fixture.Dialogs.InfoBaseEditor = _ => opened = true;
+        fixture.Dialogs.InfoBaseEditor = _ =>
+        {
+            opened = true;
+            return false; // отмена: правка списка не начинается и не переживает тест
+        };
         window.KeyPress(Key.F2, RawInputModifiers.None, PhysicalKey.F2, null);
         await WaitAsync(() => opened);
         window.Close();
@@ -163,6 +167,36 @@ public class MainWindowTests
         Assert.True(window.FindControl<TextBox>("ParametersBox")!.IsFocused);
         Assert.False(window.FindControl<Button>("EnterpriseButton")!.IsVisible);
         Snapshot(window, "06-launch-parameters");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Cache_manager_window_snapshot()
+    {
+        using var fixture = new ViewModelFixture();
+        fixture.AddCache("00000000-0000-0000-0000-000000000001", 3_500_000);
+        fixture.AddCache("00000000-0000-0000-0000-000000000001", 120_000, roaming: true);
+        fixture.AddCache("00000000-0000-0000-0000-000000000003", 800_000);
+        fixture.AddCache("99999999-0000-0000-0000-000000000009", 1_200_000_000 / 1000);
+        await fixture.LoadAsync();
+        await fixture.ViewModel.CacheScanTask;
+
+        ViewModels.CacheManagerViewModel? manager = null;
+        fixture.Dialogs.CacheManager = m =>
+        {
+            manager = m;
+            return Task.CompletedTask;
+        };
+        await fixture.ViewModel.OpenCacheManagerCommand.ExecuteAsync(null);
+        manager!.SelectOrphansCommand.Execute(null);
+
+        var window = new CacheManagerWindow(manager) { Width = 820, Height = 420 };
+        window.Show();
+        Render();
+
+        Assert.Equal(3, window.FindControl<ListBox>("RowsList")!.ItemCount);
+        Assert.True(window.FindControl<Button>("CleanButton")!.IsEffectivelyEnabled);
+        Snapshot(window, "07-cache-manager");
         window.Close();
     }
 
