@@ -22,7 +22,8 @@ internal static class AppServices
     private const long LogFileSizeLimitBytes = 10 * 1024 * 1024;
     private const int RetainedLogFileCount = 14;
 
-    public static ServiceProvider Build()
+    /// <param name="startup">Что сделать сразу после загрузки (запуск базы из списка переходов).</param>
+    public static ServiceProvider Build(StartupOptions startup)
     {
         // На неподдерживаемой ОС путей 1С нет, но окно и лог должны работать, чтобы показать ошибку.
         var paths = PlatformServices.IsSupported ? PlatformServices.CreatePaths() : null;
@@ -45,12 +46,16 @@ internal static class AppServices
             services.AddSingleton(_ => PlatformServices.CreateCredentialStore());
             services.AddSingleton(_ => PlatformServices.CreateRecycleBin());
             services.AddSingleton(_ => PlatformServices.CreateCacheUsageProbe());
+            services.AddSingleton(_ => PlatformServices.CreateJumpList());
+            services.AddSingleton<LaunchRequestChannel>();
+            services.AddSingleton<ILaunchRequestChannel>(sp => sp.GetRequiredService<LaunchRequestChannel>());
         }
 
         // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.
         var settingsStore = paths is null ? null : new SettingsStore(paths.AppDataDirectory);
         services.AddSingleton(sp => new UserSettingsService(settingsStore, sp.GetRequiredService<ILogger<UserSettingsService>>()));
 
+        services.AddSingleton(startup);
         services.AddSingleton(new CatalogLoadOptions());
         if (paths is not null)
         {

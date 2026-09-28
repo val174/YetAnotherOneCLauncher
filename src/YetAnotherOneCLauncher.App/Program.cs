@@ -11,7 +11,20 @@ internal static partial class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        using var services = AppServices.Build();
+        // Щелчок по базе в списке переходов Windows: если лаунчер уже открыт, база запускается в нём.
+        var launchKey = LaunchArgument.Parse(args);
+        if (launchKey is not null && LaunchRequestChannel.TryForward(launchKey))
+        {
+            return 0;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            // Один идентификатор у процесса и списка переходов — иначе Windows не свяжет их со значком.
+            Platform.Windows.WindowsJumpList.SetProcessAppUserModelId();
+        }
+
+        using var services = AppServices.Build(new StartupOptions(launchKey));
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(Program));
 
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>

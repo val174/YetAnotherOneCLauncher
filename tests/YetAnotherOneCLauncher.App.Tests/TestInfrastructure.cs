@@ -206,6 +206,20 @@ internal sealed class FakeAvailabilityProbe : Core.Availability.IAvailabilityPro
         Task.FromResult(!DeadHosts.Contains(host));
 }
 
+/// <summary>Список переходов в памяти.</summary>
+internal sealed class FakeJumpList : IJumpList
+{
+    public IReadOnlyList<JumpListEntry> Recent { get; private set; } = [];
+
+    public int Updates { get; private set; }
+
+    public void SetRecent(IReadOnlyList<JumpListEntry> entries)
+    {
+        Recent = entries;
+        Updates++;
+    }
+}
+
 internal sealed class FakeLocator(IReadOnlyList<PlatformInstallation> installations) : IPlatformLocator
 {
     public Task<PlatformScanResult> LocateAsync(IEnumerable<string> additionalRoots, CancellationToken cancellationToken = default) =>
@@ -263,7 +277,7 @@ internal sealed class ViewModelFixture : IDisposable
     private PersonalListStore? _store;
     private FakeRecycleBin? _recycleBin;
 
-    public ViewModelFixture(string list = SampleList)
+    public ViewModelFixture(string list = SampleList, string? startupLaunchKey = null)
     {
         _directory = Path.Combine(Path.GetTempPath(), "yaocl-app-tests-" + Guid.NewGuid().ToString("N"));
         System.IO.Directory.CreateDirectory(_directory);
@@ -296,7 +310,9 @@ internal sealed class ViewModelFixture : IDisposable
             credentials: Credentials,
             recycleBin: RecycleBin,
             cacheUsage: CacheUsage,
-            availabilityChecker: new Core.Availability.AvailabilityChecker(Availability));
+            availabilityChecker: new Core.Availability.AvailabilityChecker(Availability),
+            jumpList: JumpList,
+            startup: new StartupOptions(startupLaunchKey));
     }
 
     public string ListPath { get; }
@@ -310,6 +326,8 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeCacheUsage CacheUsage { get; } = new();
 
     public FakeAvailabilityProbe Availability { get; } = new();
+
+    public FakeJumpList JumpList { get; } = new();
 
     public FakeRecycleBin RecycleBin => _recycleBin ??= new FakeRecycleBin(Path.Combine(_directory, "trash"));
 

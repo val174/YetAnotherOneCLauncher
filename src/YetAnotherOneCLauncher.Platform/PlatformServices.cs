@@ -11,6 +11,10 @@ public static class PlatformServices
 
     public static bool IsSupported => OperatingSystem.IsWindows() || OperatingSystem.IsLinux();
 
+    /// <summary>Список переходов у значка на панели задач (только Windows).</summary>
+    public static IJumpList CreateJumpList() =>
+        OperatingSystem.IsWindows() ? new WindowsJumpList() : new NoJumpList();
+
     public static IRecycleBin CreateRecycleBin() =>
         OperatingSystem.IsWindows() ? new WindowsRecycleBin()
         : OperatingSystem.IsLinux() ? new FreedesktopTrash()

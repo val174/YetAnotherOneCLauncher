@@ -57,6 +57,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly IRecycleBin? _recycleBin;
     private readonly ICacheUsageProbe? _cacheUsage;
     private readonly AvailabilityChecker? _availabilityChecker;
+    private readonly IJumpList? _jumpList;
+    private readonly ILaunchRequestChannel? _launchChannel;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -85,7 +87,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ICredentialStore? credentials = null,
         IRecycleBin? recycleBin = null,
         ICacheUsageProbe? cacheUsage = null,
-        AvailabilityChecker? availabilityChecker = null)
+        AvailabilityChecker? availabilityChecker = null,
+        IJumpList? jumpList = null,
+        ILaunchRequestChannel? launchChannel = null,
+        StartupOptions? startup = null)
     {
         _files = files;
         _store = store;
@@ -94,6 +99,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _recycleBin = recycleBin;
         _cacheUsage = cacheUsage;
         _availabilityChecker = availabilityChecker;
+        _jumpList = jumpList;
+        _launchChannel = launchChannel;
+        _pendingLaunchKey = startup?.LaunchIdentityKey;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
         _launcher = launcher;
@@ -281,6 +289,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
             _watcher.Changed += OnListFileChanged;
             _watcher.Start(_paths.PersonalInfoBaseListPath, _paths.StarterConfigPaths);
         }
+
+        // Щелчок по базе в списке переходов Windows, когда лаунчер уже открыт.
+        _launchChannel?.Start(OnLaunchRequest);
     }
 
     /// <summary>Сохранить всё при закрытии окна.</summary>
@@ -331,6 +342,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ShowCatalog(catalog, CurrentSelectionKey());
         StartCacheScan();
         StartAvailabilityCheck();
+        _ = OnCatalogLoadedAsync();
 
         StatusText =
             $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
@@ -593,6 +605,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void OnLaunched(InfoBaseViewModel target, LaunchMode mode)
     {
         _settings.UserData.RecordLaunch(target.InfoBase, mode);
+        UpdateJumpList();
         target.Refresh();
         _settings.RequestSave();
 
