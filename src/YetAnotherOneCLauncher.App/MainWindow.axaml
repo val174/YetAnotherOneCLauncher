@@ -204,7 +204,7 @@
     <Panel Margin="8,4,8,8">
       <Panel.ContextMenu>
         <ContextMenu>
-          <MenuItem Header="Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
+          <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
           <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="Ctrl+Enter" />
           <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="Ctrl+Shift+Enter" />
           <MenuItem Header="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" />
