@@ -27,6 +27,9 @@ public partial class MainWindow : Window
     private static readonly DataFormat<TreeNodeViewModel> TreeNodeFormat =
         DataFormat.CreateInProcessFormat<TreeNodeViewModel>("YetAnotherOneCLauncher.TreeNode");
 
+    /// <summary>Список баз не сжимается уже этого, сколько ни тяни разделитель.</summary>
+    private const double MinListWidth = 280;
+
     private PointerPressedEventArgs? _dragStart;
     private bool _focusRestorePending;
     private Control? _focusedList;
@@ -74,6 +77,47 @@ public partial class MainWindow : Window
         };
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
+
+        // Панель подробностей: ширина — из настроек, меняется разделителем; кнопки над ней следуют за шириной.
+        ApplyDetailsLayout();
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName is nameof(MainWindowViewModel.ShowDetails) or nameof(MainWindowViewModel.DetailsWidth))
+            {
+                ApplyDetailsLayout();
+            }
+        };
+        DetailsSplitter.DragDelta += (_, _) => AlignToolbar(DetailsColumn.ActualWidth);
+        DetailsSplitter.DragCompleted += (_, _) =>
+        {
+            viewModel.DetailsWidth = DetailsColumn.ActualWidth;
+            ApplyDetailsLayout(); // ширина могла упереться в пределы
+        };
+    }
+
+    private ColumnDefinition DetailsColumn => BodyGrid.ColumnDefinitions[2];
+
+    private void ApplyDetailsLayout()
+    {
+        if (ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        var width = vm.ShowDetails ? vm.DetailsWidth : 0;
+        BodyGrid.ColumnDefinitions[0].MinWidth = MinListWidth;
+        DetailsColumn.MinWidth = vm.ShowDetails ? MainWindowViewModel.MinDetailsWidth : 0;
+        DetailsColumn.MaxWidth = vm.ShowDetails ? MainWindowViewModel.MaxDetailsWidth : 0;
+        DetailsColumn.Width = new GridLength(width);
+        AlignToolbar(width);
+    }
+
+    /// <summary>Кнопки над панелью занимают её ширину — поле поиска заканчивается над краем списка баз.</summary>
+    private void AlignToolbar(double detailsWidth)
+    {
+        var withDetails = ViewModel?.ShowDetails == true;
+        ToolbarPanel.Width = withDetails ? detailsWidth + DetailsSplitter.Width : double.NaN;
+        ToolbarPanel.Margin = withDetails ? default : new Thickness(6, 0, 0, 0);
     }
 
     private MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;

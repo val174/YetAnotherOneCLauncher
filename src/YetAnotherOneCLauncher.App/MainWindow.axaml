@@ -17,13 +17,6 @@
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
-    <Style Selector="Panel.toolbar">
-      <Setter Property="Margin" Value="6,0,0,0" />
-    </Style>
-    <Style Selector="Panel.toolbar.withDetails">
-      <Setter Property="Width" Value="340" />
-      <Setter Property="Margin" Value="0" />
-    </Style>
     <!-- Маленькие кнопки-значки в панели подробностей. -->
     <Style Selector="Button.icon">
       <Setter Property="Padding" Value="4" />
@@ -73,8 +66,8 @@
   <DockPanel>
     <!-- Верх: поиск, вид, обновление, настройки. -->
     <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
-      <!-- Кнопки занимают ширину панели подробностей: поле поиска заканчивается над краем списка баз. -->
-      <Panel DockPanel.Dock="Right" Classes="toolbar" Classes.withDetails="{Binding ShowDetails}">
+      <!-- Кнопки занимают ширину панели подробностей (задаётся в коде): поле поиска заканчивается над краем списка баз. -->
+      <Panel x:Name="ToolbarPanel" DockPanel.Dock="Right">
       <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
         <ToggleButton IsChecked="{Binding IsTreeMode}"
                       ToolTip.Tip="Дерево папок или плоский список">
@@ -178,8 +171,13 @@
       </ScrollViewer>
     </Border>
 
+    <!-- Список баз, разделитель и панель подробностей. Ширину колонки панели задаёт код (MainWindow.axaml.cs). -->
+    <Grid x:Name="BodyGrid" ColumnDefinitions="*,Auto,340">
+    <GridSplitter x:Name="DetailsSplitter" Grid.Column="1" Width="5" ResizeDirection="Columns" Background="Transparent"
+                  IsVisible="{Binding ShowDetails}" ToolTip.Tip="Потяните, чтобы изменить ширину панели подробностей" />
+
     <!-- Справа: подробности выбранной базы. -->
-    <Border DockPanel.Dock="Right" Width="340" IsVisible="{Binding ShowDetails}" Padding="12,4,12,8"
+    <Border Grid.Column="2" IsVisible="{Binding ShowDetails}" Padding="12,4,12,8"
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <Panel>
         <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
@@ -265,7 +263,7 @@
     </Border>
 
     <!-- Основное: дерево или список. Контекстное меню действует на выделенную базу. -->
-    <DockPanel Margin="8,4,8,8">
+    <DockPanel Grid.Column="0" Margin="8,4,8,8">
     <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
          поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
     <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
@@ -327,16 +325,16 @@
           </TreeDataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+              <!-- DockPanel, а не StackPanel: имя получает оставшуюся ширину и обрезается, не наезжая на колонки. -->
               <DockPanel>
-                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="0,0,8,0">
-              <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
-              <TextBlock Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}" Foreground="#C57C00" />
-              <TextBlock Text="{Binding Name}" />
-              <TextBlock Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
-                         ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
-              <TextBlock Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
-                         ToolTip.Tip="{Binding Base.SourceText}" />
-                </StackPanel>
+                <TextBlock DockPanel.Dock="Left" Text="★" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
+                <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
+                           Foreground="#C57C00" Margin="0,0,8,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" Margin="0,0,8,0" />
+                <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
+                           Margin="0,0,8,0" ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
+                <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
+                           Margin="0,0,8,0" ToolTip.Tip="{Binding Base.SourceText}" />
                 <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
@@ -358,11 +356,12 @@
           <DataTemplate DataType="vm:BaseListItemViewModel">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
             <StackPanel Spacing="2">
-              <StackPanel Orientation="Horizontal" Spacing="6">
-                <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
-                <c:HighlightTextBlock Segments="{Binding NameSegments}" />
-                <TextBlock Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}" Foreground="#C57C00" />
-              </StackPanel>
+              <DockPanel>
+                <TextBlock DockPanel.Dock="Left" Text="★" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
+                <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
+                           Foreground="#C57C00" Margin="0,0,6,0" />
+                <c:HighlightTextBlock Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.Name}" />
+              </DockPanel>
               <TextBlock Classes="secondary" Text="{Binding Base.Subtitle}" TextTrimming="CharacterEllipsis" />
             </StackPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
@@ -378,5 +377,6 @@
                  IsVisible="{Binding ShowNothingFound}" IsHitTestVisible="False" />
     </Panel>
     </DockPanel>
+    </Grid>
   </DockPanel>
 </Window>

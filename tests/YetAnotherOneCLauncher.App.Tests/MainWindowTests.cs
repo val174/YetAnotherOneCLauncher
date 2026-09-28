@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
@@ -119,6 +120,41 @@ public class MainWindowTests
         fixture.ViewModel.SelectedListItem = fixture.ViewModel.ListItems.Single(i => i.Base.Name == "Бухгалтерия предприятия");
         Render();
         Assert.False(open.IsEffectivelyVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Splitter_resizes_details_panel_and_width_is_remembered()
+    {
+        using var fixture = new ViewModelFixture();
+        fixture.Settings.Settings.Ui.DetailsWidth = 360;
+        var window = await OpenAsync(fixture);
+        var splitter = window.FindControl<GridSplitter>("DetailsSplitter")!;
+        var search = window.FindControl<TextBox>("SearchBox")!;
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        double RightEdge(Control c) => c.TranslatePoint(new Point(c.Bounds.Width, 0), window)!.Value.X;
+
+        Assert.Equal(360, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth);
+        Assert.Equal(RightEdge(tree), RightEdge(search), tolerance: 1.5);
+
+        // Тянем разделитель на 100 пикселей влево — панель шире.
+        var start = splitter.TranslatePoint(new Point(2, 200), window)!.Value;
+        window.MouseDown(start, MouseButton.Left);
+        window.MouseMove(start + new Point(-50, 0));
+        window.MouseMove(start + new Point(-100, 0));
+        window.MouseUp(start + new Point(-100, 0), MouseButton.Left);
+        Render();
+
+        Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
+        Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
+        Assert.Equal(RightEdge(tree), RightEdge(search), tolerance: 1.5);
+        Snapshot(window, "11-details-wide");
+
+        // Без панели список — во всю ширину окна, кнопки над ним — своей обычной ширины.
+        fixture.ViewModel.ShowDetails = false;
+        Render();
+        Assert.Equal(window.Bounds.Width - 8, RightEdge(tree), tolerance: 1.5);
+        Assert.True(double.IsNaN(window.FindControl<Panel>("ToolbarPanel")!.Width));
         window.Close();
     }
 

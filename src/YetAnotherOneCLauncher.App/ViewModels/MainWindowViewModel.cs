@@ -130,6 +130,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Все загруженные базы.</summary>
     public IReadOnlyList<InfoBaseViewModel> InfoBases => _bases;
 
+    public const double MinDetailsWidth = 260;
+    public const double MaxDetailsWidth = 700;
+
+    /// <summary>Ширина панели подробностей: задаёт разделитель, запоминается в настройках.</summary>
+    public double DetailsWidth
+    {
+        get => Math.Clamp(
+            double.IsFinite(_settings.Settings.Ui.DetailsWidth) ? _settings.Settings.Ui.DetailsWidth : UiSettings.DefaultDetailsWidth,
+            MinDetailsWidth,
+            MaxDetailsWidth);
+        set
+        {
+            var width = Math.Round(Math.Clamp(value, MinDetailsWidth, MaxDetailsWidth));
+            if (width != _settings.Settings.Ui.DetailsWidth)
+            {
+                _settings.Settings.Ui.DetailsWidth = width;
+                _settings.RequestSave();
+                OnPropertyChanged();
+            }
+        }
+    }
+
     /// <summary>Положение окна: читает и пишет представление.</summary>
     public WindowPlacement? WindowPlacement
     {

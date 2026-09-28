@@ -134,6 +134,11 @@ public sealed class UiSettings
     public List<string> CollapsedFolders { get; set; } = [];
 
     public bool ShowDetails { get; set; } = true;
+
+    /// <summary>Ширина панели подробностей: меняется разделителем.</summary>
+    public double DetailsWidth { get; set; } = UiSettings.DefaultDetailsWidth;
+
+    public const double DefaultDetailsWidth = 340;
 }
 
 public sealed class LaunchSettings
