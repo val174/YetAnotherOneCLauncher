@@ -101,16 +101,16 @@
             </Panel>
           </ToolTip.Tip>
         </Button>
-        <!-- Только для дерева: стопка папок с плюсом и с минусом. -->
+        <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом. -->
         <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsVisible="{Binding ShowTree}"
                 Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Развернуть все папки">
           <Path Width="16" Height="16" StrokeThickness="1.3" Stroke="{Binding $parent[Button].Foreground}"
-                Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
+                Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
         </Button>
         <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsVisible="{Binding ShowTree}"
                 Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Свернуть все папки">
           <Path Width="16" Height="16" StrokeThickness="1.3" Stroke="{Binding $parent[Button].Foreground}"
-                Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
+                Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
         </Button>
         <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}" Padding="8,6" VerticalAlignment="Stretch"
                 ToolTip.Tip="Обновить: перечитать списки баз и платформы (F5)">
