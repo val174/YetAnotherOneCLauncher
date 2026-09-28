@@ -159,6 +159,45 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Editor_offers_installed_platform_versions()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        fixture.ViewModel.SelectedTreeItem = fixture.ViewModel.TreeItems.OfType<ViewModels.BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии");
+        ViewModels.InfoBaseEditorViewModel? editor = null;
+        fixture.Dialogs.InfoBaseEditor = e =>
+        {
+            editor = e;
+            return false;
+        };
+        await fixture.ViewModel.EditCommand.ExecuteAsync(null);
+
+        Assert.Equal(new[] { "8.5", "8.3", "8.5.1.1150", "8.3.27.2130", "8.3.24.1667" }, editor!.PlatformVersions);
+
+        var window = new InfoBaseEditorWindow(editor);
+        window.Show();
+        Render();
+        var box = window.FindControl<ComboBox>("VersionBox")!;
+        Assert.Equal("8.3.22", box.Text); // версия из списка баз, которой нет среди установленных, — как есть
+
+        box.SelectedItem = "8.3.24.1667";
+        Render();
+        Assert.Equal("8.3.24.1667", editor.Version);
+
+        box.IsDropDownOpen = true;
+        Render();
+        Snapshot(window, "12-editor-versions");
+        box.IsDropDownOpen = false;
+
+        editor.Version = "8.3.25";
+        Render();
+        Assert.Equal("8.3.25", box.Text);
+        Assert.True(editor.TryAccept());
+        Assert.Equal("8.3.25", editor.Result!.Version);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Ctrl_q_clears_search_from_list()
     {
         using var fixture = new ViewModelFixture();

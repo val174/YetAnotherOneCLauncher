@@ -178,8 +178,20 @@ public sealed partial class MainWindowViewModel
     private InfoBaseEditorViewModel CreateBaseEditor(InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing) =>
         new(draft, AllFolderPaths(), isNew, _files)
         {
+            PlatformVersions = PlatformVersionChoices(),
             LaunchParametersEditor = editor => EditListEntryParametersAsync(editor, existing),
         };
+
+    /// <summary>Ветки установленных платформ («8.3», «8.5») и сами версии — от новых к старым.</summary>
+    private List<string> PlatformVersionChoices()
+    {
+        var versions = _installations.Select(i => i.Version).Distinct().OrderDescending().ToList();
+        return
+        [
+            .. versions.Select(v => $"{v.Major}.{v.Minor}").Distinct(),
+            .. versions.Select(v => v.ToString()),
+        ];
+    }
 
     /// <summary>
     /// То же окно, что «Параметры запуска…» в главном окне. Параметры возвращаются в поле формы (ibases.v8i),

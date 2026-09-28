@@ -41,7 +41,9 @@
       <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
 
       <TextBlock Grid.Row="2" Text="Версия платформы" Margin="0,10,0,6" />
-      <TextBox Grid.Row="3" Text="{Binding Version}" PlaceholderText="8.3, 8.3.24 или пусто — последняя" />
+      <!-- Список найденных версий; вписать маску (8.3.24) или версию вручную тоже можно. -->
+      <ComboBox x:Name="VersionBox" Grid.Row="3" IsEditable="True" Text="{Binding Version}" ItemsSource="{Binding PlatformVersions}"
+                HorizontalAlignment="Stretch" PlaceholderText="пусто — самая новая" />
       <CheckBox Grid.Row="3" Grid.Column="2" IsChecked="{Binding WindowsAuthentication}" Content="Аутентификация Windows" VerticalAlignment="Center" />
     </Grid>
 

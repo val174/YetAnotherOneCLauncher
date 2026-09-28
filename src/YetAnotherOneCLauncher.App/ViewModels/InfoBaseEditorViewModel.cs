@@ -48,6 +48,12 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
 
     public IReadOnlyList<string> Folders { get; }
 
+    /// <summary>
+    /// Варианты для поля «Версия платформы»: ветки («8.3») и найденные версии, новые — первыми.
+    /// Задаёт главное окно; вписать версию вручную можно всегда.
+    /// </summary>
+    public IReadOnlyList<string> PlatformVersions { get; init; } = [];
+
     [ObservableProperty]
     public partial string Name { get; set; }
 
