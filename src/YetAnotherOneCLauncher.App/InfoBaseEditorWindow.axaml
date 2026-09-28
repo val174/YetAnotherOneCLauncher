@@ -46,7 +46,13 @@
     </Grid>
 
     <TextBlock Text="Дополнительные параметры запуска" Margin="0,4,0,0" />
-    <TextBox Text="{Binding AdditionalParameters}" PlaceholderText="например, /DisableStartupMessages" />
+    <DockPanel>
+      <Button DockPanel.Dock="Right" Content="…" Command="{Binding EditLaunchParametersCommand}" Margin="6,0,0,0"
+              VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+              IsVisible="{Binding CanEditLaunchParameters}"
+              ToolTip.Tip="Параметры запуска: шаблоны параметров, пользователь и пароль" />
+      <TextBox Text="{Binding AdditionalParameters}" PlaceholderText="например, /DisableStartupMessages" />
+    </DockPanel>
 
     <Border IsVisible="{Binding HasErrors}" Padding="8" CornerRadius="4" Background="#33E81123">
       <TextBlock Text="{Binding Errors}" TextWrapping="Wrap" />

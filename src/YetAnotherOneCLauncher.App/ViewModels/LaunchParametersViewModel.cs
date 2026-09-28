@@ -16,6 +16,12 @@ public enum LaunchParametersKind
 
     /// <summary>Разовый запуск: ничего не сохраняется.</summary>
     OneOff,
+
+    /// <summary>
+    /// Из формы базы: параметры попадают в поле формы и сохраняются в ibases.v8i (действуют и в штатном стартере),
+    /// пользователь и пароль — в лаунчере.
+    /// </summary>
+    ListEntry,
 }
 
 /// <summary>Форма параметров запуска: у базы, у папки или разово («Запустить с параметрами…»).</summary>
@@ -65,6 +71,7 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
     {
         LaunchParametersKind.Folder => "Действуют на все базы в папке и во вложенных папках.",
         LaunchParametersKind.OneOff => "Только для этого запуска, добавляются после сохранённых.",
+        LaunchParametersKind.ListEntry => "Сохраняются в списке баз (ibases.v8i) и действуют также в штатном стартере 1С. Пользователь и пароль хранятся в лаунчере.",
         _ => "Добавляются после параметров папок. Список баз при этом не меняется.",
     };
 
@@ -119,7 +126,7 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
 
     public bool CanSavePassword => SavePasswordUnavailableReason is null;
 
-    public bool ShowSavePassword => Kind == LaunchParametersKind.InfoBase;
+    public bool ShowSavePassword => Kind is LaunchParametersKind.InfoBase or LaunchParametersKind.ListEntry;
 
     [ObservableProperty]
     public partial int ClientIndex { get; set; }

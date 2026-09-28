@@ -123,6 +123,23 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
         return Result is not null;
     }
 
+    /// <summary>
+    /// Открывает окно «Параметры запуска» (то же, что в главном окне): задаёт главное окно.
+    /// <c>null</c> — кнопка «…» у поля параметров недоступна.
+    /// </summary>
+    public Func<InfoBaseEditorViewModel, Task>? LaunchParametersEditor { get; init; }
+
+    public bool CanEditLaunchParameters => LaunchParametersEditor is not null;
+
+    /// <summary>
+    /// Что пользователь подтвердил в окне параметров: пользователь и пароль применяются только после
+    /// сохранения формы. <c>null</c> — окно не открывали.
+    /// </summary>
+    public LaunchParametersViewModel? LaunchSettings { get; set; }
+
+    [RelayCommand(CanExecute = nameof(CanEditLaunchParameters))]
+    private Task EditLaunchParametersAsync() => LaunchParametersEditor?.Invoke(this) ?? Task.CompletedTask;
+
     [RelayCommand]
     private async Task BrowseFolderAsync()
     {

@@ -74,30 +74,35 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
     private static Window? MainWindow =>
         (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow;
 
+    /// <summary>Владелец диалога — активное окно: из формы базы окно параметров открывается поверх формы.</summary>
+    private static Window? Owner =>
+        (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows.LastOrDefault(w => w.IsActive)
+        ?? MainWindow;
+
     public Task<bool> ConfirmAsync(string title, string question, string acceptText) =>
-        MainWindow is { } owner ? MessageDialog.AskAsync(owner, title, question, acceptText) : Task.FromResult(false);
+        Owner is { } owner ? MessageDialog.AskAsync(owner, title, question, acceptText) : Task.FromResult(false);
 
     public Task ShowMessageAsync(string title, string text) =>
-        MainWindow is { } owner ? MessageDialog.ShowAsync(owner, title, text) : Task.CompletedTask;
+        Owner is { } owner ? MessageDialog.ShowAsync(owner, title, text) : Task.CompletedTask;
 
     public Task<string?> PromptAsync(string title, string label, string initialText) =>
-        MainWindow is { } owner ? InputDialog.PromptAsync(owner, title, label, initialText) : Task.FromResult<string?>(null);
+        Owner is { } owner ? InputDialog.PromptAsync(owner, title, label, initialText) : Task.FromResult<string?>(null);
 
     public Task<string?> EditTextAsync(string title, string hint, string text) =>
-        MainWindow is { } owner ? InputDialog.EditTextAsync(owner, title, hint, text) : Task.FromResult<string?>(null);
+        Owner is { } owner ? InputDialog.EditTextAsync(owner, title, hint, text) : Task.FromResult<string?>(null);
 
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
-        MainWindow is { } owner ? new InfoBaseEditorWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
+        Owner is { } owner ? new InfoBaseEditorWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters) =>
-        MainWindow is { } owner ? new LaunchParametersWindow(parameters).ShowDialog<bool>(owner) : Task.FromResult(false);
+        Owner is { } owner ? new LaunchParametersWindow(parameters).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public Task ShowCacheManagerAsync(CacheManagerViewModel cache) =>
-        MainWindow is { } owner ? new CacheManagerWindow(cache).ShowDialog(owner) : Task.CompletedTask;
+        Owner is { } owner ? new CacheManagerWindow(cache).ShowDialog(owner) : Task.CompletedTask;
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {
-        if (MainWindow?.StorageProvider is not { } storage)
+        if (Owner?.StorageProvider is not { } storage)
         {
             return null;
         }
@@ -113,7 +118,7 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public async Task<string?> PickFolderAsync(string title)
     {
-        if (MainWindow?.StorageProvider is not { } storage)
+        if (Owner?.StorageProvider is not { } storage)
         {
             return null;
         }
@@ -124,7 +129,7 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public async Task<string?> OpenListFileAsync(string title)
     {
-        if (MainWindow?.StorageProvider is not { } storage)
+        if (Owner?.StorageProvider is not { } storage)
         {
             return null;
         }
@@ -140,7 +145,7 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public async Task<string?> SaveListFileAsync(string title, string suggestedName)
     {
-        if (MainWindow?.StorageProvider is not { } storage)
+        if (Owner?.StorageProvider is not { } storage)
         {
             return null;
         }

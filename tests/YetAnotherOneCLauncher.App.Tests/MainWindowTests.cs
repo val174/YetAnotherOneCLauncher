@@ -132,7 +132,10 @@ public class MainWindowTests
             new Core.Editing.InfoBaseDraft { Name = "Бухгалтерия", Kind = Core.Parsing.ConnectionKind.Server, Server = "srv-1c", InfobaseName = "buh", FolderPath = "/Рабочие", Version = "8.3" },
             ["/Рабочие", "/Архив"],
             isNew: false,
-            new FakeFiles());
+            new FakeFiles())
+        {
+            LaunchParametersEditor = _ => Task.CompletedTask,
+        };
         var window = new InfoBaseEditorWindow(editor);
         window.Show();
         editor.InfobaseName = string.Empty;

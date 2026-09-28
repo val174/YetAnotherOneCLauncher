@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
+using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Settings;
@@ -149,17 +150,81 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var userName = NullIfBlank(editor.UserName);
-        var (passwordKey, message) = await UpdateSavedPasswordAsync(target.Name, profile, userName, editor);
-        _settings.UserData.SetLaunchProfile(infoBase, profile with
+        StatusText = await SaveLaunchProfileAsync(target, editor, editor.Parameters) ?? $"Параметры запуска «{target.Name}» сохранены.";
+    }
+
+    /// <summary>Пользователь и пароль из окна параметров — в профиль базы и хранилище ОС.</summary>
+    /// <param name="target">База.</param>
+    /// <param name="form">Подтверждённое окно параметров.</param>
+    /// <param name="parameters">Параметры лаунчера для базы (из формы базы они не меняются).</param>
+    /// <returns>Сообщение, если с паролем что-то пошло не так.</returns>
+    private async Task<string?> SaveLaunchProfileAsync(InfoBaseViewModel target, LaunchParametersViewModel form, string? parameters)
+    {
+        var profile = _settings.UserData.LaunchProfile(target.InfoBase) ?? new InfoBaseLaunchProfile();
+        var userName = NullIfBlank(form.UserName);
+        var (passwordKey, message) = await UpdateSavedPasswordAsync(target.Name, profile, userName, form);
+        _settings.UserData.SetLaunchProfile(target.InfoBase, profile with
         {
-            Parameters = editor.Parameters,
+            Parameters = parameters,
             UserName = userName,
             PasswordKey = passwordKey,
         });
         _settings.RequestSave();
         target.Refresh();
-        StatusText = message ?? $"Параметры запуска «{target.Name}» сохранены.";
+        return message;
+    }
+
+    /// <summary>Форма базы: кнопка «…» у дополнительных параметров открывает окно «Параметры запуска».</summary>
+    private InfoBaseEditorViewModel CreateBaseEditor(InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing) =>
+        new(draft, AllFolderPaths(), isNew, _files)
+        {
+            LaunchParametersEditor = editor => EditListEntryParametersAsync(editor, existing),
+        };
+
+    /// <summary>
+    /// То же окно, что «Параметры запуска…» в главном окне. Параметры возвращаются в поле формы (ibases.v8i),
+    /// пользователь и пароль ждут сохранения формы.
+    /// </summary>
+    private async Task EditListEntryParametersAsync(InfoBaseEditorViewModel editor, InfoBaseViewModel? existing)
+    {
+        var profile = existing is null ? null : _settings.UserData.LaunchProfile(existing.InfoBase);
+        var pending = editor.LaunchSettings;
+        var form = new LaunchParametersViewModel(
+            LaunchParametersKind.ListEntry,
+            string.IsNullOrWhiteSpace(editor.Name) ? "новая база" : editor.Name.Trim(),
+            _settings.UserData.ParameterTemplates(),
+            [],
+            _files)
+        {
+            Parameters = editor.AdditionalParameters,
+            UserName = pending?.UserName ?? profile?.UserName ?? string.Empty,
+            Password = pending?.Password ?? string.Empty,
+            HasSavedPassword = profile?.PasswordKey is not null,
+            SavePassword = pending?.SavePassword ?? profile?.PasswordKey is not null,
+            SavePasswordUnavailableReason = _credentials is null ? "Хранилище паролей не поддерживается." : _credentials.UnavailableReason,
+        };
+
+        if (await _dialogs.EditLaunchParametersAsync(form))
+        {
+            editor.AdditionalParameters = form.Parameters;
+            editor.LaunchSettings = form;
+        }
+    }
+
+    /// <summary>После сохранения формы — пользователь и пароль, заданные в окне параметров.</summary>
+    private async Task ApplyPendingLaunchSettingsAsync(InfoBaseEditorViewModel editor, string? selectionKey)
+    {
+        if (editor.LaunchSettings is not { } form
+            || _bases.FirstOrDefault(b => b.InfoBase.IdentityKey == selectionKey) is not { } saved)
+        {
+            return;
+        }
+
+        var parameters = _settings.UserData.LaunchProfile(saved.InfoBase)?.Parameters;
+        if (await SaveLaunchProfileAsync(saved, form, parameters) is { } message)
+        {
+            StatusText = message;
+        }
     }
 
     /// <summary>Сохраняет, заменяет или удаляет пароль в хранилище ОС.</summary>

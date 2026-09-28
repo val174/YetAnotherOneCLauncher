@@ -18,18 +18,20 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task AddBaseAsync()
     {
-        var editor = new InfoBaseEditorViewModel(
-            new InfoBaseDraft { FolderPath = TargetFolderPath() }, AllFolderPaths(), isNew: true, _files);
+        var editor = CreateBaseEditor(new InfoBaseDraft { FolderPath = TargetFolderPath() }, isNew: true, existing: null);
         if (!await _dialogs.EditInfoBaseAsync(editor) || editor.Result is not { } draft)
         {
             return;
         }
 
         string? key = null;
-        await EditListAsync(
-            document => key = SelectionKeyOf(PersonalListEditor.AddBase(document, draft)),
-            $"База «{draft.Name}» добавлена.",
-            () => key);
+        if (await EditListAsync(
+                document => key = SelectionKeyOf(PersonalListEditor.AddBase(document, draft)),
+                $"База «{draft.Name}» добавлена.",
+                () => key))
+        {
+            await ApplyPendingLaunchSettingsAsync(editor, key);
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanEditList))]
@@ -67,7 +69,7 @@ public sealed partial class MainWindowViewModel
                 return;
             }
 
-            var editor = new InfoBaseEditorViewModel(InfoBaseDraft.From(target.InfoBase), AllFolderPaths(), isNew: false, _files);
+            var editor = CreateBaseEditor(InfoBaseDraft.From(target.InfoBase), isNew: false, existing: target);
             if (!await _dialogs.EditInfoBaseAsync(editor) || editor.Result is not { } draft)
             {
                 return;
@@ -76,10 +78,14 @@ public sealed partial class MainWindowViewModel
             var key = target.InfoBase.Id is not null
                 ? target.InfoBase.IdentityKey
                 : "conn:" + draft.BuildConnection().ToNormalizedKey();
-            await EditListAsync(
-                document => PersonalListEditor.UpdateBase(document, EntryRef.Of(target.InfoBase), draft),
-                $"База «{draft.Name}» сохранена.",
-                () => key);
+            if (await EditListAsync(
+                    document => PersonalListEditor.UpdateBase(document, EntryRef.Of(target.InfoBase), draft),
+                    $"База «{draft.Name}» сохранена.",
+                    () => key))
+            {
+                await ApplyPendingLaunchSettingsAsync(editor, key);
+            }
+
             return;
         }
 
