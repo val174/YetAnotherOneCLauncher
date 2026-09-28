@@ -44,7 +44,6 @@ internal static class AppServices
             services.AddSingleton(_ => new PersonalListStore(paths.PersonalInfoBaseListPath));
             services.AddSingleton<IListChangeWatcher, ListChangeWatcher>();
             services.AddSingleton(_ => PlatformServices.CreateCredentialStore());
-            services.AddSingleton(_ => PlatformServices.CreateRecycleBin());
             services.AddSingleton(_ => PlatformServices.CreateCacheUsageProbe());
             services.AddSingleton(_ => PlatformServices.CreateJumpList());
             services.AddSingleton<LaunchRequestChannel>();

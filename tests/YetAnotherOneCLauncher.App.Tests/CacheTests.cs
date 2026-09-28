@@ -1,5 +1,4 @@
 using YetAnotherOneCLauncher.App.ViewModels;
-using YetAnotherOneCLauncher.Platform.Linux;
 using YetAnotherOneCLauncher.Platform.Windows;
 
 namespace YetAnotherOneCLauncher.App.Tests;
@@ -22,7 +21,7 @@ public class CacheTests
     }
 
     [Fact]
-    public async Task Clearing_base_cache_moves_local_part_to_recycle_bin()
+    public async Task Clearing_base_cache_deletes_local_part_permanently()
     {
         using var fixture = await LoadAsync();
         fixture.Dialogs.ConfirmAnswer = true;
@@ -35,24 +34,23 @@ public class CacheTests
         Assert.Contains("кэш «Бухгалтерия предприятия» — 2 КБ", question, StringComparison.Ordinal);
         Assert.Contains("1cv8c (PID 42)", question, StringComparison.Ordinal);
         Assert.DoesNotContain("Roaming", question, StringComparison.Ordinal);
-        Assert.Equal(new[] { Path.Combine(fixture.LocalCacheRoot, BuhId) }, fixture.RecycleBin.Recycled);
+        Assert.Contains("Удалить насовсем (без корзины)", question, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
         Assert.True(Directory.Exists(Path.Combine(fixture.RoamingCacheRoot, BuhId))); // настройки не тронуты
         Assert.Equal("нет (и настройки 100 Б)", fixture.Base("Бухгалтерия предприятия").CacheText);
         Assert.StartsWith("Освобождено 2 КБ", fixture.ViewModel.StatusText, StringComparison.Ordinal);
     }
 
     [Fact]
-    public async Task Roaming_and_permanent_delete_follow_settings()
+    public async Task Roaming_is_deleted_only_when_chosen()
     {
         using var fixture = await LoadAsync();
         fixture.Dialogs.ConfirmAnswer = true;
         fixture.Settings.Settings.Cache.IncludeRoaming = true;
-        fixture.Settings.Settings.Cache.DeletePermanently = true;
 
         await fixture.ViewModel.ClearCacheCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
 
         Assert.Contains("Roaming", fixture.Dialogs.Questions.Single(), StringComparison.Ordinal);
-        Assert.Empty(fixture.RecycleBin.Recycled);
         Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
         Assert.False(Directory.Exists(Path.Combine(fixture.RoamingCacheRoot, BuhId)));
         Assert.Equal("нет", fixture.Base("Бухгалтерия предприятия").CacheText);
@@ -81,7 +79,7 @@ public class CacheTests
 
         await fixture.ViewModel.ClearCacheAndLaunchCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
 
-        Assert.Single(fixture.RecycleBin.Recycled);
+        Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
         Assert.Single(fixture.Dialogs.Questions);
         Assert.Equal("ENTERPRISE", Assert.Single(fixture.Processes.Started).Arguments[0]);
     }
@@ -93,7 +91,7 @@ public class CacheTests
 
         await fixture.ViewModel.ClearCacheAndLaunchCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
 
-        Assert.Empty(fixture.RecycleBin.Recycled);
+        Assert.True(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
         Assert.Empty(fixture.Processes.Started);
     }
 
@@ -107,7 +105,7 @@ public class CacheTests
         {
             shown = manager;
             Assert.Equal(2, manager.Rows.Count);
-            Assert.Contains("без хозяина: 1 (5 КБ)", manager.TotalText, StringComparison.Ordinal);
+            Assert.Contains("удалённых баз: 1 (5 КБ)", manager.TotalText, StringComparison.Ordinal);
             Assert.False(manager.CleanCommand.CanExecute(null));
 
             manager.SelectOrphansCommand.Execute(null);
@@ -154,54 +152,6 @@ public class CacheTests
         }
     }
 
-    [Fact]
-    public void Freedesktop_trash_moves_directory_and_writes_info()
-    {
-        var root = Path.Combine(Path.GetTempPath(), "yaocl-trash-" + Guid.NewGuid().ToString("N"));
-        var source = Path.Combine(root, "кэш баз", BuhId);
-        var trash = Path.Combine(root, "Trash");
-        try
-        {
-            Directory.CreateDirectory(source);
-            File.WriteAllText(Path.Combine(source, "a.txt"), "x");
-            var bin = new FreedesktopTrash(trash);
-
-            bin.MoveToRecycleBin(source);
-            Directory.CreateDirectory(source);
-            bin.MoveToRecycleBin(source); // то же имя — второй экземпляр получает суффикс
-
-            Assert.False(Directory.Exists(source));
-            Assert.True(File.Exists(Path.Combine(trash, "files", BuhId, "a.txt")));
-            Assert.True(Directory.Exists(Path.Combine(trash, "files", BuhId + ".2")));
-            var info = File.ReadAllText(Path.Combine(trash, "info", BuhId + ".trashinfo"));
-            Assert.StartsWith("[Trash Info]\nPath=", info, StringComparison.Ordinal);
-            Assert.Contains("%D0%BA%D1%8D%D1%88%20%D0%B1%D0%B0%D0%B7", info, StringComparison.Ordinal); // «кэш баз»
-            Assert.Contains("\nDeletionDate=", info, StringComparison.Ordinal);
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
-        }
-    }
-
-    [Fact]
-    public void Windows_recycle_bin_round_trip_when_enabled()
-    {
-        // Кладёт каталог в настоящую корзину пользователя — только по явной просьбе.
-        if (!OperatingSystem.IsWindows() || Environment.GetEnvironmentVariable("YAOCL_RECYCLE_TEST") != "1")
-        {
-            Assert.Skip("Задайте YAOCL_RECYCLE_TEST=1, чтобы проверить настоящую корзину Windows.");
-            return;
-        }
-
-        var directory = Path.Combine(Path.GetTempPath(), "yaocl-recycle-test-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(directory);
-        File.WriteAllText(Path.Combine(directory, "a.txt"), "x");
-
-        new WindowsRecycleBin().MoveToRecycleBin(directory);
-
-        Assert.False(Directory.Exists(directory));
-    }
 
     private static async Task<ViewModelFixture> LoadAsync()
     {

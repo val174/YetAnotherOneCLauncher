@@ -54,7 +54,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly PersonalListStore? _store;
     private readonly IListChangeWatcher? _watcher;
     private readonly ICredentialStore? _credentials;
-    private readonly IRecycleBin? _recycleBin;
     private readonly ICacheUsageProbe? _cacheUsage;
     private readonly AvailabilityChecker? _availabilityChecker;
     private readonly IJumpList? _jumpList;
@@ -85,7 +84,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         PersonalListStore? store = null,
         IListChangeWatcher? watcher = null,
         ICredentialStore? credentials = null,
-        IRecycleBin? recycleBin = null,
         ICacheUsageProbe? cacheUsage = null,
         AvailabilityChecker? availabilityChecker = null,
         IJumpList? jumpList = null,
@@ -96,7 +94,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _store = store;
         _watcher = watcher;
         _credentials = credentials;
-        _recycleBin = recycleBin;
         _cacheUsage = cacheUsage;
         _availabilityChecker = availabilityChecker;
         _jumpList = jumpList;

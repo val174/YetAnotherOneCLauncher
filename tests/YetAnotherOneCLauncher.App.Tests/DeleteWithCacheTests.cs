@@ -19,7 +19,7 @@ public class DeleteWithCacheTests
         Assert.True(isChecked);
         Assert.Equal("Удалить временные файлы информационной базы (4 КБ)", text);
         Assert.DoesNotContain(fixture.SavedList().Sections, s => s.Name == "Копия бухгалтерии");
-        Assert.Equal(new[] { Path.Combine(fixture.LocalCacheRoot, CopyId) }, fixture.RecycleBin.Recycled);
+        Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, CopyId))); // удалён насовсем
         Assert.True(Directory.Exists(Path.Combine(fixture.RoamingCacheRoot, CopyId))); // настройки пользователя — только по настройке
         Assert.Single(fixture.Dialogs.Questions); // второго вопроса про кэш нет
         Assert.Contains("удалена из списка", fixture.ViewModel.StatusText, StringComparison.Ordinal);
@@ -36,7 +36,6 @@ public class DeleteWithCacheTests
         await fixture.ViewModel.DeleteCommand.ExecuteAsync(null);
 
         Assert.DoesNotContain(fixture.SavedList().Sections, s => s.Name == "Копия бухгалтерии");
-        Assert.Empty(fixture.RecycleBin.Recycled);
         Assert.True(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, CopyId)));
     }
 
@@ -48,7 +47,7 @@ public class DeleteWithCacheTests
         await fixture.ViewModel.DeleteCommand.ExecuteAsync(null);
 
         Assert.Contains(fixture.SavedList().Sections, s => s.Name == "Копия бухгалтерии");
-        Assert.Empty(fixture.RecycleBin.Recycled);
+        Assert.True(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, CopyId)));
     }
 
     [Fact]

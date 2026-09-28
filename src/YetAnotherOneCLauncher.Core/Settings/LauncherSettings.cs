@@ -164,9 +164,6 @@ public sealed class NetworkSettings
 /// <summary>Очистка кэша баз.</summary>
 public sealed class CacheSettings
 {
-    /// <summary>Удалять насовсем, а не в корзину.</summary>
-    public bool DeletePermanently { get; set; }
-
     /// <summary>Удалять и каталог Roaming — локальные настройки пользователя для базы (только Windows).</summary>
     public bool IncludeRoaming { get; set; }
 }

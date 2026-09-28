@@ -49,14 +49,12 @@ public sealed partial class CacheManagerViewModel : ObservableObject
 
     /// <param name="report">Текущий отчёт.</param>
     /// <param name="includeRoaming">Удалять и Roaming.</param>
-    /// <param name="deletePermanently">Удалять насовсем.</param>
     /// <param name="hasRoaming">Есть ли на этой ОС отдельный Roaming (Windows).</param>
     /// <param name="clean">Очистка с подтверждением; возвращает новый отчёт или <c>null</c>, если отменили.</param>
     /// <param name="rescan">Пересчитать размеры.</param>
     public CacheManagerViewModel(
         CacheReport report,
         bool includeRoaming,
-        bool deletePermanently,
         bool hasRoaming,
         Func<IReadOnlyList<CacheDirectory>, Task<CacheReport?>> clean,
         Func<Task<CacheReport>> rescan)
@@ -65,7 +63,6 @@ public sealed partial class CacheManagerViewModel : ObservableObject
         _rescan = rescan;
         HasRoaming = hasRoaming;
         IncludeRoaming = includeRoaming && hasRoaming;
-        DeletePermanently = deletePermanently;
         Show(report);
     }
 
@@ -77,9 +74,6 @@ public sealed partial class CacheManagerViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(SelectedText))]
     [NotifyCanExecuteChangedFor(nameof(CleanCommand))]
     public partial bool IncludeRoaming { get; set; }
-
-    [ObservableProperty]
-    public partial bool DeletePermanently { get; set; }
 
     [ObservableProperty]
     public partial string TotalText { get; private set; } = string.Empty;
@@ -174,7 +168,7 @@ public sealed partial class CacheManagerViewModel : ObservableObject
 
         var orphans = report.Owners.Count(o => o.IsOrphan);
         TotalText = $"Всего {ByteSize.Format(report.TotalBytes)} в {report.Owners.Count} каталогах баз; " +
-                    $"без хозяина: {orphans} ({ByteSize.Format(report.OrphanBytes)})";
+                    $"удалённых баз: {orphans} ({ByteSize.Format(report.OrphanBytes)})";
         OnSelectionChanged();
     }
 

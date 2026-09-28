@@ -28,7 +28,7 @@ public sealed record CacheCleanResult(IReadOnlyList<CacheCleanItem> Items)
 public static class CacheCleaner
 {
     /// <param name="directories">Что удалить.</param>
-    /// <param name="remove">Удаление: в корзину или окончательно (<see cref="DeletePermanently"/>).</param>
+    /// <param name="remove">Удаление каталога (обычно <see cref="DeletePermanently"/>).</param>
     /// <param name="isInUse">Проверка, открыты ли файлы в каталоге.</param>
     /// <param name="cancellationToken">Отмена между каталогами.</param>
     public static Task<CacheCleanResult> CleanAsync(

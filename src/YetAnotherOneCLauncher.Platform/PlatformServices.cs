@@ -15,11 +15,6 @@ public static class PlatformServices
     public static IJumpList CreateJumpList() =>
         OperatingSystem.IsWindows() ? new WindowsJumpList() : new NoJumpList();
 
-    public static IRecycleBin CreateRecycleBin() =>
-        OperatingSystem.IsWindows() ? new WindowsRecycleBin()
-        : OperatingSystem.IsLinux() ? new FreedesktopTrash()
-        : throw new PlatformNotSupportedException("Корзина есть только для Windows и Linux.");
-
     public static ICacheUsageProbe CreateCacheUsageProbe() =>
         OperatingSystem.IsWindows() ? new WindowsCacheUsageProbe()
         : OperatingSystem.IsLinux() ? new LinuxCacheUsageProbe()

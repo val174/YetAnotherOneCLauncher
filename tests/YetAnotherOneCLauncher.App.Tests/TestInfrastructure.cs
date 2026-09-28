@@ -167,19 +167,6 @@ internal sealed class FakeCredentials : ICredentialStore
     public void Delete(string key) => Entries.Remove(key);
 }
 
-/// <summary>Корзина: каталог переносится в папку «корзины» внутри временного каталога теста.</summary>
-internal sealed class FakeRecycleBin(string trash) : IRecycleBin
-{
-    public List<string> Recycled { get; } = [];
-
-    public void MoveToRecycleBin(string path)
-    {
-        System.IO.Directory.CreateDirectory(trash);
-        System.IO.Directory.Move(path, Path.Combine(trash, Path.GetFileName(path) + "-" + Recycled.Count));
-        Recycled.Add(path);
-    }
-}
-
 /// <summary>Занятые каталоги и запущенные процессы задаются тестом.</summary>
 internal sealed class FakeCacheUsage : ICacheUsageProbe
 {
@@ -275,7 +262,6 @@ internal sealed class ViewModelFixture : IDisposable
 
     private readonly string _directory;
     private PersonalListStore? _store;
-    private FakeRecycleBin? _recycleBin;
 
     public ViewModelFixture(string list = SampleList, string? startupLaunchKey = null)
     {
@@ -308,7 +294,6 @@ internal sealed class ViewModelFixture : IDisposable
             Store,
             watcher: null,
             credentials: Credentials,
-            recycleBin: RecycleBin,
             cacheUsage: CacheUsage,
             availabilityChecker: new Core.Availability.AvailabilityChecker(Availability),
             jumpList: JumpList,
@@ -328,8 +313,6 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeAvailabilityProbe Availability { get; } = new();
 
     public FakeJumpList JumpList { get; } = new();
-
-    public FakeRecycleBin RecycleBin => _recycleBin ??= new FakeRecycleBin(Path.Combine(_directory, "trash"));
 
     public string LocalCacheRoot => Path.Combine(_directory, "local");
 

@@ -143,7 +143,6 @@ public sealed partial class MainWindowViewModel
         var manager = new CacheManagerViewModel(
             _cacheReport,
             cache.IncludeRoaming,
-            cache.DeletePermanently,
             hasRoaming: _paths?.InfoBaseCacheRoots.Any(r => r.Location == CacheLocation.Roaming) == true,
             async directories =>
             {
@@ -153,10 +152,9 @@ public sealed partial class MainWindowViewModel
             ScanCacheAsync);
         manager.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(CacheManagerViewModel.IncludeRoaming) or nameof(CacheManagerViewModel.DeletePermanently))
+            if (e.PropertyName is nameof(CacheManagerViewModel.IncludeRoaming))
             {
                 cache.IncludeRoaming = manager.IncludeRoaming;
-                cache.DeletePermanently = manager.DeletePermanently;
                 _settings.RequestSave();
             }
         };
@@ -175,9 +173,8 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
-        var permanently = _settings.Settings.Cache.DeletePermanently || _recycleBin is null;
         var question = new StringBuilder()
-            .Append(permanently ? "Удалить насовсем " : "Переместить в корзину ")
+            .Append("Удалить насовсем (без корзины) ")
             .Append(what).Append(" — ").Append(ByteSize.Format(directories.Sum(d => d.SizeBytes))).Append('?');
         if (directories.Any(d => d.Location == CacheLocation.Roaming))
         {
@@ -193,16 +190,15 @@ public sealed partial class MainWindowViewModel
                 .Append(". Кэш открытых баз будет пропущен.");
         }
 
-        if (confirm && !await _dialogs.ConfirmAsync(CacheTitle, question.ToString(), permanently ? "Удалить" : "В корзину"))
+        if (confirm && !await _dialogs.ConfirmAsync(CacheTitle, question.ToString(), "Удалить"))
         {
             return null;
         }
 
-        Action<string> remove = permanently ? CacheCleaner.DeletePermanently : _recycleBin!.MoveToRecycleBin;
         CacheCleanResult result;
         try
         {
-            result = await CacheCleaner.CleanAsync(directories, remove, _cacheUsage.IsDirectoryInUse);
+            result = await CacheCleaner.CleanAsync(directories, CacheCleaner.DeletePermanently, _cacheUsage.IsDirectoryInUse);
         }
         catch (InvalidOperationException ex)
         {
@@ -216,10 +212,10 @@ public sealed partial class MainWindowViewModel
             LogCacheProblem(_logger, problem.Directory.Path, problem.Status, problem.Message);
         }
 
-        LogCacheCleaned(_logger, result.RemovedCount, result.RemovedBytes, permanently);
+        LogCacheCleaned(_logger, result.RemovedCount, result.RemovedBytes);
         await ScanCacheAsync();
 
-        var removed = $"Освобождено {ByteSize.Format(result.RemovedBytes)} ({result.RemovedCount} каталогов{(permanently ? string.Empty : ", в корзине")}).";
+        var removed = $"Освобождено {ByteSize.Format(result.RemovedBytes)} ({result.RemovedCount} каталогов).";
         var problems = result.Problems.ToList();
         StatusText = problems.Count == 0 ? removed : $"{removed} Не удалось: {problems.Count}.";
         if (problems.Count > 0)
@@ -239,6 +235,6 @@ public sealed partial class MainWindowViewModel
     [LoggerMessage(Level = LogLevel.Warning, Message = "Кэш {Path} не удалён ({Status}): {Reason}")]
     private static partial void LogCacheProblem(ILogger logger, string path, CacheCleanStatus status, string? reason);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Кэш очищен: каталогов {Count}, байт {Bytes}, насовсем: {Permanently}")]
-    private static partial void LogCacheCleaned(ILogger logger, int count, long bytes, bool permanently);
+    [LoggerMessage(Level = LogLevel.Information, Message = "Кэш очищен: каталогов {Count}, байт {Bytes}")]
+    private static partial void LogCacheCleaned(ILogger logger, int count, long bytes);
 }
