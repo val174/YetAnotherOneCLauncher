@@ -15,8 +15,8 @@ namespace YetAnotherOneCLauncher.App;
 /// положение окна, фокус и сочетания клавиш.
 /// </summary>
 /// <remarks>
-/// Клавиши: Ctrl+F — поиск; Esc — очистить поиск; ↓ из поиска — к списку; Enter — Предприятие;
-/// Ctrl+Enter — Конфигуратор; Ctrl+D — избранное; F5 — обновить; Ctrl+N / Ins — новая база; Ctrl+Shift+N — папка;
+/// Клавиши: Ctrl+F — поиск; Esc, Ctrl+Q — очистить поиск; ↓ из поиска — к списку; Enter, F3 — 1С: Предприятие;
+/// F4 — Конфигуратор; F6 — запуск с параметрами; Ctrl+D — избранное; F5 — обновить; Ctrl+N / Ins — новая база; Ctrl+Shift+N — папка;
 /// F2 — изменить; Del — удалить; Alt+↑/↓ — порядок. Набор текста в списке уходит в поиск.
 /// </remarks>
 public partial class MainWindow : Window
@@ -147,6 +147,22 @@ public partial class MainWindow : Window
             case Key.Escape when vm.HasSearch:
                 vm.SearchText = string.Empty;
                 FocusSearch(selectAll: false);
+                e.Handled = true;
+                break;
+
+            // Запуск: F3 — 1С: Предприятие, F4 — Конфигуратор, F6 — с параметрами. Работают и из поиска, и из списка.
+            case Key.F3 when e.KeyModifiers == KeyModifiers.None:
+                Execute(vm.LaunchEnterpriseCommand);
+                e.Handled = true;
+                break;
+
+            case Key.F4 when e.KeyModifiers == KeyModifiers.None:
+                Execute(vm.LaunchDesignerCommand);
+                e.Handled = true;
+                break;
+
+            case Key.F6 when e.KeyModifiers == KeyModifiers.None:
+                Execute(vm.LaunchWithParametersCommand);
                 e.Handled = true;
                 break;
 
@@ -314,8 +330,8 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
-            case Key.Enter:
-                Launch(e.KeyModifiers);
+            case Key.Enter when e.KeyModifiers == KeyModifiers.None:
+                LaunchEnterprise();
                 e.Handled = true;
                 break;
         }
@@ -323,9 +339,9 @@ public partial class MainWindow : Window
 
     private void OnListKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter)
+        if (e.Key == Key.Enter && e.KeyModifiers == KeyModifiers.None)
         {
-            Launch(e.KeyModifiers);
+            LaunchEnterprise();
             e.Handled = true;
         }
     }
@@ -337,7 +353,7 @@ public partial class MainWindow : Window
                    ?? (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext;
         if (item is BaseNodeViewModel or BaseListItemViewModel)
         {
-            Launch(KeyModifiers.None);
+            LaunchEnterprise();
             e.Handled = true;
         }
     }
@@ -355,22 +371,12 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    private void Launch(KeyModifiers modifiers)
+    /// <summary>Enter и двойной щелчок — 1С: Предприятие (как F3).</summary>
+    private void LaunchEnterprise()
     {
-        if (ViewModel is not { } vm)
+        if (ViewModel is { } vm)
         {
-            return;
-        }
-
-        ICommand command = modifiers switch
-        {
-            KeyModifiers.Control | KeyModifiers.Shift => vm.LaunchWithParametersCommand,
-            _ when modifiers.HasFlag(KeyModifiers.Control) => vm.LaunchDesignerCommand,
-            _ => vm.LaunchEnterpriseCommand,
-        };
-        if (command.CanExecute(null))
-        {
-            command.Execute(null);
+            Execute(vm.LaunchEnterpriseCommand);
         }
     }
 

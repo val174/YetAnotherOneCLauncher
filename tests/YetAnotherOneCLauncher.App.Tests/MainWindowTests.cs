@@ -7,6 +7,7 @@ using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.Tests;
@@ -55,7 +56,7 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public async Task Ctrl_enter_launches_designer_and_ctrl_d_toggles_favorite()
+    public async Task F4_launches_designer_and_ctrl_d_toggles_favorite()
     {
         using var fixture = new ViewModelFixture();
         var window = await OpenAsync(fixture);
@@ -63,7 +64,7 @@ public class MainWindowTests
         Render();
 
         window.KeyPress(Key.D, RawInputModifiers.Control, PhysicalKey.D, "d");
-        window.KeyPress(Key.Enter, RawInputModifiers.Control, PhysicalKey.Enter, null);
+        window.KeyPress(Key.F4, RawInputModifiers.None, PhysicalKey.F4, null);
         await WaitAsync(() => fixture.Processes.Started.Count > 0);
 
         Assert.Equal("DESIGNER", Assert.Single(fixture.Processes.Started).Arguments[0]);
@@ -320,6 +321,31 @@ public class MainWindowTests
         var (accepted, deleteCache) = await dialog;
         Assert.True(accepted);
         Assert.False(deleteCache);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task F3_launches_enterprise_and_f6_opens_launch_with_parameters()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        window.KeyTextInput("зуп");
+        Render();
+
+        window.KeyPress(Key.F3, RawInputModifiers.None, PhysicalKey.F3, null);
+        await WaitAsync(() => fixture.Processes.Started.Count == 1);
+        Assert.Equal("ENTERPRISE", fixture.Processes.Started[0].Arguments[0]);
+
+        fixture.Dialogs.LaunchParameters = _ => (true, LaunchMode.Designer);
+        window.KeyPress(Key.F6, RawInputModifiers.None, PhysicalKey.F6, null);
+        await WaitAsync(() => fixture.Processes.Started.Count == 2);
+        Assert.Single(fixture.Dialogs.LaunchParameterForms);
+        Assert.Equal("DESIGNER", fixture.Processes.Started[1].Arguments[0]);
+
+        // Прежние сочетания больше не запускают Конфигуратор: Ctrl+Enter — ничего.
+        window.KeyPress(Key.Enter, RawInputModifiers.Control, PhysicalKey.Enter, null);
+        Render();
+        Assert.Equal(2, fixture.Processes.Started.Count);
         window.Close();
     }
 

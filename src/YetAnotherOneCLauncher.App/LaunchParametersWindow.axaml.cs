@@ -32,24 +32,24 @@ public partial class LaunchParametersWindow : Window
         SaveButton.Click += (_, _) => Accept(null);
         CancelButton.Click += (_, _) => Close(false);
 
-        // Enter сохраняет форму базы и папки; при разовом запуске — запускает Предприятие (IsDefault),
-        // Ctrl+Enter — Конфигуратор, как в главном окне.
+        // Enter сохраняет форму базы и папки; при разовом запуске — запускает 1С: Предприятие (IsDefault).
+        // Как в главном окне: F3 — 1С: Предприятие, F4 — Конфигуратор.
         KeyDown += (_, e) =>
         {
-            if (e.Key != Key.Enter)
+            switch (e.Key)
             {
-                return;
-            }
-
-            if (!viewModel.IsOneOff)
-            {
-                Accept(null);
-                e.Handled = true;
-            }
-            else if (e.KeyModifiers == KeyModifiers.Control)
-            {
-                Accept(LaunchMode.Designer);
-                e.Handled = true;
+                case Key.Enter when !viewModel.IsOneOff:
+                    Accept(null);
+                    e.Handled = true;
+                    break;
+                case Key.F3 when viewModel.IsOneOff:
+                    Accept(LaunchMode.Enterprise);
+                    e.Handled = true;
+                    break;
+                case Key.F4 when viewModel.IsOneOff:
+                    Accept(LaunchMode.Designer);
+                    e.Handled = true;
+                    break;
             }
         };
 

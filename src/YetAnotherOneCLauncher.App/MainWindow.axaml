@@ -245,9 +245,9 @@
             </DockPanel>
 
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Classes="accent" Content="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="Enter или двойной щелчок" />
-              <Button Content="Конфигуратор" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="Ctrl+Enter" />
-              <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (Ctrl+Shift+Enter)" />
+              <Button Classes="accent" Content="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="F3, Enter или двойной щелчок" />
+              <Button Content="Конфигуратор" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="F4" />
+              <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (F6)" />
             </StackPanel>
 
             <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
@@ -323,9 +323,9 @@
     <Panel>
       <Panel.ContextMenu>
         <ContextMenu>
-          <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
-          <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="Ctrl+Enter" />
-          <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="Ctrl+Shift+Enter" />
+          <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="F3" />
+          <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="F4" />
+          <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="F6" />
           <MenuItem Header="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" />
           <MenuItem Header="Очистить кэш и запустить" Command="{Binding ClearCacheAndLaunchCommand}" />
           <Separator />

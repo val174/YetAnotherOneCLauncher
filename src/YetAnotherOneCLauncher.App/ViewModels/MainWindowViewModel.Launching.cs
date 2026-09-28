@@ -82,7 +82,7 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    /// <summary>Запуск с разовыми параметрами, пользователем или клиентом (Ctrl+Shift+Enter).</summary>
+    /// <summary>Запуск с разовыми параметрами, пользователем, клиентом или платформой (F6).</summary>
     [RelayCommand(CanExecute = nameof(CanLaunch))]
     private async Task LaunchWithParametersAsync(InfoBaseViewModel? target)
     {
