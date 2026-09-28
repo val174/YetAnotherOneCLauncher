@@ -21,7 +21,8 @@ public class CacheTests
         WriteFile(Path.Combine(local, "tmplts", "big.bin"), 5000); // служебный каталог платформы
         WriteFile(Path.Combine(local, "EmptyIB", "x.bin"), 5000);
         WriteFile(Path.Combine(local, "1cv8.pfl"), 5000);
-        Directory.CreateDirectory(Path.Combine(local, IdB));
+        Directory.CreateDirectory(Path.Combine(local, IdB, "vrs", "empty")); // только пустые каталоги — не показывается
+        WriteFile(Path.Combine(roaming, IdB, "zero.dat"), 0); // файл нулевой длины — показывается
 
         var scan = CacheScanner.Scan([new CacheRoot(local, CacheLocation.Local), new CacheRoot(roaming, CacheLocation.Roaming), new CacheRoot(temp.Combine("нет"), CacheLocation.Local)]);
 
@@ -29,8 +30,9 @@ public class CacheTests
         Assert.Equal(3, scan.Directories.Count);
         var a = scan.Directories.Single(d => d.Id == IdA && d.Location == CacheLocation.Local);
         Assert.Equal(1024, a.SizeBytes);
-        Assert.Equal(10, scan.Directories.Single(d => d.Location == CacheLocation.Roaming).SizeBytes);
-        Assert.Equal(0, scan.Directories.Single(d => d.Id == IdB).SizeBytes);
+        Assert.Equal(10, scan.Directories.Single(d => d.Id == IdA && d.Location == CacheLocation.Roaming).SizeBytes);
+        var zero = scan.Directories.Single(d => d.Id == IdB);
+        Assert.Equal((CacheLocation.Roaming, 0L), (zero.Location, zero.SizeBytes));
     }
 
     [Fact]

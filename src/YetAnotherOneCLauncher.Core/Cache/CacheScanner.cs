@@ -56,7 +56,12 @@ public static class CacheScanner
                     continue; // ссылку не считаем и не удаляем: кэш за ней чужой
                 }
 
-                directories.Add(new CacheDirectory(id, child, root.Location, SizeOf(info, cancellationToken), info.LastWriteTime));
+                // Каталог без файлов (пустой или только с пустыми подкаталогами) — не кэш, показывать нечего.
+                var (size, files) = Measure(info, cancellationToken);
+                if (files > 0)
+                {
+                    directories.Add(new CacheDirectory(id, child, root.Location, size, info.LastWriteTime));
+                }
             }
         }
 
@@ -67,7 +72,8 @@ public static class CacheScanner
     public static string? TryParseId(string? name) =>
         Guid.TryParseExact(name, "D", out var id) ? id.ToString("D") : null;
 
-    private static long SizeOf(DirectoryInfo directory, CancellationToken cancellationToken)
+    /// <summary>Размер и число файлов; файлы нулевой длины тоже считаются.</summary>
+    private static (long Size, int Files) Measure(DirectoryInfo directory, CancellationToken cancellationToken)
     {
         var options = new EnumerationOptions
         {
@@ -76,12 +82,14 @@ public static class CacheScanner
             AttributesToSkip = FileAttributes.ReparsePoint,
         };
         long total = 0;
+        var files = 0;
         try
         {
             foreach (var file in directory.EnumerateFiles("*", options))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 total += file.Length;
+                files++;
             }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -89,6 +97,6 @@ public static class CacheScanner
             // Файлы меняются, пока 1С работает, — размер приблизительный.
         }
 
-        return total;
+        return (total, files);
     }
 }
