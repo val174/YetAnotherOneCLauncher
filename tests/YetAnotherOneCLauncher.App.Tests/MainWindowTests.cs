@@ -97,6 +97,32 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Connection_row_has_copy_and_open_folder_buttons()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        fixture.ViewModel.IsTreeMode = false;
+        fixture.ViewModel.SelectedListItem = fixture.ViewModel.ListItems.Single(i => i.Base.Name == "Копия бухгалтерии");
+        Render();
+
+        var copy = window.FindControl<Button>("CopyConnectionButton")!;
+        var open = window.FindControl<Button>("OpenBaseFolderButton")!;
+        Assert.True(copy.IsEffectivelyVisible);
+        Assert.True(open.IsEffectivelyVisible);
+        Snapshot(window, "10-details-file-base");
+
+        copy.Command!.Execute(copy.CommandParameter);
+        await WaitAsync(() => fixture.Shell.ClipboardText is not null);
+        Assert.Equal("""File="C:\Bases\BuhCopy";""", fixture.Shell.ClipboardText);
+
+        // У серверной базы каталога нет — кнопка скрыта.
+        fixture.ViewModel.SelectedListItem = fixture.ViewModel.ListItems.Single(i => i.Base.Name == "Бухгалтерия предприятия");
+        Render();
+        Assert.False(open.IsEffectivelyVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Ctrl_q_clears_search_from_list()
     {
         using var fixture = new ViewModelFixture();
