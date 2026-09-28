@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -70,6 +71,28 @@ public class MainWindowTests
         Render();
         Assert.True(fixture.ViewModel.ShowTree);
         Snapshot(window, "03-favorites-and-recent");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Status_bar_button_toggles_details_panel()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var toggle = window.FindControl<ToggleButton>("DetailsToggle")!;
+        Assert.True(toggle.IsChecked);
+        Snapshot(window, "08-details-on");
+
+        toggle.IsChecked = false;
+        Render();
+
+        Assert.False(fixture.ViewModel.ShowDetails);
+        Assert.False(fixture.Settings.Settings.Ui.ShowDetails); // запоминается
+        Snapshot(window, "09-details-off");
+
+        toggle.IsChecked = true;
+        Render();
+        Assert.True(fixture.ViewModel.ShowDetails);
         window.Close();
     }
 

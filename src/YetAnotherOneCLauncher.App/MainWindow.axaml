@@ -138,6 +138,16 @@
               <Run Text="Предупреждения: " /><Run Text="{Binding WarningCount}" />
             </TextBlock>
           </ToggleButton>
+          <!-- Значок «окно с правой панелью»: панель закрашена, когда подробности показаны. -->
+          <ToggleButton x:Name="DetailsToggle" IsChecked="{Binding ShowDetails}" Padding="6,3" VerticalAlignment="Stretch"
+                        ToolTip.Tip="Показать или скрыть панель подробностей">
+            <Panel Width="16" Height="14">
+              <Path Data="M 10,1.5 L 14.5,1.5 L 14.5,12.5 L 10,12.5 Z" Fill="{Binding $parent[ToggleButton].Foreground}"
+                    IsVisible="{Binding ShowDetails}" />
+              <Path Data="M 1.5,1.5 L 14.5,1.5 L 14.5,12.5 L 1.5,12.5 Z M 10,1.5 L 10,12.5"
+                    Stroke="{Binding $parent[ToggleButton].Foreground}" StrokeThickness="1.3" />
+            </Panel>
+          </ToggleButton>
         </StackPanel>
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
       </DockPanel>
