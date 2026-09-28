@@ -112,7 +112,7 @@
                PlaceholderText="Поиск: имя, сервер, путь — можно в любой раскладке (Ctrl+F)">
         <TextBox.InnerRightContent>
           <Button Content="✕" Command="{Binding ClearSearchCommand}" IsVisible="{Binding HasSearch}"
-                  Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc)" />
+                  Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc, Ctrl+Q)" />
         </TextBox.InnerRightContent>
       </TextBox>
     </DockPanel>

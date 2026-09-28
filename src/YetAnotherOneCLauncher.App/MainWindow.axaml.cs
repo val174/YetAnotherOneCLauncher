@@ -92,6 +92,12 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
+            case Key.Q when e.KeyModifiers == KeyModifiers.Control:
+                vm.SearchText = string.Empty;
+                FocusSearch(selectAll: false);
+                e.Handled = true;
+                break;
+
             case Key.Escape when vm.HasSearch:
                 vm.SearchText = string.Empty;
                 FocusSearch(selectAll: false);

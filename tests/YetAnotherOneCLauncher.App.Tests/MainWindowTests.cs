@@ -74,6 +74,25 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Ctrl_q_clears_search_from_list()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        window.KeyTextInput("бух");
+        Render();
+        window.FindControl<ListBox>("CatalogList")!.ContainerFromIndex(0)!.Focus();
+        Render();
+
+        window.KeyPress(Key.Q, RawInputModifiers.Control, PhysicalKey.Q, "q");
+        Render();
+
+        Assert.Equal(string.Empty, fixture.ViewModel.SearchText);
+        Assert.True(fixture.ViewModel.ShowTree);
+        Assert.True(window.FindControl<TextBox>("SearchBox")!.IsFocused);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Dark_theme_list_mode_snapshot()
     {
         using var fixture = new ViewModelFixture();
