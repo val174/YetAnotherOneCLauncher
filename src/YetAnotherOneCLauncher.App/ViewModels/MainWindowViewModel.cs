@@ -315,6 +315,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _catalog = catalog;
         _bases.Clear();
         _bases.AddRange(catalog.InfoBases.Select(b => new InfoBaseViewModel(b, _settings.UserData)));
+        UpdatePlatformColumn(_bases);
 
         var warnings = catalog.Warnings.Select(w => w.ToString())
             .Concat(_platformWarnings)
@@ -463,6 +464,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         _settings.UserData.SetPlatformVersionOverride(target.InfoBase, value.Version);
         target.Refresh();
+        UpdatePlatformColumn([target]);
         _settings.RequestSave();
     }
 
@@ -509,6 +511,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.Settings.Launch.UseThickClientForFileBasesByDefault = value;
+        UpdatePlatformColumn(_bases);
         _settings.RequestSave();
     }
 

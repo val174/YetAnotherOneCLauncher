@@ -24,6 +24,35 @@
       <Setter Property="Width" Value="340" />
       <Setter Property="Margin" Value="0" />
     </Style>
+    <!-- Колонки списка баз. -->
+    <Style Selector="Grid#ColumnHeaders">
+      <Setter Property="Margin" Value="12,0,12,4" />
+    </Style>
+    <!-- У строк дерева отступ справа меньше, чем у строк списка. -->
+    <Style Selector="Grid#ColumnHeaders.tree">
+      <Setter Property="Margin" Value="12,0,1,4" />
+    </Style>
+    <Style Selector="TextBlock.cell">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+      <Setter Property="Margin" Value="8,0,0,0" />
+    </Style>
+    <Style Selector="TextBlock.platform">
+      <Setter Property="Width" Value="110" />
+    </Style>
+    <Style Selector="TextBlock.mode">
+      <Setter Property="Width" Value="90" />
+    </Style>
+    <Style Selector="TextBlock.date">
+      <Setter Property="Width" Value="110" />
+    </Style>
+    <Style Selector="TextBlock.missing">
+      <Setter Property="Foreground" Value="#C57C00" />
+    </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="12" />
+    </Style>
     <Style Selector="TextBlock.secondary">
       <Setter Property="Opacity" Value="0.6" />
       <Setter Property="FontSize" Value="12" />
@@ -201,7 +230,17 @@
     </Border>
 
     <!-- Основное: дерево или список. Контекстное меню действует на выделенную базу. -->
-    <Panel Margin="8,4,8,8">
+    <DockPanel Margin="8,4,8,8">
+    <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
+         поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
+    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
+      <TextBlock Classes="columnHeader" Text="Наименование" />
+      <TextBlock Grid.Column="1" Classes="columnHeader cell platform" Text="Платформа" />
+      <TextBlock Grid.Column="2" Classes="columnHeader cell mode" Text="Режим запуска" />
+      <TextBlock Grid.Column="3" Classes="columnHeader cell date" Text="Последний запуск" ToolTip.Tip="Дата последнего запуска из лаунчера" />
+    </Grid>
+
+    <Panel>
       <Panel.ContextMenu>
         <ContextMenu>
           <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="Enter" />
@@ -230,6 +269,7 @@
       </Panel.ContextMenu>
 
       <TreeView x:Name="CatalogTree"
+                ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                 DragDrop.AllowDrop="True"
                 ItemsSource="{Binding TreeItems}"
                 SelectedItem="{Binding SelectedTreeItem}"
@@ -237,6 +277,10 @@
         <TreeView.Styles>
           <Style Selector="TreeViewItem" x:DataType="vm:TreeNodeViewModel">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+          </Style>
+          <!-- Строка на всю ширину, чтобы колонки прижались к правому краю. -->
+          <Style Selector="TreeViewItem /template/ ContentPresenter#PART_HeaderPresenter">
+            <Setter Property="HorizontalAlignment" Value="Stretch" />
           </Style>
         </TreeView.Styles>
         <TreeView.DataTemplates>
@@ -247,7 +291,9 @@
             </StackPanel>
           </TreeDataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
-            <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+              <DockPanel>
+                <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="0,0,8,0">
               <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
               <TextBlock Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}" Foreground="#C57C00" />
               <TextBlock Text="{Binding Name}" />
@@ -255,20 +301,28 @@
                          ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
               <TextBlock Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
                          ToolTip.Tip="{Binding Base.SourceText}" />
-              <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" />
-            </StackPanel>
+                </StackPanel>
+                <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              </DockPanel>
+              <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
+                         Classes.missing="{Binding Base.IsPlatformMissing}" />
+              <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
+              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+            </Grid>
           </DataTemplate>
         </TreeView.DataTemplates>
       </TreeView>
 
       <ListBox x:Name="CatalogList"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                ItemsSource="{Binding ListItems}"
                SelectedItem="{Binding SelectedListItem}"
                IsVisible="{Binding ShowList}"
                Background="Transparent">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
-            <StackPanel Spacing="2" Background="Transparent">
+            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+            <StackPanel Spacing="2">
               <StackPanel Orientation="Horizontal" Spacing="6">
                 <TextBlock Text="★" IsVisible="{Binding Base.IsFavorite}" />
                 <c:HighlightTextBlock Segments="{Binding NameSegments}" />
@@ -276,6 +330,11 @@
               </StackPanel>
               <TextBlock Classes="secondary" Text="{Binding Base.Subtitle}" TextTrimming="CharacterEllipsis" />
             </StackPanel>
+              <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
+                         Classes.missing="{Binding Base.IsPlatformMissing}" />
+              <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
+              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
@@ -283,5 +342,6 @@
       <TextBlock Text="Ничего не найдено" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
                  IsVisible="{Binding ShowNothingFound}" IsHitTestVisible="False" />
     </Panel>
+    </DockPanel>
   </DockPanel>
 </Window>

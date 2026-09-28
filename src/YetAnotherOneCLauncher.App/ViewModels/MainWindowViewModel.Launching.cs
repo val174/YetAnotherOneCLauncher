@@ -299,6 +299,47 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    /// <summary>
+    /// Колонка «Платформа»: какую версию выберет запуск в режиме 1С: Предприятие — тот же планировщик, что и при запуске.
+    /// </summary>
+    private void UpdatePlatformColumn(IEnumerable<InfoBaseViewModel> bases)
+    {
+        var options = _settings.Settings.Launch.ToLaunchOptions();
+        foreach (var target in bases)
+        {
+            var request = new LaunchRequest(target.InfoBase, LaunchMode.Enterprise) { PlatformVersionOverride = target.PlatformVersionOverride };
+            switch (LaunchPlanner.Plan(request, _installations, _starterDefaultVersion, options))
+            {
+                case LaunchPlan.Run run:
+                    target.SetPlatform(run.Command.Platform.Version.ToString(), PlatformSource(target, run.Command), missing: false);
+                    break;
+
+                case LaunchPlan.ConfirmFallback fallback:
+                    var mask = target.PlatformVersionOverride ?? target.InfoBase.Version ?? _starterDefaultVersion;
+                    target.SetPlatform($"{mask} — нет", fallback.Question, missing: true);
+                    break;
+
+                case LaunchPlan.OpenInBrowser:
+                    target.SetPlatform("браузер", "Веб-клиент открывается в браузере", missing: false);
+                    break;
+
+                case LaunchPlan.Failed failed:
+                    target.SetPlatform("—", failed.Message, missing: true);
+                    break;
+            }
+        }
+    }
+
+    private string PlatformSource(InfoBaseViewModel target, LaunchCommand command)
+    {
+        var client = Path.GetFileNameWithoutExtension(command.ExecutablePath);
+        var source = target.PlatformVersionOverride is { } chosen ? $"выбрана в лаунчере ({chosen})"
+            : target.InfoBase.Version is { } version ? $"по версии в списке баз ({version})"
+            : _starterDefaultVersion is { } starter ? $"по версии по умолчанию из 1cestart.cfg ({starter})"
+            : "самая новая из установленных";
+        return $"{command.Platform} {client}: {source}";
+    }
+
     private static string? NullIfBlank(string? value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Хранилище паролей")]

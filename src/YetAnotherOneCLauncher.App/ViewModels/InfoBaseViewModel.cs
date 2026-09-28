@@ -37,6 +37,37 @@ public sealed partial class InfoBaseViewModel : ObservableObject
         _ => "Не распознан",
     };
 
+    /// <summary>Колонка «Режим запуска»: клиент из ключа <c>App</c>, коротко.</summary>
+    public string ClientShortText => InfoBase.App switch
+    {
+        ClientApp.ThinClient => "Тонкий",
+        ClientApp.ThickClient => "Толстый",
+        ClientApp.WebClient => "Веб-клиент",
+        _ => "Авто",
+    };
+
+    /// <summary>Колонка «Платформа»: версия, на которой база запустится в режиме 1С: Предприятие.</summary>
+    [ObservableProperty]
+    public partial string PlatformText { get; private set; } = string.Empty;
+
+    [ObservableProperty]
+    public partial string PlatformToolTip { get; private set; } = string.Empty;
+
+    /// <summary>Нужной версии нет среди установленных.</summary>
+    [ObservableProperty]
+    public partial bool IsPlatformMissing { get; private set; }
+
+    /// <summary>Колонка «Дата последнего запуска».</summary>
+    [ObservableProperty]
+    public partial string LastLaunchShortText { get; private set; } = string.Empty;
+
+    public void SetPlatform(string text, string toolTip, bool missing)
+    {
+        PlatformText = text;
+        PlatformToolTip = toolTip;
+        IsPlatformMissing = missing;
+    }
+
     public string ClientText => InfoBase.App switch
     {
         ClientApp.ThinClient => "Тонкий клиент",
@@ -149,6 +180,9 @@ public sealed partial class InfoBaseViewModel : ObservableObject
             : "выбирается при входе";
 
         var last = _userData.LastLaunch(InfoBase);
+        LastLaunchShortText = last is null
+            ? string.Empty
+            : last.LaunchedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.CurrentCulture);
         LastLaunchText = last is null
             ? "не запускалась из лаунчера"
             : string.Create(
