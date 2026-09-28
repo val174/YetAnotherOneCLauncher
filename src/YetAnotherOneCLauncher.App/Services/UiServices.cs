@@ -14,6 +14,9 @@ public interface IDialogService
 {
     Task<bool> ConfirmAsync(string title, string question, string acceptText);
 
+    /// <summary>Вопрос с флажком (например, «Удалить временные файлы»); возвращает ответ и состояние флажка.</summary>
+    Task<(bool Accepted, bool Option)> ConfirmWithOptionAsync(string title, string question, string acceptText, string optionText, bool optionChecked);
+
     Task ShowMessageAsync(string title, string text);
 
     /// <summary>Однострочный ввод (например, имя папки); <c>null</c> — отмена.</summary>
@@ -81,6 +84,11 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> ConfirmAsync(string title, string question, string acceptText) =>
         Owner is { } owner ? MessageDialog.AskAsync(owner, title, question, acceptText) : Task.FromResult(false);
+
+    public Task<(bool Accepted, bool Option)> ConfirmWithOptionAsync(string title, string question, string acceptText, string optionText, bool optionChecked) =>
+        Owner is { } owner
+            ? MessageDialog.AskWithOptionAsync(owner, title, question, acceptText, optionText, optionChecked)
+            : Task.FromResult((false, optionChecked));
 
     public Task ShowMessageAsync(string title, string text) =>
         Owner is { } owner ? MessageDialog.ShowAsync(owner, title, text) : Task.CompletedTask;

@@ -165,7 +165,10 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>Подтверждение, очистка, пересчёт и итог. <c>null</c> — пользователь отказался.</summary>
-    private async Task<CacheCleanResult?> CleanCacheAsync(IReadOnlyList<CacheDirectory> directories, string what)
+    /// <param name="directories">Что удалить.</param>
+    /// <param name="what">Что это — для вопроса.</param>
+    /// <param name="confirm"><c>false</c> — согласие уже получено (флажок при удалении базы из списка).</param>
+    private async Task<CacheCleanResult?> CleanCacheAsync(IReadOnlyList<CacheDirectory> directories, string what, bool confirm = true)
     {
         if (_cacheUsage is null || directories.Count == 0)
         {
@@ -190,7 +193,7 @@ public sealed partial class MainWindowViewModel
                 .Append(". Кэш открытых баз будет пропущен.");
         }
 
-        if (!await _dialogs.ConfirmAsync(CacheTitle, question.ToString(), permanently ? "Удалить" : "В корзину"))
+        if (confirm && !await _dialogs.ConfirmAsync(CacheTitle, question.ToString(), permanently ? "Удалить" : "В корзину"))
         {
             return null;
         }

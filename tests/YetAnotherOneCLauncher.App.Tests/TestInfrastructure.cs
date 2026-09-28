@@ -41,6 +41,18 @@ internal sealed class FakeDialogs : IDialogService
         return Task.FromResult(ConfirmAnswer);
     }
 
+    /// <summary>Флажок в вопросе: <c>null</c> — оставить, как предложено.</summary>
+    public bool? OptionAnswer { get; set; }
+
+    public List<(string Text, bool Default)> Options { get; } = [];
+
+    public Task<(bool Accepted, bool Option)> ConfirmWithOptionAsync(string title, string question, string acceptText, string optionText, bool optionChecked)
+    {
+        Questions.Add(question);
+        Options.Add((optionText, optionChecked));
+        return Task.FromResult((ConfirmAnswer, OptionAnswer ?? optionChecked));
+    }
+
     public Task ShowMessageAsync(string title, string text)
     {
         Messages.Add(text);

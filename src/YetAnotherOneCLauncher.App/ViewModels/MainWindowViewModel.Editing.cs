@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
 using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.Core.Cache;
 using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Parsing;
@@ -146,12 +147,35 @@ public sealed partial class MainWindowViewModel
                 return;
             }
 
-            if (await _dialogs.ConfirmAsync(ListTitle, $"Удалить «{infoBase.Name}» из списка баз?\nСама база и её файлы не удаляются.", "Удалить"))
+            // Кэш — до удаления из списка: после него база пропадёт из каталога.
+            await CacheScanTask;
+            var cache = _cacheReport.For(infoBase.InfoBase)?.In(local: true, roaming: _settings.Settings.Cache.IncludeRoaming).ToList() ?? [];
+            var cacheSize = cache.Count > 0 ? $" ({ByteSize.Format(cache.Sum(d => d.SizeBytes))})" : string.Empty;
+            var (accepted, deleteCache) = await _dialogs.ConfirmWithOptionAsync(
+                ListTitle,
+                $"Удалить «{infoBase.Name}» из списка баз?\nСама база (её данные) не удаляется.",
+                "Удалить",
+                $"Удалить временные файлы информационной базы{cacheSize}",
+                optionChecked: true);
+            if (!accepted)
             {
-                await EditListAsync(
-                    document => PersonalListEditor.DeleteBase(document, EntryRef.Of(infoBase.InfoBase)),
-                    $"«{infoBase.Name}» удалена из списка.",
-                    () => null);
+                return;
+            }
+
+            var removed = await EditListAsync(
+                document => PersonalListEditor.DeleteBase(document, EntryRef.Of(infoBase.InfoBase)),
+                $"«{infoBase.Name}» удалена из списка.",
+                () => null);
+
+            // Временные файлы — тем же способом, что «Очистить кэш» (корзина или насовсем, открытая база пропускается),
+            // но без второго вопроса: согласие дано флажком.
+            if (removed && deleteCache && cache.Count > 0 && CanManageCache)
+            {
+                var listStatus = StatusText;
+                if (await CleanCacheAsync(cache, $"временные файлы «{infoBase.Name}»", confirm: false) is not null)
+                {
+                    StatusText = listStatus + " " + StatusText;
+                }
             }
 
             return;

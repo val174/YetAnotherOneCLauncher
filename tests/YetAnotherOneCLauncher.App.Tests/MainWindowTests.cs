@@ -4,6 +4,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
+using Avalonia.LogicalTree;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using YetAnotherOneCLauncher.Core.Settings;
@@ -264,7 +265,8 @@ public class MainWindowTests
         Assert.Equal("AddButton", toolbar[0].Name);
         Assert.Equal(
             new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton" },
-            toolbar.Skip(1).Take(3).Select(b => b.Name));
+            toolbar.Skip(2).Take(3).Select(b => b.Name));
+        Assert.Equal("DeleteButton", toolbar[1].Name);
         Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;
@@ -288,6 +290,36 @@ public class MainWindowTests
         }
 
         Assert.Contains("светлая", vm.ThemeToolTip, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Delete_button_uses_same_command_and_dialog_has_checked_flag()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var delete = window.FindControl<Button>("DeleteButton")!;
+        Assert.Same(fixture.ViewModel.DeleteCommand, delete.Command);
+
+        var dialog = MessageDialog.AskWithOptionAsync(
+            window,
+            "Список баз",
+            "Удалить «Копия бухгалтерии» из списка баз?" + Environment.NewLine + "Сама база (её данные) не удаляется.",
+            "Удалить",
+            "Удалить временные файлы информационной базы (4 КБ)",
+            optionChecked: true);
+        Render();
+        var dialogWindow = window.OwnedWindows.OfType<MessageDialog>().Single();
+        var option = dialogWindow.GetLogicalDescendants().OfType<CheckBox>().Single();
+        Assert.True(option.IsChecked);
+        Snapshot(dialogWindow, "16-delete-dialog");
+
+        // Снять флажок и нажать «Удалить» (кнопка закрывает окно с true).
+        option.IsChecked = false;
+        dialogWindow.Close(true);
+        var (accepted, deleteCache) = await dialog;
+        Assert.True(accepted);
+        Assert.False(deleteCache);
         window.Close();
     }
 
