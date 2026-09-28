@@ -255,6 +255,43 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Toolbar_order_and_theme_button_cycles_themes()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
+        Assert.Equal("AddButton", toolbar[0].Name);
+        Assert.Equal(
+            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton" },
+            toolbar.Skip(1).Take(3).Select(b => b.Name));
+        Assert.Equal("ThemeButton", toolbar[^2].Name);
+
+        var theme = window.FindControl<Button>("ThemeButton")!;
+        var expected = new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
+        Assert.True(vm.IsSystemTheme);
+        Snapshot(window, "15-theme-system");
+        foreach (var mode in expected)
+        {
+            theme.Command!.Execute(null);
+            Avalonia.Application.Current!.RequestedThemeVariant = mode switch
+            {
+                ThemeMode.Light => Avalonia.Styling.ThemeVariant.Light,
+                ThemeMode.Dark => Avalonia.Styling.ThemeVariant.Dark,
+                _ => Avalonia.Styling.ThemeVariant.Light,
+            };
+            Render();
+            Assert.Equal(mode, fixture.Shell.AppliedTheme);
+            Assert.Equal(mode, fixture.Settings.Settings.Ui.Theme);
+            Assert.Equal((int)mode, vm.ThemeIndex); // тот же выбор, что в настройках
+            Snapshot(window, "15-theme-" + mode.ToString().ToLowerInvariant());
+        }
+
+        Assert.Contains("светлая", vm.ThemeToolTip, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Ctrl_q_clears_search_from_list()
     {
         using var fixture = new ViewModelFixture();

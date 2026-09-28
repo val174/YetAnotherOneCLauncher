@@ -240,7 +240,25 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial int PlatformCount { get; private set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsSystemTheme), nameof(IsLightTheme), nameof(IsDarkTheme), nameof(ThemeToolTip))]
     public partial int ThemeIndex { get; set; }
+
+    public bool IsSystemTheme => ThemeIndex == (int)ThemeMode.System;
+
+    public bool IsLightTheme => ThemeIndex == (int)ThemeMode.Light;
+
+    public bool IsDarkTheme => ThemeIndex == (int)ThemeMode.Dark;
+
+    public string ThemeToolTip => (ThemeMode)ThemeIndex switch
+    {
+        ThemeMode.Light => "Тема: светлая. Нажмите — тёмная",
+        ThemeMode.Dark => "Тема: тёмная. Нажмите — как в системе",
+        _ => "Тема: как в системе. Нажмите — светлая",
+    };
+
+    /// <summary>Кнопка темы: как в системе → светлая → тёмная → как в системе.</summary>
+    [RelayCommand]
+    private void CycleTheme() => ThemeIndex = (ThemeIndex + 1) % ThemeNames.Count;
 
     [ObservableProperty]
     public partial int AfterLaunchIndex { get; set; }
