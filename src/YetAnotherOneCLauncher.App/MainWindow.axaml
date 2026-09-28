@@ -17,6 +17,13 @@
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
+    <Style Selector="Panel.toolbar">
+      <Setter Property="Margin" Value="6,0,0,0" />
+    </Style>
+    <Style Selector="Panel.toolbar.withDetails">
+      <Setter Property="Width" Value="340" />
+      <Setter Property="Margin" Value="0" />
+    </Style>
     <Style Selector="TextBlock.secondary">
       <Setter Property="Opacity" Value="0.6" />
       <Setter Property="FontSize" Value="12" />
@@ -26,7 +33,9 @@
   <DockPanel>
     <!-- Верх: поиск, вид, обновление, настройки. -->
     <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="6,0,0,0">
+      <!-- Кнопки занимают ширину панели подробностей: поле поиска заканчивается над краем списка баз. -->
+      <Panel DockPanel.Dock="Right" Classes="toolbar" Classes.withDetails="{Binding ShowDetails}">
+      <StackPanel Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
         <ToggleButton IsChecked="{Binding IsTreeMode}"
                       ToolTip.Tip="Дерево папок или плоский список">
           <Panel>
@@ -67,6 +76,7 @@
           </Button.Flyout>
         </Button>
       </StackPanel>
+      </Panel>
 
       <TextBox x:Name="SearchBox"
                Text="{Binding SearchText}"
@@ -124,8 +134,9 @@
       <Panel>
         <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
-        <ScrollViewer IsVisible="{Binding HasSelection}">
-          <StackPanel Spacing="10">
+        <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+          <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
+          <StackPanel Spacing="10" Margin="0,0,12,0">
             <DockPanel>
               <Button DockPanel.Dock="Right" Command="{Binding ToggleFavoriteCommand}" Padding="8,4"
                       VerticalAlignment="Top" ToolTip.Tip="Избранное (Ctrl+D)">
@@ -138,7 +149,7 @@
             </DockPanel>
 
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button Classes="accent" Content="Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="Enter или двойной щелчок" />
+              <Button Classes="accent" Content="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="Enter или двойной щелчок" />
               <Button Content="Конфигуратор" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="Ctrl+Enter" />
               <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (Ctrl+Shift+Enter)" />
             </StackPanel>
