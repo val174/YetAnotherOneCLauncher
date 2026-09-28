@@ -240,6 +240,27 @@ public class LaunchParametersTests
     }
 
     [Fact]
+    public void Nothing_is_preselected_and_parameters_can_be_cleared()
+    {
+        var form = new LaunchParametersViewModel(LaunchParametersKind.InfoBase, "База", ParameterLibrary.BuiltIn, [], new FakeFiles())
+        {
+            Parameters = "/UC 42",
+        };
+
+        Assert.Null(form.SelectedTemplate);
+        Assert.Equal(string.Empty, form.TemplateDescription);
+        Assert.False(form.InsertTemplateCommand.CanExecute(null));
+        Assert.True(form.HasParameters);
+
+        form.ClearParametersCommand.Execute(null);
+        Assert.Equal(string.Empty, form.Parameters);
+        Assert.False(form.HasParameters);
+
+        form.SelectedTemplate = ParameterLibrary.BuiltIn[0];
+        Assert.True(form.InsertTemplateCommand.CanExecute(null));
+    }
+
+    [Fact]
     public void Own_templates_are_parsed_from_lines()
     {
         var templates = MainWindowViewModel.ParseTemplates("Тест = /N Тест /DisableStartupMessages\r\n\r\n/ClearCache\nПустой =");

@@ -24,7 +24,12 @@
     <TextBlock Text="Параметры командной строки" Margin="0,4,0,0" />
     <TextBox x:Name="ParametersBox" Text="{Binding Parameters}" TextWrapping="Wrap" AcceptsReturn="False"
              FontFamily="Consolas, DejaVu Sans Mono, monospace"
-             PlaceholderText="например, /DisableStartupMessages /UC 123" />
+             PlaceholderText="например, /DisableStartupMessages /UC 123">
+      <TextBox.InnerRightContent>
+        <Button x:Name="ClearParametersButton" Content="✕" Command="{Binding ClearParametersCommand}" IsVisible="{Binding HasParameters}"
+                Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить параметры" />
+      </TextBox.InnerRightContent>
+    </TextBox>
     <TextBlock Classes="secondary" Text="{Binding ParametersHint}" />
 
     <DockPanel Margin="0,4,0,0">
@@ -34,9 +39,11 @@
               IsVisible="{Binding TemplateNeedsFile}" />
       <TextBox DockPanel.Dock="Right" Width="150" Margin="6,0,0,0" Text="{Binding TemplateValue}"
                PlaceholderText="значение" IsVisible="{Binding TemplateNeedsValue}" />
-      <ComboBox ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" HorizontalAlignment="Stretch" />
+      <ComboBox x:Name="TemplatesBox" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}" HorizontalAlignment="Stretch"
+                PlaceholderText="Выберите параметр для добавления…" />
     </DockPanel>
-    <TextBlock Classes="secondary" Text="{Binding TemplateDescription}" />
+    <TextBlock Classes="secondary" Text="{Binding TemplateDescription}"
+               IsVisible="{Binding TemplateDescription, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
 
     <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto" Margin="0,6,0,0" IsVisible="{Binding ShowCredentials}">
       <TextBlock Text="Пользователь 1С" Margin="0,0,0,6" />

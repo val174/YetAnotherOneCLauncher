@@ -53,7 +53,6 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
             LaunchParametersKind.OneOff => $"Запуск «{subject}» с параметрами",
             _ => $"Параметры запуска «{subject}»",
         };
-        SelectedTemplate = templates.Count > 0 ? templates[0] : null;
     }
 
     public LaunchParametersKind Kind { get; }
@@ -85,10 +84,14 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
     public IReadOnlyList<string> ClientNames { get; } = ["Как указано у базы", "Тонкий клиент", "Толстый клиент", "Веб-клиент"];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasParameters))]
     public partial string Parameters { get; set; } = string.Empty;
+
+    public bool HasParameters => !string.IsNullOrEmpty(Parameters);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TemplateNeedsValue), nameof(TemplateNeedsFile), nameof(TemplateDescription))]
+    [NotifyCanExecuteChangedFor(nameof(InsertTemplateCommand))]
     public partial ParameterTemplate? SelectedTemplate { get; set; }
 
     public bool TemplateNeedsValue => SelectedTemplate?.Value is ParameterValueKind.Text or ParameterValueKind.File;
@@ -163,8 +166,12 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
         return errors.Count == 0;
     }
 
-    /// <summary>Вставить выбранный шаблон в конец параметров.</summary>
+    /// <summary>Очистить поле параметров (кнопка ✕ в поле).</summary>
     [RelayCommand]
+    private void ClearParameters() => Parameters = string.Empty;
+
+    /// <summary>Вставить выбранный шаблон в конец параметров. Шаблон выбирает пользователь — по умолчанию ничего не выбрано.</summary>
+    [RelayCommand(CanExecute = nameof(HasSelectedTemplate))]
     private void InsertTemplate()
     {
         if (SelectedTemplate is not { } template)
@@ -182,6 +189,8 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
         Parameters = ParameterLibrary.Append(Parameters, template.Format(TemplateValue));
         TemplateValue = string.Empty;
     }
+
+    private bool HasSelectedTemplate() => SelectedTemplate is not null;
 
     [RelayCommand]
     private async Task BrowseTemplateFileAsync()

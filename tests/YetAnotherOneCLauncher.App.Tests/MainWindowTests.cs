@@ -237,7 +237,6 @@ public class MainWindowTests
             HasSavedPassword = true,
             SavePassword = true,
         };
-        form.SelectedTemplate = form.Templates.Single(t => t.Text == "/Execute");
         var window = new LaunchParametersWindow(form);
         window.Show();
         Render();
