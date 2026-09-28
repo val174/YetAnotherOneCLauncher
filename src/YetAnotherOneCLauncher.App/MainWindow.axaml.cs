@@ -92,7 +92,8 @@ public partial class MainWindow : Window
                 e.Handled = true;
                 break;
 
-            case Key.Q when e.KeyModifiers == KeyModifiers.Control:
+            // Физическая клавиша — чтобы Ctrl+Q работал и в русской раскладке (Ctrl+Й).
+            case var _ when e.KeyModifiers == KeyModifiers.Control && (e.Key == Key.Q || e.PhysicalKey == PhysicalKey.Q):
                 vm.SearchText = string.Empty;
                 FocusSearch(selectAll: false);
                 e.Handled = true;

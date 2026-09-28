@@ -89,6 +89,13 @@ public class MainWindowTests
         Assert.Equal(string.Empty, fixture.ViewModel.SearchText);
         Assert.True(fixture.ViewModel.ShowTree);
         Assert.True(window.FindControl<TextBox>("SearchBox")!.IsFocused);
+
+        // Русская раскладка: та же физическая клавиша, символ «й».
+        window.KeyTextInput("зуп");
+        Render();
+        window.KeyPress(Key.None, RawInputModifiers.Control, PhysicalKey.Q, "й");
+        Render();
+        Assert.Equal(string.Empty, fixture.ViewModel.SearchText);
         window.Close();
     }
 
