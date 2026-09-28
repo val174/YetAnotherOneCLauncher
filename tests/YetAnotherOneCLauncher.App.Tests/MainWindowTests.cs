@@ -154,7 +154,7 @@ public class MainWindowTests
         fixture.ViewModel.ShowDetails = false;
         Render();
         Assert.Equal(window.Bounds.Width - 8, RightEdge(tree), tolerance: 1.5);
-        Assert.True(double.IsNaN(window.FindControl<Panel>("ToolbarPanel")!.Width));
+        Assert.Equal(0, window.FindControl<Panel>("ToolbarPanel")!.MinWidth);
         window.Close();
     }
 
@@ -216,6 +216,41 @@ public class MainWindowTests
         Assert.True(window.FindControl<ComboBox>("PlatformBox")!.IsEffectivelyVisible);
         Assert.Equal(4, window.FindControl<ComboBox>("PlatformBox")!.ItemCount);
         Snapshot(window, "13-one-off-platform");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Collapse_and_expand_all_buttons_work_only_in_tree()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        vm.ToggleFavoriteCommand.Execute(fixture.Base("Бухгалтерия предприятия")); // папка «Избранное»
+        Render();
+        var collapse = window.FindControl<Button>("CollapseAllButton")!;
+        var expand = window.FindControl<Button>("ExpandAllButton")!;
+        IEnumerable<ViewModels.FolderNodeViewModel> Folders() => vm.TreeItems.OfType<ViewModels.FolderNodeViewModel>();
+        Assert.True(collapse.IsEffectivelyVisible);
+        Assert.True(expand.IsEffectivelyVisible);
+
+        collapse.Command!.Execute(null);
+        Render();
+        Assert.All(Folders(), f => Assert.False(f.IsExpanded));
+        Assert.Contains("/Рабочие", fixture.Settings.Settings.Ui.CollapsedFolders);
+        Snapshot(window, "14-collapsed");
+
+        expand.Command!.Execute(null);
+        Render();
+        Assert.All(Folders(), f => Assert.True(f.IsExpanded));
+        Assert.Empty(fixture.Settings.Settings.Ui.CollapsedFolders);
+
+        vm.SearchText = "бух"; // результаты поиска — списком
+        Render();
+        Assert.False(collapse.IsEffectivelyVisible);
+        vm.SearchText = string.Empty;
+        vm.IsTreeMode = false;
+        Render();
+        Assert.False(expand.IsEffectivelyVisible);
         window.Close();
     }
 

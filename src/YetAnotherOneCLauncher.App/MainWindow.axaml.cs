@@ -116,7 +116,8 @@ public partial class MainWindow : Window
     private void AlignToolbar(double detailsWidth)
     {
         var withDetails = ViewModel?.ShowDetails == true;
-        ToolbarPanel.Width = withDetails ? detailsWidth + DetailsSplitter.Width : double.NaN;
+        // Минимум, а не точная ширина: если кнопкам не хватает места над узкой панелью, они не наезжают на поиск.
+        ToolbarPanel.MinWidth = withDetails ? detailsWidth + DetailsSplitter.Width : 0;
         ToolbarPanel.Margin = withDetails ? default : new Thickness(6, 0, 0, 0);
     }
 

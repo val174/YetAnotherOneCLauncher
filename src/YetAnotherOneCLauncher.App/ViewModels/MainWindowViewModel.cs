@@ -411,6 +411,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ToggleViewMode() => IsTreeMode = !IsTreeMode;
 
+    /// <summary>Развернуть все папки дерева, включая «Избранное» и «Недавние». Состояние запоминается.</summary>
+    [RelayCommand]
+    private void ExpandAll() => SetExpanded(TreeItems, expanded: true);
+
+    /// <summary>Свернуть все папки дерева.</summary>
+    [RelayCommand]
+    private void CollapseAll() => SetExpanded(TreeItems, expanded: false);
+
+    private static void SetExpanded(IEnumerable<TreeNodeViewModel> nodes, bool expanded)
+    {
+        foreach (var folder in nodes.OfType<FolderNodeViewModel>())
+        {
+            folder.IsExpanded = expanded;
+            SetExpanded(folder.Children, expanded);
+        }
+    }
+
     partial void OnSearchTextChanged(string value)
     {
         var key = CurrentSelectionKey();
