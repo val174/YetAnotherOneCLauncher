@@ -121,8 +121,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<BaseListItemViewModel> ListItems { get; } = [];
 
-    public ObservableCollection<PlatformChoice> PlatformChoices { get; } = [AsInListChoice];
-
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
     public IReadOnlyList<string> AfterLaunchNames { get; } = ["Ничего не делать", "Свернуть окно", "Закрыть лаунчер"];
@@ -211,9 +209,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
-
-    [ObservableProperty]
-    public partial PlatformChoice? SelectedPlatformChoice { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand), nameof(LaunchWithParametersCommand), nameof(ClearCacheAndLaunchCommand))]
@@ -305,13 +300,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _installations = platforms.Installations;
         _platformWarnings = platforms.Warnings;
         _starterDefaultVersion = catalog.StarterConfig.DefaultVersion;
-
-        PlatformChoices.Clear();
-        PlatformChoices.Add(AsInListChoice);
-        foreach (var version in _installations.Select(i => i.Version).Distinct())
-        {
-            PlatformChoices.Add(new PlatformChoice(version.ToString(), version.ToString()));
-        }
 
         PlatformCount = _installations.Count;
         PlatformsText = _installations.Count == 0
@@ -461,33 +449,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    partial void OnSelectedInfoBaseChanged(InfoBaseViewModel? value)
+    /// <summary>Варианты платформы для «Запустить с параметрами»: как в списке баз и найденные версии.</summary>
+    internal List<PlatformChoice> PlatformChoicesFor(InfoBaseViewModel target)
     {
-        var version = value?.PlatformVersionOverride;
-        var choice = version is null ? AsInListChoice : PlatformChoices.FirstOrDefault(c => c.Version == version);
-        if (choice is null)
+        var choices = new List<PlatformChoice> { AsInListChoice };
+        choices.AddRange(_installations.Select(i => i.Version).Distinct().OrderDescending()
+            .Select(v => new PlatformChoice(v.ToString(), v.ToString())));
+        if (target.PlatformVersionOverride is { } saved && choices.TrueForAll(c => c.Version != saved))
         {
-            // Выбранной версии больше нет среди установленных — показываем её, чтобы было видно, что выбрано.
-            choice = new PlatformChoice($"{version} (не установлена)", version);
-            PlatformChoices.Add(choice);
+            // Сохранённой версии больше нет среди установленных — показываем её, чтобы было видно, что выбрано.
+            choices.Add(new PlatformChoice($"{saved} (не установлена)", saved));
         }
 
-        _suppressSettingsSync = true;
-        SelectedPlatformChoice = choice;
-        _suppressSettingsSync = false;
-    }
-
-    partial void OnSelectedPlatformChoiceChanged(PlatformChoice? value)
-    {
-        if (_suppressSettingsSync || value is null || SelectedInfoBase is not { } target)
-        {
-            return;
-        }
-
-        _settings.UserData.SetPlatformVersionOverride(target.InfoBase, value.Version);
-        target.Refresh();
-        UpdatePlatformColumn([target]);
-        _settings.RequestSave();
+        return choices;
     }
 
     partial void OnThemeIndexChanged(int value)

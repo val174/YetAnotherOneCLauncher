@@ -22,11 +22,14 @@ public class ColumnsTests
 
         Assert.Equal("8.5.1.1150", fixture.Base("Зарплата и управление персоналом").PlatformText); // без версии — самая новая
 
-        // Версия, выбранная в лаунчере, сразу видна в колонке.
-        fixture.ViewModel.SelectedListItem = null;
-        fixture.ViewModel.IsTreeMode = false;
-        fixture.ViewModel.SelectedListItem = fixture.ViewModel.ListItems.Single(i => i.Base.Name == "Копия бухгалтерии");
-        fixture.ViewModel.SelectedPlatformChoice = fixture.ViewModel.PlatformChoices.Single(c => c.Version == "8.3.24.1667");
+        // Версия, запомненная в «Запустить с параметрами», сразу видна в колонке.
+        fixture.Dialogs.LaunchParameters = f =>
+        {
+            f.SelectedPlatformChoice = f.PlatformChoices.Single(c => c.Version == "8.3.24.1667");
+            f.RememberPlatform = true;
+            return (true, LaunchMode.Enterprise);
+        };
+        await fixture.ViewModel.LaunchWithParametersCommand.ExecuteAsync(copy);
         Assert.Equal("8.3.24.1667", copy.PlatformText);
         Assert.False(copy.IsPlatformMissing);
         Assert.Contains("выбрана в лаунчере", copy.PlatformToolTip, StringComparison.Ordinal);

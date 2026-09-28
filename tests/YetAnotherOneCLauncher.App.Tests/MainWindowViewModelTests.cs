@@ -155,24 +155,54 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
-    public async Task Platform_choice_overrides_version_and_survives_reselection()
+    public async Task Platform_is_chosen_in_launch_with_parameters_once_or_remembered()
     {
         using var fixture = new ViewModelFixture();
         await fixture.LoadAsync();
         var vm = fixture.ViewModel;
         vm.SearchText = "бухгалтерия предприятия";
-        Assert.Equal("Как в списке баз", vm.SelectedPlatformChoice?.Label);
+        LaunchParametersViewModel? form = null;
 
-        vm.SelectedPlatformChoice = vm.PlatformChoices.Single(c => c.Version == "8.3.24.1667");
+        // Разово: версия только для этого запуска.
+        fixture.Dialogs.LaunchParameters = f =>
+        {
+            form = f;
+            Assert.True(f.ShowPlatform);
+            Assert.Equal("Как в списке баз", f.SelectedPlatformChoice?.Label);
+            f.SelectedPlatformChoice = f.PlatformChoices.Single(c => c.Version == "8.3.24.1667");
+            return (true, LaunchMode.Enterprise);
+        };
+        await vm.LaunchWithParametersCommand.ExecuteAsync(null);
+        Assert.Equal("8.3.24.1667", fixture.Processes.Started[0].Platform.Version.ToString());
+        Assert.Null(fixture.Base("Бухгалтерия предприятия").PlatformVersionOverride);
+
         await vm.LaunchEnterpriseCommand.ExecuteAsync(null);
+        Assert.Equal("8.3.27.2130", fixture.Processes.Started[1].Platform.Version.ToString());
 
-        Assert.Equal("8.3.24.1667", Assert.Single(fixture.Processes.Started).Platform.Version.ToString());
+        // Запомнить: версия действует и при обычном запуске, в окне выбрана она же.
+        fixture.Dialogs.LaunchParameters = f =>
+        {
+            f.SelectedPlatformChoice = f.PlatformChoices.Single(c => c.Version == "8.3.24.1667");
+            f.RememberPlatform = true;
+            return (true, LaunchMode.Enterprise);
+        };
+        await vm.LaunchWithParametersCommand.ExecuteAsync(null);
         Assert.Equal("8.3.24.1667", fixture.Base("Бухгалтерия предприятия").PlatformVersionOverride);
+        Assert.Equal("8.3.24.1667", fixture.Base("Бухгалтерия предприятия").PlatformText);
 
-        vm.SearchText = "зуп";
-        Assert.Equal("Как в списке баз", vm.SelectedPlatformChoice?.Label);
-        vm.SearchText = "бухгалтерия предприятия";
-        Assert.Equal("8.3.24.1667", vm.SelectedPlatformChoice?.Version);
+        await vm.LaunchEnterpriseCommand.ExecuteAsync(null);
+        Assert.Equal("8.3.24.1667", fixture.Processes.Started[3].Platform.Version.ToString());
+
+        fixture.Dialogs.LaunchParameters = f =>
+        {
+            Assert.Equal("8.3.24.1667", f.SelectedPlatformChoice?.Version);
+            f.SelectedPlatformChoice = f.PlatformChoices[0]; // «Как в списке баз»
+            f.RememberPlatform = true;
+            return (true, LaunchMode.Enterprise);
+        };
+        await vm.LaunchWithParametersCommand.ExecuteAsync(null);
+        Assert.Null(fixture.Base("Бухгалтерия предприятия").PlatformVersionOverride);
+        Assert.Equal("8.3.27.2130", fixture.Processes.Started[4].Platform.Version.ToString());
     }
 
     [Fact]

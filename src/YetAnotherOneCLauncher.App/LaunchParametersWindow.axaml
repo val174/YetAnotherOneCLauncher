@@ -60,9 +60,14 @@
                  IsVisible="{Binding !CanSavePassword}" />
     </StackPanel>
 
-    <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding IsOneOff}" Margin="0,4,0,0">
+    <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto" IsVisible="{Binding IsOneOff}" Margin="0,4,0,0">
       <TextBlock Text="Клиент" VerticalAlignment="Center" Margin="0,0,12,0" />
       <ComboBox Grid.Column="1" ItemsSource="{Binding ClientNames}" SelectedIndex="{Binding ClientIndex}" HorizontalAlignment="Stretch" />
+      <TextBlock Grid.Row="1" Text="Платформа" VerticalAlignment="Center" Margin="0,8,12,0" IsVisible="{Binding ShowPlatform}" />
+      <ComboBox x:Name="PlatformBox" Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" HorizontalAlignment="Stretch"
+                ItemsSource="{Binding PlatformChoices}" SelectedItem="{Binding SelectedPlatformChoice}" IsVisible="{Binding ShowPlatform}" />
+      <CheckBox Grid.Row="2" Grid.Column="1" IsChecked="{Binding RememberPlatform}" IsVisible="{Binding ShowPlatform}" Margin="0,4,0,0"
+                Content="Запомнить для этой базы (и для обычного запуска)" />
     </Grid>
 
     <Border IsVisible="{Binding HasErrors}" Padding="8" CornerRadius="4" Background="#33E81123">

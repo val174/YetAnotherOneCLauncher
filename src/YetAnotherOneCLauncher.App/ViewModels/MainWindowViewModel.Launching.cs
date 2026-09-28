@@ -13,7 +13,8 @@ namespace YetAnotherOneCLauncher.App.ViewModels;
 /// <param name="UserName">Пользователь; пусто — без <c>/N</c>.</param>
 /// <param name="Password">Пароль; пусто — сохранённый, если пользователь тот же.</param>
 /// <param name="ClientOverride">Клиент вместо указанного у базы.</param>
-internal sealed record OneOffLaunch(string Parameters, string UserName, string Password, ClientApp? ClientOverride)
+/// <param name="Platform">Платформа для этого запуска; <c>null</c> — как сохранено для базы.</param>
+internal sealed record OneOffLaunch(string Parameters, string UserName, string Password, ClientApp? ClientOverride, PlatformChoice? Platform = null)
 {
     // Сгенерированный ToString записи вывел бы пароль.
     public override string ToString() => nameof(OneOffLaunch);
@@ -51,7 +52,8 @@ public sealed partial class MainWindowViewModel
 
         var request = new LaunchRequest(infoBase, mode)
         {
-            PlatformVersionOverride = target.PlatformVersionOverride,
+            // Выбор в «Запустить с параметрами» важнее сохранённого; «Как в списке баз» — без замены версии.
+            PlatformVersionOverride = oneOff?.Platform is { } platform ? platform.Version : target.PlatformVersionOverride,
             ParameterFragments = fragments,
             UserName = userName,
             Password = password,
@@ -90,6 +92,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
+        var choices = PlatformChoicesFor(target);
         var profile = _settings.UserData.LaunchProfile(target.InfoBase);
         var editor = new LaunchParametersViewModel(
             LaunchParametersKind.OneOff,
@@ -100,6 +103,8 @@ public sealed partial class MainWindowViewModel
         {
             UserName = profile?.UserName ?? string.Empty,
             HasSavedPassword = profile?.PasswordKey is not null,
+            PlatformChoices = choices,
+            SelectedPlatformChoice = choices.Find(c => c.Version == target.PlatformVersionOverride) ?? choices[0],
         };
 
         if (!await _dialogs.EditLaunchParametersAsync(editor) || editor.Mode is not { } mode)
@@ -107,7 +112,15 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        await LaunchAsync(target, mode, new OneOffLaunch(editor.Parameters, editor.UserName, editor.Password, editor.ClientOverride));
+        if (editor.RememberPlatform)
+        {
+            _settings.UserData.SetPlatformVersionOverride(target.InfoBase, editor.SelectedPlatformChoice?.Version);
+            _settings.RequestSave();
+            target.Refresh();
+            UpdatePlatformColumn([target]);
+        }
+
+        await LaunchAsync(target, mode, new OneOffLaunch(editor.Parameters, editor.UserName, editor.Password, editor.ClientOverride, editor.SelectedPlatformChoice));
     }
 
     /// <summary>Параметры запуска выделенной базы (пользователь, пароль) или папки.</summary>

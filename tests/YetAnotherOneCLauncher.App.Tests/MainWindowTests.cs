@@ -198,6 +198,28 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task One_off_window_shows_platform_choice()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        ViewModels.LaunchParametersViewModel? form = null;
+        fixture.Dialogs.LaunchParameters = f =>
+        {
+            form = f;
+            return (false, null);
+        };
+        await fixture.ViewModel.LaunchWithParametersCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
+
+        var window = new LaunchParametersWindow(form!);
+        window.Show();
+        Render();
+        Assert.True(window.FindControl<ComboBox>("PlatformBox")!.IsEffectivelyVisible);
+        Assert.Equal(4, window.FindControl<ComboBox>("PlatformBox")!.ItemCount);
+        Snapshot(window, "13-one-off-platform");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Ctrl_q_clears_search_from_list()
     {
         using var fixture = new ViewModelFixture();

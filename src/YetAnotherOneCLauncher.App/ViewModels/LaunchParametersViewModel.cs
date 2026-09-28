@@ -131,6 +131,18 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
 
     public bool ShowSavePassword => Kind is LaunchParametersKind.InfoBase or LaunchParametersKind.ListEntry;
 
+    /// <summary>Версии платформы для разового запуска; пусто — поле не показывается.</summary>
+    public IReadOnlyList<PlatformChoice> PlatformChoices { get; init; } = [];
+
+    public bool ShowPlatform => IsOneOff && PlatformChoices.Count > 0;
+
+    [ObservableProperty]
+    public partial PlatformChoice? SelectedPlatformChoice { get; set; }
+
+    /// <summary>Сохранить выбранную платформу для базы: дальше она используется и при обычном запуске.</summary>
+    [ObservableProperty]
+    public partial bool RememberPlatform { get; set; }
+
     [ObservableProperty]
     public partial int ClientIndex { get; set; }
 
