@@ -27,6 +27,7 @@ public class MainWindowTests
         var tree = window.FindControl<TreeView>("CatalogTree")!;
         Assert.True(tree.IsEffectivelyVisible);
         Assert.Equal(3, tree.ItemCount);
+        Assert.NotNull(window.Icon); // значок приложения из стиля окон
         Assert.True(window.FindControl<TextBox>("SearchBox")!.IsFocused);
 
         Snapshot(window, "01-tree");

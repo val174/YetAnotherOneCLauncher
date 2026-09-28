@@ -5,6 +5,8 @@
     <RootNamespace>YetAnotherOneCLauncher.App</RootNamespace>
     <AssemblyName>YetAnotherOneCLauncher</AssemblyName>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- Значок .exe (Проводник, панель задач); исходник и сборка — assets/icon. -->
+    <ApplicationIcon>Assets/app.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -27,6 +29,11 @@
       <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
     </ItemGroup>
   </Target>
+
+  <ItemGroup>
+    <!-- Значок окон. -->
+    <AvaloniaResource Include="Assets/**" />
+  </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="YetAnotherOneCLauncher.App.Tests" />

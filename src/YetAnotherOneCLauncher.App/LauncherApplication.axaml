@@ -5,5 +5,9 @@
   <!-- Default = как в системе; переключается на лету из главного окна. -->
   <Application.Styles>
     <FluentTheme />
+    <!-- Значок всех окон лаунчера (заголовок, Alt+Tab); у .exe — ApplicationIcon в проекте. -->
+    <Style Selector="Window">
+      <Setter Property="Icon" Value="/Assets/app.ico" />
+    </Style>
   </Application.Styles>
 </Application>
