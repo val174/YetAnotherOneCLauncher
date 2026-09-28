@@ -18,6 +18,16 @@
     <PackageReference Include="Serilog.Sinks.File" />
   </ItemGroup>
 
+  <!--
+    Публикация одним файлом (Properties/PublishProfiles): отладочные символы не кладутся рядом с .exe.
+    Свои — встроены в сборки (DebugType=embedded), символы нативных библиотек из пакетов (SkiaSharp и др.) не нужны.
+  -->
+  <Target Name="ExcludeSymbolsFromSingleFilePublish" AfterTargets="ComputeResolvedFilesToPublishList" Condition="'$(PublishSingleFile)' == 'true'">
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" Condition="'%(Extension)' == '.pdb'" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <InternalsVisibleTo Include="YetAnotherOneCLauncher.App.Tests" />
   </ItemGroup>

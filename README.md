@@ -40,6 +40,15 @@ dotnet test
 dotnet run --project src/YetAnotherOneCLauncher.App
 ```
 
+Один исполняемый файл без установленного .NET (профили в `src/YetAnotherOneCLauncher.App/Properties/PublishProfiles`):
+
+```powershell
+dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=win-x64    # artifacts/publish/win-x64/YetAnotherOneCLauncher.exe
+dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=linux-x64  # artifacts/publish/linux-x64/YetAnotherOneCLauncher
+```
+
+Файл около 47 МБ: внутри .NET и библиотеки отрисовки. Их лаунчер при первом запуске распаковывает в `%TEMP%.netYetAnotherOneCLauncher` (Linux: `~/.net`), поэтому первый старт дольше. Настройки и логи — в каталоге настроек пользователя, не рядом с файлом.
+
 Предупреждения компилятора и анализаторов считаются ошибками (`TreatWarningsAsErrors`, `AnalysisLevel=latest-recommended`).
 CI (GitHub Actions, `.github/workflows/ci.yml`) собирает решение и запускает тесты на Windows и Linux.
 
