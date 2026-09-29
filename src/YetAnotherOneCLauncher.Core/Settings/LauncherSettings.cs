@@ -184,6 +184,15 @@ public sealed class NetworkSettings
 {
     /// <summary>Проверять в фоне, доступны ли базы: каталог файловой базы, порт сервера, веб-сервер.</summary>
     public bool CheckAvailability { get; set; } = true;
+
+    /// <summary>Адрес опубликованного сервиса «ПУСК»; пусто — не задан. Открывается из окна консоли кластера.</summary>
+    public string? PuskUrl { get; set; }
+
+    /// <summary><see cref="PuskUrl"/>, если это адрес http или https; иначе <c>null</c>.</summary>
+    public static Uri? ParseWebUrl(string? text) =>
+        Uri.TryCreate(text?.Trim(), UriKind.Absolute, out var url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)
+            ? url
+            : null;
 }
 
 /// <summary>Очистка кэша баз.</summary>

@@ -786,7 +786,7 @@ public class MainWindowTests
         Dispatcher.UIThread.RunJobs();
     }
 
-    private static void Snapshot(Window window, string name)
+    internal static void Snapshot(Window window, string name)
     {
         var directory = Environment.GetEnvironmentVariable("YAOCL_SCREENSHOTS");
         if (string.IsNullOrWhiteSpace(directory))

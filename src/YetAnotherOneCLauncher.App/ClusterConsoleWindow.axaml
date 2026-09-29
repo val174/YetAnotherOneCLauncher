@@ -1,0 +1,75 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        x:Class="YetAnotherOneCLauncher.App.ClusterConsoleWindow"
+        x:DataType="vm:ClusterConsoleViewModel"
+        Title="Консоль кластера серверов"
+        Width="520" SizeToContent="Height" CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- Метка уже зарегистрированной версии. -->
+    <Style Selector="Border.registeredTag">
+      <Setter Property="Background" Value="{DynamicResource IconRefreshBrush}" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.registeredTag > TextBlock">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+    </Style>
+  </Window.Styles>
+
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock Text="Версия платформы" IsVisible="{Binding HasOptions}" />
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4"
+            IsVisible="{Binding HasOptions}">
+      <ListBox x:Name="VersionsList" ItemsSource="{Binding Options}" SelectedItem="{Binding SelectedOption}" MaxHeight="260"
+               Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:ClusterConsoleOption">
+            <DockPanel>
+              <Border DockPanel.Dock="Right" Classes="registeredTag" IsVisible="{Binding IsRegistered}"
+                      ToolTip.Tip="Компонент администрирования этой версии зарегистрирован в Windows">
+                <TextBlock Text="зарегистрирована" />
+              </Border>
+              <TextBlock Text="{Binding Version}" FontWeight="SemiBold" VerticalAlignment="Center" />
+              <TextBlock Text="{Binding ArchitectureText}" Opacity="0.65" Margin="10,0,0,0" VerticalAlignment="Center" />
+            </DockPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+    <TextBlock x:Name="RegistrationHint" Classes="secondary" IsVisible="{Binding NeedsRegistration}"
+               Text="Консоль этой версии ещё не зарегистрирована в Windows: при запуске будет запрошено разрешение администратора." />
+    <TextBlock x:Name="EmptyText" Text="{Binding EmptyText}" TextWrapping="Wrap" IsVisible="{Binding !HasOptions}" />
+    <TextBlock x:Name="ErrorText" Text="{Binding ErrorText}" IsVisible="{Binding HasError}" TextWrapping="Wrap" Foreground="#C42B1C" />
+
+    <Grid ColumnDefinitions="Auto,*,Auto" Margin="0,6,0,0">
+      <Button x:Name="PuskButton" Command="{Binding OpenPuskCommand}" IsVisible="{Binding HasPusk}"
+              ToolTip.Tip="{Binding PuskUrl}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource WebIconGeometry}" />
+          <TextBlock Text="Открыть «ПУСК»" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="LaunchButton" Classes="accent" Command="{Binding LaunchCommand}" IsDefault="True"
+                IsVisible="{Binding HasOptions}" MinWidth="100">
+          <StackPanel Orientation="Horizontal" Spacing="6">
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ClusterIconGeometry}" />
+            <TextBlock Text="Запустить" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" HorizontalContentAlignment="Center" />
+      </StackPanel>
+    </Grid>
+  </StackPanel>
+</Window>

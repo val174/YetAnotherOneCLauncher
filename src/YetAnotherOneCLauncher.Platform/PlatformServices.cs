@@ -15,6 +15,10 @@ public static class PlatformServices
     public static IJumpList CreateJumpList() =>
         OperatingSystem.IsWindows() ? new WindowsJumpList() : new NoJumpList();
 
+    /// <summary>Консоль кластера серверов 1С (только Windows).</summary>
+    public static IClusterConsole CreateClusterConsole() =>
+        OperatingSystem.IsWindows() ? new WindowsClusterConsole() : new NoClusterConsole();
+
     public static ICacheUsageProbe CreateCacheUsageProbe() =>
         OperatingSystem.IsWindows() ? new WindowsCacheUsageProbe()
         : OperatingSystem.IsLinux() ? new LinuxCacheUsageProbe()

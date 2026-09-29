@@ -91,6 +91,11 @@ internal sealed class FakeDialogs : IDialogService
     public Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates) =>
         Task.FromResult(ParameterTemplatesEditor(templates));
 
+    /// <summary>Что сделать в окне консоли кластера.</summary>
+    public Func<ClusterConsoleViewModel, Task> ClusterConsole { get; set; } = _ => Task.CompletedTask;
+
+    public Task ShowClusterConsoleAsync(ClusterConsoleViewModel console) => ClusterConsole(console);
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)
@@ -211,6 +216,39 @@ internal sealed class FakeAvailabilityProbe : Core.Availability.IAvailabilityPro
         Task.FromResult(!DeadHosts.Contains(host));
 }
 
+/// <summary>Консоль кластера без реестра и MMC: какие версии с консолью, какая зарегистрирована, что открыто.</summary>
+internal sealed class FakeClusterConsole : IClusterConsole
+{
+    public bool IsSupported { get; set; } = true;
+
+    /// <summary>Версии с компонентом администрирования.</summary>
+    public HashSet<string> Available { get; } = [];
+
+    public string? Registered { get; set; }
+
+    /// <summary>Отказ в правах администратора при регистрации.</summary>
+    public bool DenyRegistration { get; set; }
+
+    public List<string> Opened { get; } = [];
+
+    public bool IsAvailable(PlatformInstallation platform) => Available.Contains(platform.Version.ToString());
+
+    public bool IsRegistered(PlatformInstallation platform) => Registered == platform.Version.ToString();
+
+    public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default)
+    {
+        if (DenyRegistration)
+        {
+            throw new LaunchFailedException("Регистрация отменена.");
+        }
+
+        Registered = platform.Version.ToString();
+        return Task.CompletedTask;
+    }
+
+    public void Open(PlatformInstallation platform) => Opened.Add(platform.Version.ToString());
+}
+
 /// <summary>Список переходов в памяти.</summary>
 internal sealed class FakeJumpList : IJumpList
 {
@@ -315,7 +353,8 @@ internal sealed class ViewModelFixture : IDisposable
             cacheUsage: CacheUsage,
             availabilityChecker: new Core.Availability.AvailabilityChecker(Availability),
             jumpList: JumpList,
-            startup: new StartupOptions(startupLaunchKey));
+            startup: new StartupOptions(startupLaunchKey),
+            clusterConsole: ClusterConsole);
     }
 
     public string ListPath { get; }
@@ -331,6 +370,8 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeAvailabilityProbe Availability { get; } = new();
 
     public FakeJumpList JumpList { get; } = new();
+
+    public FakeClusterConsole ClusterConsole { get; } = new();
 
     public string LocalCacheRoot => Path.Combine(_directory, "local");
 

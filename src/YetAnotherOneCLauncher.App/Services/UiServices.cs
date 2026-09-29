@@ -38,6 +38,9 @@ public interface IDialogService
 
     /// <summary>Окно своих шаблонов параметров; <c>true</c> — сохранить.</summary>
     Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates);
+
+    /// <summary>Окно консоли кластера: выбор версии платформы, переход в «ПУСК».</summary>
+    Task ShowClusterConsoleAsync(ClusterConsoleViewModel console);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -121,6 +124,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates) =>
         Owner is { } owner ? new ParameterTemplatesWindow(templates).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task ShowClusterConsoleAsync(ClusterConsoleViewModel console) =>
+        Owner is { } owner ? new ClusterConsoleWindow(console).ShowDialog(owner) : Task.CompletedTask;
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {

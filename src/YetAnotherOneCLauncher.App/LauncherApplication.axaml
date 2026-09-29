@@ -28,6 +28,9 @@
       <StreamGeometry x:Key="EditIconGeometry">M 10.5,2.5 L 13.5,5.5 L 5.5,13.5 L 2,14 L 2.5,10.5 Z M 9,4 L 12,7</StreamGeometry>
       <StreamGeometry x:Key="UpIconGeometry">M 8,13.5 L 8,2.5 M 3.5,7 L 8,2.5 L 12.5,7</StreamGeometry>
       <StreamGeometry x:Key="DownIconGeometry">M 8,2.5 L 8,13.5 M 3.5,9 L 8,13.5 L 12.5,9</StreamGeometry>
+      <!-- Консоль кластера: две стойки сервера; «ПУСК» (веб-сервис): глобус. -->
+      <StreamGeometry x:Key="ClusterIconGeometry">M 2,2 L 14,2 L 14,7 L 2,7 Z M 2,9 L 14,9 L 14,14 L 2,14 Z M 4.5,4.5 L 5.5,4.5 M 4.5,11.5 L 5.5,11.5 M 8,4.5 L 11.5,4.5 M 8,11.5 L 11.5,11.5</StreamGeometry>
+      <StreamGeometry x:Key="WebIconGeometry">M 8,1.5 A 6.5,6.5 0 1 1 7.99,1.5 Z M 8,1.5 A 3,6.5 0 0 0 8,14.5 A 3,6.5 0 0 0 8,1.5 M 1.5,8 L 14.5,8</StreamGeometry>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="IconAddBrush" Color="#639922" />
@@ -43,6 +46,7 @@
           <SolidColorBrush x:Key="IconFavoriteBrush" Color="#E0900F" />
           <SolidColorBrush x:Key="IconCopyBrush" Color="#7F77DD" />
           <SolidColorBrush x:Key="IconAllBasesBrush" Color="#D85A30" />
+          <SolidColorBrush x:Key="IconClusterBrush" Color="#185FA5" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -58,6 +62,7 @@
           <SolidColorBrush x:Key="IconFavoriteBrush" Color="#FAC775" />
           <SolidColorBrush x:Key="IconCopyBrush" Color="#AFA9EC" />
           <SolidColorBrush x:Key="IconAllBasesBrush" Color="#F0997B" />
+          <SolidColorBrush x:Key="IconClusterBrush" Color="#9CC3EE" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

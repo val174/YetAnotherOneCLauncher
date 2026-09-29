@@ -213,6 +213,10 @@
           <c:ToolIcon StrokeThickness="1.4" Brush="{DynamicResource IconRefreshBrush}"
                       Data="M 13.5,8 A 5.5,5.5 0 1 1 11.9,4.1 M 12.4,1.2 L 12.4,4.6 L 9,4.6" />
         </Button>
+        <Button x:Name="ClusterConsoleButton" Command="{Binding OpenClusterConsoleCommand}" Padding="8,6" VerticalAlignment="Stretch"
+                ToolTip.Tip="Консоль кластера серверов 1С: выбрать версию платформы">
+          <c:ToolIcon Brush="{DynamicResource IconClusterBrush}" Data="{StaticResource ClusterIconGeometry}" />
+        </Button>
         <!-- Тема по кругу: как в системе → светлая → тёмная; значок — текущая тема. -->
         <Button x:Name="ThemeButton" Command="{Binding CycleThemeCommand}" Padding="8,6" VerticalAlignment="Stretch"
                 ToolTip.Tip="{Binding ThemeToolTip}">
@@ -255,6 +259,11 @@
                 <CheckBox IsChecked="{Binding CheckAvailability}">
                   <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
                 </CheckBox>
+                <TextBlock Text="Адрес сервиса «ПУСК»" Margin="0,6,0,0" />
+                <TextBox x:Name="PuskUrlBox" Text="{Binding PuskUrl}" PlaceholderText="https://…"
+                         ToolTip.Tip="Опубликованный сервис «ПУСК»: открывается в браузере из окна консоли кластера" />
+                <TextBlock Text="Нужен адрес http:// или https://" FontSize="{StaticResource SmallFontSize}" Foreground="#C42B1C"
+                           IsVisible="{Binding IsPuskUrlInvalid}" />
                 <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
                 <Button x:Name="AboutButton" Content="О программе…" Command="{Binding ShowAboutCommand}" />
               </StackPanel>

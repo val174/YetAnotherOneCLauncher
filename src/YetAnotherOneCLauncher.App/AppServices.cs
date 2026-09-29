@@ -46,6 +46,7 @@ internal static class AppServices
             services.AddSingleton(_ => PlatformServices.CreateCredentialStore());
             services.AddSingleton(_ => PlatformServices.CreateCacheUsageProbe());
             services.AddSingleton(_ => PlatformServices.CreateJumpList());
+            services.AddSingleton(_ => PlatformServices.CreateClusterConsole());
             services.AddSingleton<LaunchRequestChannel>();
             services.AddSingleton<ILaunchRequestChannel>(sp => sp.GetRequiredService<LaunchRequestChannel>());
         }

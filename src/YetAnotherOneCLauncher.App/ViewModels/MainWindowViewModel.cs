@@ -57,6 +57,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly AvailabilityChecker? _availabilityChecker;
     private readonly IJumpList? _jumpList;
     private readonly ILaunchRequestChannel? _launchChannel;
+    private readonly IClusterConsole _clusterConsole;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -87,7 +88,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         AvailabilityChecker? availabilityChecker = null,
         IJumpList? jumpList = null,
         ILaunchRequestChannel? launchChannel = null,
-        StartupOptions? startup = null)
+        StartupOptions? startup = null,
+        IClusterConsole? clusterConsole = null)
     {
         _files = files;
         _store = store;
@@ -97,6 +99,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _availabilityChecker = availabilityChecker;
         _jumpList = jumpList;
         _launchChannel = launchChannel;
+        _clusterConsole = clusterConsole ?? new NoClusterConsole();
         _pendingLaunchKey = startup?.LaunchIdentityKey;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
@@ -122,6 +125,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ShowDetails = ui.ShowDetails;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
+        PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
         _suppressSettingsSync = false;
     }
 
