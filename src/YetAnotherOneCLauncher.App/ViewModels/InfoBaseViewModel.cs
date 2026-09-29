@@ -119,10 +119,16 @@ public sealed partial class InfoBaseViewModel : ObservableObject
 
     public bool IsFileBase => InfoBase.ConnectionKind == ConnectionKind.File;
 
-    /// <summary>Строка под именем в списке: папка и подключение.</summary>
-    public string Subtitle => InfoBase.FolderPath == FolderPaths.Root
-        ? ConnectionText
-        : $"{InfoBase.FolderPath}  ·  {ConnectionText}";
+    /// <summary>
+    /// Папка базы рядом с именем в плоском списке; у баз в корне — пусто. Путь к базе в строке не показывается:
+    /// он в подсказке к имени и в панели подробностей, а поиск по нему работает как прежде.
+    /// </summary>
+    public string RowFolderText => InfoBase.FolderPath == FolderPaths.Root ? string.Empty : InfoBase.FolderPath;
+
+    public bool HasRowFolder => RowFolderText.Length > 0;
+
+    /// <summary>Подсказка к имени в списке: имя и подключение.</summary>
+    public string NameToolTip => $"{Name}{Environment.NewLine}{ConnectionText}";
 
     [ObservableProperty]
     public partial bool IsFavorite { get; private set; }

@@ -395,12 +395,11 @@
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,8,0" />
-                <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Name}" Margin="0,0,8,0" />
+                <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
                            Margin="0,0,8,0" ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
                            Margin="0,0,8,0" ToolTip.Tip="{Binding Base.SourceText}" />
-                <TextBlock Classes="secondary" Text="{Binding Base.ConnectionText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
@@ -420,15 +419,14 @@
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
             <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
-            <StackPanel Spacing="2">
-              <DockPanel>
+              <!-- Одна строка: имя и папка; путь к базе — в подсказке к имени (поиск по нему работает). -->
+              <DockPanel VerticalAlignment="Center">
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,6,0" />
-                <c:HighlightTextBlock Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.Name}" />
+                <c:HighlightTextBlock DockPanel.Dock="Left" Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" Margin="0,0,8,0" />
+                <TextBlock Classes="secondary" Text="{Binding Base.RowFolderText}" IsVisible="{Binding Base.HasRowFolder}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
               </DockPanel>
-              <TextBlock Classes="secondary" Text="{Binding Base.Subtitle}" TextTrimming="CharacterEllipsis" />
-            </StackPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />

@@ -37,6 +37,28 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Rows_hide_connection_path_but_search_still_finds_by_it()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        string RowTexts(Control root) => string.Join("|", root.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        Assert.DoesNotContain(@"srv-1c\buh_prod", RowTexts(tree), StringComparison.Ordinal);
+        Assert.DoesNotContain(@"C:\Bases\BuhCopy", RowTexts(tree), StringComparison.Ordinal);
+
+        fixture.ViewModel.SearchText = "buh_prod"; // только в пути, в имени такого нет
+        Render();
+        var list = window.FindControl<ListBox>("CatalogList")!;
+        var item = Assert.Single(fixture.ViewModel.ListItems);
+        Assert.Equal("Бухгалтерия предприятия", item.Base.Name);
+        Assert.DoesNotContain("srv-1c", RowTexts(list), StringComparison.Ordinal);
+        Assert.Contains("/Рабочие", RowTexts(list), StringComparison.Ordinal); // папка в списке осталась
+        Assert.Contains(@"srv-1c\buh_prod", item.Base.NameToolTip, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Typing_searches_and_enter_launches_best_match()
     {
         using var fixture = new ViewModelFixture();
