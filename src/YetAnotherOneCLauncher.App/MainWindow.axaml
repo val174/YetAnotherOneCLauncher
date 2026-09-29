@@ -17,6 +17,12 @@
       <Setter Property="Opacity" Value="0.65" />
       <Setter Property="Margin" Value="0,0,12,6" />
     </Style>
+    <!-- Разделитель групп свойств базы. -->
+    <Style Selector="Border.propertiesSeparator">
+      <Setter Property="Height" Value="1" />
+      <Setter Property="Margin" Value="0,4,0,10" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+    </Style>
     <Style Selector="SelectableTextBlock.value">
       <Setter Property="TextWrapping" Value="Wrap" />
       <Setter Property="Margin" Value="0,0,0,6" />
@@ -250,7 +256,6 @@
                   <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
                 </CheckBox>
                 <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
-                <Button Content="Кэш баз…" Command="{Binding OpenCacheManagerCommand}" />
                 <Button x:Name="AboutButton" Content="О программе…" Command="{Binding ShowAboutCommand}" />
               </StackPanel>
             </Flyout>
@@ -378,19 +383,39 @@
           <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
           <StackPanel Spacing="10" Margin="0,0,12,0">
             <DockPanel>
-              <Button DockPanel.Dock="Right" Command="{Binding ToggleFavoriteCommand}" Padding="8,4"
+              <Button x:Name="FavoriteButton" DockPanel.Dock="Right" Command="{Binding ToggleFavoriteCommand}" Padding="8,4"
                       VerticalAlignment="Top" ToolTip.Tip="Избранное (Ctrl+D)">
-                <Panel>
-                  <TextBlock Text="★ В избранном" IsVisible="{Binding SelectedInfoBase.IsFavorite, FallbackValue=False}" />
-                  <TextBlock Text="☆ В избранное" IsVisible="{Binding !SelectedInfoBase.IsFavorite, FallbackValue=False}" />
-                </Panel>
+                <!-- Звезда: закрашенная — база в избранном, контур — нет. -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <Panel VerticalAlignment="Center">
+                    <c:ToolIcon Classes="favStar" SolidData="{StaticResource StarIconGeometry}"
+                                IsVisible="{Binding SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                    <c:ToolIcon Classes="favStar" IsVisible="{Binding !SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                  </Panel>
+                  <Panel VerticalAlignment="Center">
+                    <TextBlock Text="В избранном" IsVisible="{Binding SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                    <TextBlock Text="В избранное" IsVisible="{Binding !SelectedInfoBase.IsFavorite, FallbackValue=False}" />
+                  </Panel>
+                </StackPanel>
               </Button>
               <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
             </DockPanel>
 
-            <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-              <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
-              <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,6">
+            <!-- Свойства тремя группами: как запускается; откуда база в списке; состояние и история. -->
+            <Grid x:Name="PropertiesGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Classes="label" Text="Тип" />
+              <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionKindText}" />
+              <TextBlock Grid.Row="1" Classes="label" Text="Клиент" />
+              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ClientText}" />
+              <TextBlock Grid.Row="2" Classes="label" Text="Платформа" />
+              <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.PlatformText}"
+                                   ToolTip.Tip="{Binding SelectedInfoBase.PlatformToolTip}" />
+              <TextBlock Grid.Row="3" Classes="label" Text="Параметры" />
+              <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchParametersText}" />
+              <TextBlock Grid.Row="4" Classes="label" Text="Пользователь" />
+              <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.UserText}" />
+              <TextBlock Grid.Row="5" Classes="label" Text="Подключение" />
+              <DockPanel Grid.Row="5" Grid.Column="1" Margin="0,0,0,6">
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Top" Margin="2,-3,0,0">
                   <Button x:Name="CopyConnectionButton" Classes="icon" Command="{Binding CopyConnectionStringCommand}"
                           ToolTip.Tip="Копировать строку подключения">
@@ -406,32 +431,23 @@
                 </StackPanel>
                 <SelectableTextBlock Text="{Binding SelectedInfoBase.ConnectionText}" TextWrapping="Wrap" />
               </DockPanel>
-              <TextBlock Grid.Row="1" Classes="label" Text="Тип" />
-              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionKindText}" />
-              <TextBlock Grid.Row="2" Classes="label" Text="Клиент" />
-              <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ClientText}" />
-              <TextBlock Grid.Row="3" Classes="label" Text="Версия в списке" />
-              <SelectableTextBlock Grid.Row="3" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ListVersionText}" />
-              <TextBlock Grid.Row="4" Classes="label" Text="Платформа" />
-              <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.PlatformText}"
-                                   ToolTip.Tip="{Binding SelectedInfoBase.PlatformToolTip}" />
-              <TextBlock Grid.Row="9" Classes="label" Text="Параметры" />
-              <SelectableTextBlock Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchParametersText}" />
-              <TextBlock Grid.Row="12" Classes="label" Text="Доступность" />
-              <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
-              <TextBlock Grid.Row="11" Classes="label" Text="Кэш" />
-              <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
-              <TextBlock Grid.Row="10" Classes="label" Text="Пользователь" />
-              <SelectableTextBlock Grid.Row="10" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.UserText}" />
-              <TextBlock Grid.Row="5" Classes="label" Text="Папка" />
-              <SelectableTextBlock Grid.Row="5" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}" />
-              <TextBlock Grid.Row="6" Classes="label" Text="Последний запуск" />
-              <SelectableTextBlock Grid.Row="6" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
-              <TextBlock Grid.Row="7" Classes="label" Text="Запусков" />
-              <SelectableTextBlock Grid.Row="7" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
-              <TextBlock Grid.Row="8" Classes="label" Text="Источник" />
-              <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.SourceText}"
+
+              <Border Grid.Row="6" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
+              <TextBlock Grid.Row="7" Classes="label" Text="Источник" />
+              <SelectableTextBlock Grid.Row="7" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.SourceText}"
                                    ToolTip.Tip="{Binding SelectedInfoBase.SourceLocation}" />
+              <TextBlock Grid.Row="8" Classes="label" Text="Группа" />
+              <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}" />
+
+              <Border Grid.Row="9" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
+              <TextBlock Grid.Row="10" Classes="label" Text="Кэш" />
+              <SelectableTextBlock Grid.Row="10" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
+              <TextBlock Grid.Row="11" Classes="label" Text="Доступность" />
+              <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
+              <TextBlock Grid.Row="12" Classes="label" Text="Последний запуск" />
+              <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
+              <TextBlock Grid.Row="13" Classes="label" Text="Запусков" />
+              <SelectableTextBlock Grid.Row="13" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
             </Grid>
 
             <WrapPanel>

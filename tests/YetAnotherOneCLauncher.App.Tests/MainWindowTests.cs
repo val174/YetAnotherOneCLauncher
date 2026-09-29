@@ -114,6 +114,33 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Properties_are_grouped_and_favorite_button_has_star()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        fixture.ViewModel.SelectedTreeItem = fixture.ViewModel.TreeItems.OfType<ViewModels.BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии");
+        Render();
+
+        var grid = window.FindControl<Grid>("PropertiesGrid")!;
+        var labels = grid.Children.OfType<TextBlock>().Where(t => t.Classes.Contains("label")).OrderBy(Grid.GetRow).Select(t => t.Text);
+        Assert.Equal(
+            ["Тип", "Клиент", "Платформа", "Параметры", "Пользователь", "Подключение", "Источник", "Группа", "Кэш", "Доступность", "Последний запуск", "Запусков"],
+            labels);
+        var separators = grid.Children.OfType<Border>().Where(b => b.Classes.Contains("propertiesSeparator")).Select(Grid.GetRow);
+        Assert.Equal([6, 9], separators); // после «Подключения» и после «Группы»
+
+        // Звезда на кнопке: контур — не в избранном, закрашенная — в избранном.
+        var favorite = window.FindControl<Button>("FavoriteButton")!;
+        ToolIcon VisibleStar() => favorite.GetVisualDescendants().OfType<ToolIcon>().Single(i => i.IsEffectivelyVisible);
+        Assert.Null(VisibleStar().SolidData);
+        fixture.ViewModel.ToggleFavoriteCommand.Execute(null);
+        Render();
+        Assert.NotNull(VisibleStar().SolidData);
+        Snapshot(window, "08c-properties");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Status_bar_button_toggles_details_panel()
     {
         using var fixture = new ViewModelFixture();

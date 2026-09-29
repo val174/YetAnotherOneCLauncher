@@ -76,8 +76,6 @@ public sealed partial class InfoBaseViewModel : ObservableObject
         _ => "Выбирать автоматически",
     };
 
-    public string ListVersionText => InfoBase.Version ?? "не указана";
-
     public string FolderText => InfoBase.FolderPath;
 
     public string SourceText => InfoBase.Source switch
