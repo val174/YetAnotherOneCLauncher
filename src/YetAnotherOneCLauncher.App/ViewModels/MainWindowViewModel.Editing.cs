@@ -286,7 +286,7 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        var path = await _files.SaveListFileAsync("Выгрузить в файл", name + ".v8i");
+        var path = await _files.SaveListFileAsync("Сохранить ссылку в файл", name + ".v8i");
         if (path is null)
         {
             return;
@@ -295,7 +295,7 @@ public sealed partial class MainWindowViewModel
         try
         {
             await PersonalListEditor.Export(sections).SaveAsync(path);
-            StatusText = $"Выгружено записей: {sections.Count} — {path}";
+            StatusText = $"Ссылка сохранена в файл (записей: {sections.Count}): {path}";
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

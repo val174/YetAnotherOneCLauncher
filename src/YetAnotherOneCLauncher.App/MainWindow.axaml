@@ -538,8 +538,7 @@
           <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource CacheIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Выгрузить в файл…" Command="{Binding ExportCommand}" />
-          <MenuItem Header="Загрузить из файла…" Command="{Binding ImportCommand}" />
+          <MenuItem Header="Сохранить ссылку в файл…" Command="{Binding ExportCommand}" />
         </ContextMenu>
       </Panel.ContextMenu>
 
