@@ -292,7 +292,7 @@
             <StackPanel Orientation="Horizontal" Spacing="8">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="F3, Enter или двойной щелчок">
                 <StackPanel Orientation="Horizontal" Spacing="6">
-                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" />
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                   <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
                 </StackPanel>
               </Button>

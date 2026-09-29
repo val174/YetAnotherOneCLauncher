@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Documents;
 using Avalonia.Media;
 using Avalonia.Media.Immutable;
 using YetAnotherOneCLauncher.Core.Settings;
@@ -40,7 +41,11 @@ public sealed class ToolIcon : Control
     public static readonly StyledProperty<Geometry?> SolidDataProperty =
         AvaloniaProperty.Register<ToolIcon, Geometry?>(nameof(SolidData));
 
-    /// <summary>Цвет значка по смыслу кнопки.</summary>
+    /// <summary>Цвет текста вокруг (наследуется): им рисуется значок без своего цвета — например, на кнопке с надписью.</summary>
+    public static readonly AttachedProperty<IBrush?> ForegroundProperty =
+        TextElement.ForegroundProperty.AddOwner<ToolIcon>();
+
+    /// <summary>Цвет значка по смыслу кнопки; не задан — цвет текста (<see cref="ForegroundProperty"/>).</summary>
     public static readonly StyledProperty<IBrush?> BrushProperty =
         AvaloniaProperty.Register<ToolIcon, IBrush?>(nameof(Brush));
 
@@ -49,7 +54,8 @@ public sealed class ToolIcon : Control
 
     static ToolIcon()
     {
-        AffectsRender<ToolIcon>(IconStyleProperty, DataProperty, BoldDataProperty, SolidDataProperty, BrushProperty, StrokeThicknessProperty);
+        AffectsRender<ToolIcon>(
+            IconStyleProperty, DataProperty, BoldDataProperty, SolidDataProperty, BrushProperty, ForegroundProperty, StrokeThicknessProperty);
     }
 
     public static IconStyle GetIconStyle(Control control) => control.GetValue(IconStyleProperty);
@@ -80,6 +86,12 @@ public sealed class ToolIcon : Control
         set => SetValue(BrushProperty, value);
     }
 
+    public IBrush? Foreground
+    {
+        get => GetValue(ForegroundProperty);
+        set => SetValue(ForegroundProperty, value);
+    }
+
     public double StrokeThickness
     {
         get => GetValue(StrokeThicknessProperty);
@@ -101,7 +113,7 @@ public sealed class ToolIcon : Control
         var offset = new Point((Bounds.Width - size) / 2, (Bounds.Height - size) / 2);
         using var grid = context.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(offset.X, offset.Y));
 
-        var accent = Brush ?? Brushes.Gray;
+        var accent = Brush ?? Foreground ?? Brushes.Gray;
         if (GetValue(IconStyleProperty) == IconStyle.Plate)
         {
             context.DrawRectangle(accent, null, new RoundedRect(new Rect(0, 0, GridSize, GridSize), PlateCornerRadius));

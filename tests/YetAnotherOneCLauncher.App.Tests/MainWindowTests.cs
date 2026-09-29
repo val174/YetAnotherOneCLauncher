@@ -145,6 +145,16 @@ public class MainWindowTests
         var open = window.FindControl<Button>("OpenBaseFolderButton")!;
         Assert.True(copy.IsEffectivelyVisible);
         Assert.True(open.IsEffectivelyVisible);
+        // Значки кнопок запуска — цвета надписи: на синей «1С: Предприятие» — белые, не серые по умолчанию.
+        foreach (var name in new[] { "LaunchEnterpriseButton", "LaunchDesignerButton" })
+        {
+            var button = window.FindControl<Button>(name)!;
+            var icon = button.GetVisualDescendants().OfType<ToolIcon>().Single();
+            var caption = button.GetVisualDescendants().OfType<TextBlock>().Single();
+            Assert.NotNull(icon.Foreground);
+            Assert.Equal((icon.Foreground as Avalonia.Media.ISolidColorBrush)?.Color, (caption.Foreground as Avalonia.Media.ISolidColorBrush)?.Color);
+        }
+
         Snapshot(window, "10-details-file-base");
 
         copy.Command!.Execute(copy.CommandParameter);

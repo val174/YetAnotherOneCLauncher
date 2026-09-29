@@ -79,7 +79,7 @@
       <Button x:Name="EnterpriseButton" Classes="accent" IsDefault="True" MinWidth="110" ToolTip.Tip="Enter, F3"
               IsVisible="{Binding IsOneOff}">
         <StackPanel Orientation="Horizontal" Spacing="6">
-          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" />
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
           <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
         </StackPanel>
       </Button>
