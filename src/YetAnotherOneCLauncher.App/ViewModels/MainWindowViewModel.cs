@@ -315,6 +315,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void CycleTheme() => ThemeIndex = (ThemeIndex + 1) % ThemeNames.Count;
 
+    [RelayCommand]
+    private Task ShowAboutAsync() => _dialogs.ShowAboutAsync(new AboutViewModel());
+
     [ObservableProperty]
     public partial int AfterLaunchIndex { get; set; }
 

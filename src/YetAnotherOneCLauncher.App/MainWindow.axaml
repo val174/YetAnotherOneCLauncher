@@ -237,10 +237,10 @@
                 <TextBlock Text="После запуска базы" Margin="0,6,0,0" />
                 <ComboBox ItemsSource="{Binding AfterLaunchNames}" SelectedIndex="{Binding AfterLaunchIndex}" HorizontalAlignment="Stretch" />
                 <CheckBox x:Name="MinimizeToTrayBox" IsChecked="{Binding MinimizeToTray}" Margin="0,6,0,0">
-                  <TextBlock TextWrapping="Wrap" Text="Сворачивать в трей (значок в области уведомлений)" />
+                  <TextBlock TextWrapping="Wrap" Text="Сворачивать в трей" />
                 </CheckBox>
                 <CheckBox x:Name="SingleInstanceBox" IsChecked="{Binding SingleInstance}">
-                  <TextBlock TextWrapping="Wrap" Text="Запретить повторный запуск: открывать уже запущенный лаунчер" />
+                  <TextBlock TextWrapping="Wrap" Text="Запретить повторный запуск" />
                 </CheckBox>
                 <CheckBox IsChecked="{Binding UseThickClientForFileBases}" Margin="0,6,0,0">
                   <TextBlock TextWrapping="Wrap" Text="Файловые базы с клиентом «Автоматически» открывать в толстом клиенте" />
@@ -251,6 +251,7 @@
                 </CheckBox>
                 <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,6,0,0" />
                 <Button Content="Кэш баз…" Command="{Binding OpenCacheManagerCommand}" />
+                <Button x:Name="AboutButton" Content="О программе…" Command="{Binding ShowAboutCommand}" />
               </StackPanel>
             </Flyout>
           </Button.Flyout>

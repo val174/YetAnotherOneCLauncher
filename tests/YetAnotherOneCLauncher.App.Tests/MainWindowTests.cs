@@ -632,6 +632,25 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task About_window_shows_version_and_author()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.ViewModel.ShowAboutCommand.ExecuteAsync(null);
+        var about = fixture.Dialogs.ShownAbout!;
+        Assert.Equal("YetAnotherOneCLauncher", about.Product);
+        Assert.Equal("Автор: Val", about.AuthorText);
+        Assert.Matches(@"^\d+\.\d+\.\d+", about.Version);
+        Assert.DoesNotContain("+", about.VersionText, StringComparison.Ordinal); // хеш коммита — коротко, в скобках
+
+        var window = new AboutWindow(about);
+        window.Show();
+        Render();
+        Assert.Equal("Автор: Val", window.FindControl<TextBlock>("AuthorText")!.Text);
+        Snapshot(window, "08-about");
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Minimized_window_hides_to_tray_and_comes_back_as_it_was()
     {
         using var fixture = new ViewModelFixture();

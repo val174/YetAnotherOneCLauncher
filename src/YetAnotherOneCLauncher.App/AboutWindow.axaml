@@ -1,0 +1,24 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        x:Class="YetAnotherOneCLauncher.App.AboutWindow"
+        x:DataType="vm:AboutViewModel"
+        Title="О программе"
+        Width="440" SizeToContent="Height" CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="20" Spacing="14">
+    <StackPanel Orientation="Horizontal" Spacing="14">
+      <Image Source="/Assets/app.png" Width="56" Height="56" VerticalAlignment="Top" />
+      <StackPanel Spacing="2" VerticalAlignment="Center">
+        <TextBlock x:Name="ProductText" Text="{Binding Product}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" />
+        <SelectableTextBlock x:Name="VersionText" Text="{Binding VersionText}" Opacity="0.75" />
+      </StackPanel>
+    </StackPanel>
+    <TextBlock Text="{Binding Description}" TextWrapping="Wrap" />
+    <TextBlock x:Name="AuthorText" Text="{Binding AuthorText}" />
+    <SelectableTextBlock Text="{Binding Environment}" TextWrapping="Wrap" Opacity="0.65" FontSize="{StaticResource SmallFontSize}" />
+    <Button x:Name="OkButton" Content="OK" IsDefault="True" IsCancel="True" MinWidth="90" HorizontalAlignment="Right"
+            HorizontalContentAlignment="Center" />
+  </StackPanel>
+</Window>

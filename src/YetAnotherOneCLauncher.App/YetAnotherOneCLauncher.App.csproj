@@ -37,6 +37,8 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="YetAnotherOneCLauncher.App.Tests" />
+    <!-- Автор (Directory.Build.props) — для окна «О программе». -->
+    <AssemblyMetadata Include="Author" Value="$(Authors)" />
   </ItemGroup>
 
   <ItemGroup>

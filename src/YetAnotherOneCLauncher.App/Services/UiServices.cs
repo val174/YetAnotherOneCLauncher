@@ -33,6 +33,8 @@ public interface IDialogService
 
     /// <summary>Окно «Кэш баз»; закрывается пользователем.</summary>
     Task ShowCacheManagerAsync(CacheManagerViewModel cache);
+
+    Task ShowAboutAsync(AboutViewModel about);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -110,6 +112,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task ShowCacheManagerAsync(CacheManagerViewModel cache) =>
         Owner is { } owner ? new CacheManagerWindow(cache).ShowDialog(owner) : Task.CompletedTask;
+
+    public Task ShowAboutAsync(AboutViewModel about) =>
+        Owner is { } owner ? new AboutWindow(about).ShowDialog(owner) : Task.CompletedTask;
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {

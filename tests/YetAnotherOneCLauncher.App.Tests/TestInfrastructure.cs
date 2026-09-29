@@ -85,6 +85,14 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task ShowCacheManagerAsync(CacheManagerViewModel cache) => CacheManager(cache);
 
+    public AboutViewModel? ShownAbout { get; private set; }
+
+    public Task ShowAboutAsync(AboutViewModel about)
+    {
+        ShownAbout = about;
+        return Task.CompletedTask;
+    }
+
     public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters)
     {
         LaunchParameterForms.Add(parameters);

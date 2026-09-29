@@ -12,5 +12,7 @@
     <Company>YetAnotherOneCLauncher</Company>
     <Product>YetAnotherOneCLauncher</Product>
     <Version>0.1.0</Version>
+    <Authors>Val</Authors>
+    <Copyright>© Val</Copyright>
   </PropertyGroup>
 </Project>
