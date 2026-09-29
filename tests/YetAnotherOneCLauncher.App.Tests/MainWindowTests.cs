@@ -632,10 +632,10 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public void Parameter_templates_window_adds_by_enter_and_deletes_by_del()
+    public void Parameter_templates_window_adds_edits_and_deletes_from_keyboard()
     {
         Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
-        var form = new ViewModels.ParameterTemplatesViewModel([ParameterLibrary.Custom("/N Тест", "Тестовый вход")]);
+        var form = new ViewModels.ParameterTemplatesViewModel([ParameterLibrary.Custom("N Тест", "Тестовый вход")]);
         var window = new ParameterTemplatesWindow(form);
         window.Show();
         Render();
@@ -643,18 +643,35 @@ public class MainWindowTests
         var rows = window.FindControl<ListBox>("RowsList")!;
         Assert.Equal(form.Rows.Count, rows.ItemCount);
         Assert.False(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled);
+        Assert.False(window.FindControl<Button>("EditButton")!.IsEffectivelyEnabled);
+        Assert.DoesNotContain("/", window.FindControl<TextBox>("NewParameterBox")!.PlaceholderText, StringComparison.Ordinal);
+        string RowTexts() => string.Join("|", rows.GetVisualDescendants().OfType<TextBlock>().Select(t => t.Text));
+        Assert.DoesNotContain("/", RowTexts(), StringComparison.Ordinal); // в колонке «Параметр» — без «/»
 
         var parameter = window.FindControl<TextBox>("NewParameterBox")!;
         parameter.Focus();
-        form.NewParameter = "/L en";
+        form.NewParameter = "L en";
         form.NewDescription = "Английский интерфейс";
         window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Render();
         Assert.Equal(2, form.CustomTemplates.Count);
         Assert.True(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled); // выделен добавленный
-        Snapshot(window, "09-parameter-templates");
 
+        // F2 в таблице — изменить: поля заполняются, Esc отменяет только изменение, окно остаётся открытым.
         rows.ContainerFromItem(form.SelectedRow!)!.Focus(); // как после щелчка по строке
+        window.KeyPressQwerty(PhysicalKey.F2, RawInputModifiers.None);
+        Render();
+        Assert.True(form.IsEditing);
+        Assert.True(parameter.IsFocused);
+        Assert.Equal("Применить", window.FindControl<TextBlock>("ApplyText")!.Text);
+        Assert.True(window.FindControl<Button>("CancelEditButton")!.IsVisible);
+        Snapshot(window, "09-parameter-templates");
+        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Render();
+        Assert.False(form.IsEditing);
+        Assert.True(window.IsVisible);
+
+        rows.ContainerFromItem(form.SelectedRow!)!.Focus();
         window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
         Render();
         Assert.Single(form.CustomTemplates);

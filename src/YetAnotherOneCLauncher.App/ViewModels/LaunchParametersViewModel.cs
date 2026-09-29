@@ -99,7 +99,7 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
     public bool TemplateNeedsFile => SelectedTemplate?.Value == ParameterValueKind.File;
 
     public string TemplateDescription => SelectedTemplate is { } template
-        ? string.IsNullOrWhiteSpace(template.Description) ? template.Text : $"{template.Text} — {char.ToLower(template.Description[0], System.Globalization.CultureInfo.CurrentCulture)}{template.Description[1..]}"
+        ? string.IsNullOrWhiteSpace(template.Description) ? template.CommandText : $"{template.CommandText} — {char.ToLower(template.Description[0], System.Globalization.CultureInfo.CurrentCulture)}{template.Description[1..]}"
         : string.Empty;
 
     [ObservableProperty]

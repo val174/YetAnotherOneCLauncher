@@ -5,7 +5,7 @@ using YetAnotherOneCLauncher.Core.Launching;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
-/// <summary>Строка таблицы параметров: встроенный или свой (свой можно удалить).</summary>
+/// <summary>Строка таблицы параметров: встроенный или свой (свой можно изменить и удалить).</summary>
 public sealed class ParameterTemplateRow
 {
     public ParameterTemplateRow(ParameterTemplate template, bool isCustom)
@@ -18,14 +18,15 @@ public sealed class ParameterTemplateRow
 
     public bool IsCustom { get; }
 
-    public string Parameter => Template.Text;
+    /// <summary>Без «/»: он подставляется только при вставке в параметры запуска.</summary>
+    public string Parameter => Template.Key;
 
     public string Description => ParameterLibrary.DescriptionOf(Template);
 }
 
 /// <summary>
 /// Окно «Свои шаблоны параметров»: таблица известных параметров (свои — сверху), добавление своего
-/// (параметр и описание) и удаление своих. Изменения применяются кнопкой «Сохранить».
+/// (параметр и описание), изменение и удаление своих. Изменения применяются кнопкой «Сохранить».
 /// </summary>
 public sealed partial class ParameterTemplatesViewModel : ObservableObject
 {
@@ -49,17 +50,29 @@ public sealed partial class ParameterTemplatesViewModel : ObservableObject
     public List<ParameterTemplate> CustomTemplates => Rows.Where(r => r.IsCustom).Select(r => r.Template).ToList();
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+    [NotifyCanExecuteChangedFor(nameof(DeleteCommand), nameof(EditCommand))]
     public partial ParameterTemplateRow? SelectedRow { get; set; }
 
+    /// <summary>Свой параметр, который сейчас изменяется в полях ввода; <c>null</c> — поля для нового.</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(AddCommand))]
+    [NotifyPropertyChangedFor(nameof(IsEditing), nameof(FormTitle), nameof(ApplyText))]
+    [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
+    public partial ParameterTemplateRow? EditingRow { get; set; }
+
+    public bool IsEditing => EditingRow is not null;
+
+    public string FormTitle => IsEditing ? "Изменение параметра" : "Новый параметр";
+
+    public string ApplyText => IsEditing ? "Применить" : "Добавить";
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(ApplyCommand))]
     public partial string NewParameter { get; set; } = string.Empty;
 
     [ObservableProperty]
     public partial string NewDescription { get; set; } = string.Empty;
 
-    /// <summary>Почему параметр не добавлен (повтор); пусто — всё в порядке.</summary>
+    /// <summary>Почему параметр не принят (повтор); пусто — всё в порядке.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasError))]
     public partial string ErrorText { get; set; } = string.Empty;
@@ -68,26 +81,56 @@ public sealed partial class ParameterTemplatesViewModel : ObservableObject
 
     partial void OnNewParameterChanged(string value) => ErrorText = string.Empty;
 
-    [RelayCommand(CanExecute = nameof(CanAdd))]
-    private void Add()
+    /// <summary>Добавить новый параметр или применить изменение выбранного.</summary>
+    [RelayCommand(CanExecute = nameof(CanApply))]
+    private void Apply()
     {
-        var parameter = NewParameter.Trim();
-        if (Rows.FirstOrDefault(r => string.Equals(r.Parameter, parameter, StringComparison.OrdinalIgnoreCase)) is { } existing)
+        var key = ParameterLibrary.NormalizeKey(NewParameter);
+        var duplicate = Rows.FirstOrDefault(r => r != EditingRow && string.Equals(r.Parameter, key, StringComparison.OrdinalIgnoreCase));
+        if (duplicate is not null)
         {
-            ErrorText = existing.IsCustom ? "Такой параметр уже добавлен." : "Такой параметр уже есть среди встроенных.";
-            SelectedRow = existing;
+            ErrorText = duplicate.IsCustom ? "Такой параметр уже добавлен." : "Такой параметр уже есть среди встроенных.";
+            if (!IsEditing)
+            {
+                SelectedRow = duplicate;
+            }
+
             return;
         }
 
-        // Свои — после уже добавленных своих, перед встроенными.
-        var row = new ParameterTemplateRow(ParameterLibrary.Custom(parameter, NewDescription), isCustom: true);
-        Rows.Insert(Rows.Count(r => r.IsCustom), row);
+        var row = new ParameterTemplateRow(ParameterLibrary.Custom(key, NewDescription), isCustom: true);
+        if (EditingRow is { } editing)
+        {
+            Rows[Rows.IndexOf(editing)] = row; // на прежнем месте
+        }
+        else
+        {
+            Rows.Insert(Rows.Count(r => r.IsCustom), row); // после своих, перед встроенными
+        }
+
         SelectedRow = row;
-        NewParameter = string.Empty;
-        NewDescription = string.Empty;
+        ClearForm();
     }
 
-    private bool CanAdd() => !string.IsNullOrWhiteSpace(NewParameter);
+    private bool CanApply() => ParameterLibrary.NormalizeKey(NewParameter).Length > 0;
+
+    /// <summary>Выбранный свой параметр — в поля ввода для изменения.</summary>
+    [RelayCommand(CanExecute = nameof(CanChangeSelected))]
+    private void Edit()
+    {
+        if (SelectedRow is not { IsCustom: true } row)
+        {
+            return;
+        }
+
+        EditingRow = row;
+        NewParameter = row.Parameter;
+        NewDescription = row.Description;
+    }
+
+    /// <summary>Отказаться от изменения: поля снова для нового параметра.</summary>
+    [RelayCommand]
+    private void CancelEdit() => ClearForm();
 
     [RelayCommand(CanExecute = nameof(CanDelete))]
     private void Delete()
@@ -103,5 +146,16 @@ public sealed partial class ParameterTemplatesViewModel : ObservableObject
         SelectedRow = Rows.Where(r => r.IsCustom).ElementAtOrDefault(Math.Min(index, Rows.Count(r => r.IsCustom) - 1));
     }
 
-    private bool CanDelete() => SelectedRow?.IsCustom == true;
+    private bool CanChangeSelected() => SelectedRow?.IsCustom == true;
+
+    // Изменяемый сейчас не удаляется: сначала применить или отменить изменение.
+    private bool CanDelete() => CanChangeSelected() && SelectedRow != EditingRow;
+
+    private void ClearForm()
+    {
+        EditingRow = null;
+        NewParameter = string.Empty;
+        NewDescription = string.Empty;
+        ErrorText = string.Empty;
+    }
 }

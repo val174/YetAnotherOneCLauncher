@@ -19,8 +19,19 @@ public sealed record ParameterTemplate
     /// <summary>Название для списка.</summary>
     public string Name { get; init; } = string.Empty;
 
-    /// <summary>Текст параметра без значения, например <c>/UC</c>.</summary>
+    /// <summary>
+    /// Текст параметра без значения: у встроенных — с «/» (<c>/UC</c>), у своих — без него (<c>N Иванов</c>).
+    /// «/» подставляется при вставке в параметры запуска (<see cref="CommandText"/>).
+    /// </summary>
     public string Text { get; init; } = string.Empty;
+
+    /// <summary>Параметр без ведущего «/» — так он показывается и вводится в окне своих шаблонов.</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string Key => ParameterLibrary.NormalizeKey(Text);
+
+    /// <summary>Параметр для командной строки: всегда с «/».</summary>
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string CommandText => "/" + Key;
 
     public string Description { get; init; } = string.Empty;
 
@@ -31,10 +42,10 @@ public sealed record ParameterTemplate
     {
         if (Value == ParameterValueKind.None || string.IsNullOrWhiteSpace(value))
         {
-            return Text;
+            return CommandText;
         }
 
-        return Text + " " + OneCCommandLine.Quote(value.Trim());
+        return CommandText + " " + OneCCommandLine.Quote(value.Trim());
     }
 
     public override string ToString() => Name;
@@ -210,15 +221,21 @@ public static class ParameterLibrary
     ];
 
     /// <summary>
-    /// Свой параметр из окна «Свои шаблоны параметров»: в списке шаблонов называется описанием
-    /// (или самим параметром, если описания нет) и вставляется как есть.
+    /// Свой параметр из окна «Свои шаблоны параметров»: хранится без «/» (его подставляет <see cref="ParameterTemplate.Format"/>),
+    /// в списке шаблонов называется описанием или, если описания нет, самим параметром.
     /// </summary>
     public static ParameterTemplate Custom(string parameter, string? description)
     {
-        ArgumentNullException.ThrowIfNull(parameter);
-        var text = parameter.Trim();
+        var key = NormalizeKey(parameter);
         var about = description?.Trim() ?? string.Empty;
-        return new ParameterTemplate { Name = about.Length > 0 ? about : text, Text = text, Description = about };
+        return new ParameterTemplate { Name = about.Length > 0 ? about : "/" + key, Text = key, Description = about };
+    }
+
+    /// <summary>Параметр без ведущего «/» и лишних пробелов: «/N Иванов» → «N Иванов».</summary>
+    public static string NormalizeKey(string parameter)
+    {
+        ArgumentNullException.ThrowIfNull(parameter);
+        return parameter.Trim().TrimStart('/').TrimStart();
     }
 
     /// <summary>Описание для таблицы: у старых своих шаблонов описания нет — тогда их название.</summary>
@@ -230,7 +247,7 @@ public static class ParameterLibrary
             return template.Description;
         }
 
-        return template.Name == template.Text ? string.Empty : template.Name;
+        return template.Name == template.Text || template.Name == template.CommandText ? string.Empty : template.Name;
     }
 
     /// <summary>Добавляет фрагмент к тексту параметров через пробел.</summary>

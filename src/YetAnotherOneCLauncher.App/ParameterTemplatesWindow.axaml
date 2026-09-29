@@ -42,36 +42,50 @@
   <!-- Колонки таблицы и полей ввода совпадают: «Параметр» — 280, «Описание» — остальное. -->
   <DockPanel Margin="16">
     <TextBlock DockPanel.Dock="Top" Classes="secondary" TextWrapping="Wrap" Margin="0,0,0,10"
-               Text="Параметры командной строки 1С. Свои параметры появятся в списке шаблонов окна «Параметры запуска»; встроенные изменить нельзя." />
+               Text="Параметры командной строки 1С — без «/»: он подставляется, когда параметр выбирают для запуска. Свои параметры появятся в списке шаблонов окна «Параметры запуска»; встроенные изменить нельзя." />
 
     <!-- Кнопки окна. -->
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
-      <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" ToolTip.Tip="Удалить выбранный свой параметр (Del)">
-        <StackPanel Orientation="Horizontal">
-          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DeleteIconGeometry}" />
-          <TextBlock Text="Удалить" VerticalAlignment="Center" />
-        </StackPanel>
-      </Button>
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Button x:Name="EditButton" Command="{Binding EditCommand}" ToolTip.Tip="Изменить выбранный свой параметр (F2, двойной щелчок)">
+          <StackPanel Orientation="Horizontal">
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EditIconGeometry}" />
+            <TextBlock Text="Изменить" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" ToolTip.Tip="Удалить выбранный свой параметр (Del)">
+          <StackPanel Orientation="Horizontal">
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DeleteIconGeometry}" />
+            <TextBlock Text="Удалить" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </StackPanel>
       <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
         <Button x:Name="SaveButton" Content="Сохранить" Classes="accent" MinWidth="100" HorizontalContentAlignment="Center" />
         <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" HorizontalContentAlignment="Center" />
       </StackPanel>
     </Grid>
 
-    <!-- Новый параметр: параметр и описание. -->
+    <!-- Новый или изменяемый свой параметр: параметр (без «/» — он подставляется при запуске) и описание. -->
     <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,10,0,0">
-      <TextBlock Text="Новый параметр" />
-      <Grid ColumnDefinitions="280,*,Auto">
+      <TextBlock x:Name="FormTitle" Text="{Binding FormTitle}" />
+      <Grid ColumnDefinitions="280,*,Auto,Auto">
         <TextBox x:Name="NewParameterBox" Text="{Binding NewParameter}" FontFamily="Consolas, DejaVu Sans Mono, monospace"
-                 PlaceholderText="Параметр, например /N Иванов" Margin="0,0,8,0" />
+                 PlaceholderText="Параметр, например N Иванов" Margin="0,0,8,0"
+                 ToolTip.Tip="Без «/» — он подставляется, когда параметр выбирают для запуска" />
         <TextBox x:Name="NewDescriptionBox" Grid.Column="1" Text="{Binding NewDescription}"
                  PlaceholderText="Описание" Margin="0,0,8,0" />
-        <Button x:Name="AddButton" Grid.Column="2" Command="{Binding AddCommand}" ToolTip.Tip="Добавить параметр (Enter)">
+        <Button x:Name="ApplyButton" Grid.Column="2" Command="{Binding ApplyCommand}" ToolTip.Tip="Добавить или применить изменение (Enter)">
           <StackPanel Orientation="Horizontal">
-            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource AddIconGeometry}" />
-            <TextBlock Text="Добавить" VerticalAlignment="Center" />
+            <Panel>
+              <c:ToolIcon Classes="buttonIcon" Data="{StaticResource AddIconGeometry}" IsVisible="{Binding !IsEditing}" />
+              <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EditIconGeometry}" IsVisible="{Binding IsEditing}" />
+            </Panel>
+            <TextBlock x:Name="ApplyText" Text="{Binding ApplyText}" VerticalAlignment="Center" />
           </StackPanel>
         </Button>
+        <Button x:Name="CancelEditButton" Grid.Column="3" Content="✕" Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}"
+                Margin="8,0,0,0" ToolTip.Tip="Отменить изменение (Esc)" VerticalAlignment="Stretch" />
       </Grid>
       <TextBlock x:Name="ErrorText" Text="{Binding ErrorText}" IsVisible="{Binding HasError}" Foreground="#C42B1C" />
     </StackPanel>

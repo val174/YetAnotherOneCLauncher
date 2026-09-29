@@ -261,33 +261,86 @@ public class LaunchParametersTests
     }
 
     [Fact]
-    public void Own_parameters_are_added_with_description_and_only_they_can_be_deleted()
+    public void Own_parameters_are_added_without_slash_and_only_they_can_be_deleted()
     {
-        // Старый свой шаблон (без описания): в колонке «Описание» — его название.
+        // Старый свой шаблон (с «/», без описания): «/» не показывается, в колонке «Описание» — его название.
         var form = new ParameterTemplatesViewModel([new ParameterTemplate { Name = "Тестовый вход", Text = "/N Тест" }]);
         Assert.Equal(1 + ParameterLibrary.BuiltIn.Count, form.Rows.Count);
-        Assert.Equal(("/N Тест", "Тестовый вход", true), (form.Rows[0].Parameter, form.Rows[0].Description, form.Rows[0].IsCustom));
-        Assert.False(form.AddCommand.CanExecute(null)); // без параметра добавлять нечего
+        Assert.Equal(("N Тест", "Тестовый вход", true), (form.Rows[0].Parameter, form.Rows[0].Description, form.Rows[0].IsCustom));
+        Assert.DoesNotContain(form.Rows, r => r.Parameter.StartsWith('/')); // и у встроенных
+        Assert.False(form.ApplyCommand.CanExecute(null)); // без параметра добавлять нечего
+        Assert.Equal(("Новый параметр", "Добавить"), (form.FormTitle, form.ApplyText));
 
-        form.NewParameter = "  /L en ";
+        form.NewParameter = "  /L en "; // «/» по привычке — отбрасывается
         form.NewDescription = "Английский интерфейс";
-        form.AddCommand.Execute(null);
+        form.ApplyCommand.Execute(null);
         var added = form.Rows[1]; // после своих, перед встроенными
-        Assert.Equal(("/L en", "Английский интерфейс", true), (added.Parameter, added.Description, added.IsCustom));
+        Assert.Equal(("L en", "Английский интерфейс", true), (added.Parameter, added.Description, added.IsCustom));
+        Assert.Equal("L en", added.Template.Text); // хранится без «/»
         Assert.Equal("Английский интерфейс", added.Template.Name); // так он называется в списке шаблонов
         Assert.Same(added, form.SelectedRow);
         Assert.Equal((string.Empty, string.Empty), (form.NewParameter, form.NewDescription));
 
-        form.NewParameter = "/clearcache"; // уже есть среди встроенных
-        form.AddCommand.Execute(null);
+        form.NewParameter = "clearcache"; // уже есть среди встроенных
+        form.ApplyCommand.Execute(null);
         Assert.Contains("встроенных", form.ErrorText, StringComparison.Ordinal);
         Assert.False(form.SelectedRow!.IsCustom);
-        Assert.False(form.DeleteCommand.CanExecute(null)); // встроенный не удаляется
+        Assert.False(form.DeleteCommand.CanExecute(null)); // встроенный не удаляется и не изменяется
+        Assert.False(form.EditCommand.CanExecute(null));
 
         form.SelectedRow = form.Rows[0];
         form.DeleteCommand.Execute(null);
-        Assert.Equal(["/L en"], form.CustomTemplates.Select(t => t.Text));
+        Assert.Equal(["L en"], form.CustomTemplates.Select(t => t.Text));
         Assert.Same(form.Rows[0], form.SelectedRow); // выделение — на оставшийся свой
+    }
+
+    [Fact]
+    public void Own_parameter_is_edited_in_place()
+    {
+        var form = new ParameterTemplatesViewModel(
+        [
+            ParameterLibrary.Custom("N Тест", "Тестовый вход"),
+            ParameterLibrary.Custom("L en", "Английский интерфейс"),
+        ]);
+        form.SelectedRow = form.Rows[0];
+        form.EditCommand.Execute(null);
+        Assert.Equal(("N Тест", "Тестовый вход"), (form.NewParameter, form.NewDescription));
+        Assert.Equal(("Изменение параметра", "Применить"), (form.FormTitle, form.ApplyText));
+        Assert.False(form.DeleteCommand.CanExecute(null)); // изменяемый не удаляется
+
+        form.NewParameter = "L en"; // занят другим своим
+        form.ApplyCommand.Execute(null);
+        Assert.Contains("уже добавлен", form.ErrorText, StringComparison.Ordinal);
+        Assert.True(form.IsEditing);
+
+        form.NewParameter = "N Тест"; // тот же параметр — не повтор
+        form.NewDescription = "Вход тестировщика";
+        form.ApplyCommand.Execute(null);
+        Assert.False(form.IsEditing);
+        Assert.Equal(("N Тест", "Вход тестировщика"), (form.Rows[0].Parameter, form.Rows[0].Description)); // на прежнем месте
+        Assert.Equal(["N Тест", "L en"], form.CustomTemplates.Select(t => t.Text));
+
+        form.SelectedRow = form.Rows[1];
+        form.EditCommand.Execute(null);
+        form.NewDescription = "не то";
+        form.CancelEditCommand.Execute(null);
+        Assert.False(form.IsEditing);
+        Assert.Equal("Английский интерфейс", form.Rows[1].Description);
+        Assert.Equal((string.Empty, string.Empty), (form.NewParameter, form.NewDescription));
+    }
+
+    [Fact]
+    public void Slash_is_added_when_parameter_is_chosen_for_launch()
+    {
+        var own = ParameterLibrary.Custom("N Тест", "Тестовый вход");
+        Assert.Equal("/N Тест", own.Format(null));
+        Assert.Equal("/UC 123", ParameterLibrary.BuiltIn.Single(t => t.Text == "/UC").Format("123"));
+        Assert.Equal("/N", ParameterLibrary.Custom("N", null).Name); // без описания в списке шаблонов — с «/»
+
+        var form = new LaunchParametersViewModel(LaunchParametersKind.OneOff, "База", [own], [], new FakeFiles()) { SelectedTemplate = own };
+        Assert.StartsWith("/N Тест — ", form.TemplateDescription, StringComparison.Ordinal);
+        form.InsertTemplateCommand.Execute(null);
+        Assert.Equal("/N Тест", form.Parameters);
     }
 
     [Fact]
@@ -298,7 +351,7 @@ public class LaunchParametersTests
         {
             form.NewParameter = "/N Тест";
             form.NewDescription = "Тестовый вход";
-            form.AddCommand.Execute(null);
+            form.ApplyCommand.Execute(null);
             return false; // «Отмена»
         };
         await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
@@ -308,13 +361,13 @@ public class LaunchParametersTests
         {
             form.NewParameter = "/N Тест";
             form.NewDescription = "Тестовый вход";
-            form.AddCommand.Execute(null);
+            form.ApplyCommand.Execute(null);
             return true;
         };
         await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
 
         var saved = Assert.Single(fixture.Settings.Settings.ParameterTemplates);
-        Assert.Equal(("Тестовый вход", "/N Тест", "Тестовый вход"), (saved.Name, saved.Text, saved.Description));
+        Assert.Equal(("Тестовый вход", "N Тест", "Тестовый вход"), (saved.Name, saved.Text, saved.Description));
         Assert.Equal(saved, fixture.Settings.UserData.ParameterTemplates()[0]); // первым — в списке шаблонов окна параметров
     }
 
