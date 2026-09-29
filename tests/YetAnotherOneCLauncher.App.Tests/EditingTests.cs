@@ -57,6 +57,38 @@ public class EditingTests
     }
 
     [Fact]
+    public async Task Architecture_choice_in_editor_is_saved_to_list()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        vm.SearchText = "зуп";
+        InfoBaseEditorViewModel? shown = null;
+        fixture.Dialogs.InfoBaseEditor = editor =>
+        {
+            shown = editor;
+            editor.ArchitectureIndex = 1; // 32 бита (x86)
+            return true;
+        };
+
+        await vm.EditCommand.ExecuteAsync(null);
+
+        Assert.Equal(5, shown!.ArchitectureNames.Count);
+        Assert.Equal("x86", fixture.SavedList().Sections.Single(s => s.Name == "Зарплата и управление персоналом").Get("AppArch"));
+        Assert.Equal(Core.Model.AppArchitecture.X86, vm.InfoBases.Single(b => b.Name == "Зарплата и управление персоналом").InfoBase.Architecture);
+
+        // При следующем открытии выбор показан.
+        fixture.Dialogs.InfoBaseEditor = editor =>
+        {
+            shown = editor;
+            return false;
+        };
+        vm.SearchText = "зуп";
+        await vm.EditCommand.ExecuteAsync(null);
+        Assert.Equal(1, shown.ArchitectureIndex);
+    }
+
+    [Fact]
     public async Task Edit_base_changes_only_its_lines()
     {
         using var fixture = new ViewModelFixture();

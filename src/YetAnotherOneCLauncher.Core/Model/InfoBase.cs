@@ -34,6 +34,9 @@ public sealed class InfoBase : CatalogEntry
     /// <summary>Маска версии платформы: "8.3", "8.3.24", "8.3.24.1548" или <c>null</c>.</summary>
     public string? Version => NullIfEmpty(Section.Get(V8iKeys.Version));
 
+    /// <summary>Разрядность клиента (<c>AppArch</c>).</summary>
+    public AppArchitecture Architecture => AppArchitectures.Parse(Section.Get(V8iKeys.AppArch));
+
     /// <summary>Аутентификация Windows (ключ <c>WA</c>); <c>null</c>, если не указано.</summary>
     public bool? WindowsAuthentication => Section.Get(V8iKeys.WindowsAuthentication)?.Trim() switch
     {

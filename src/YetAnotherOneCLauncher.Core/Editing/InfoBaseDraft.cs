@@ -29,6 +29,9 @@ public sealed record InfoBaseDraft
     /// <summary>Маска версии: "8.3", "8.3.24", "8.3.24.1548" или пусто.</summary>
     public string? Version { get; init; }
 
+    /// <summary>Разрядность клиента (<c>AppArch</c>); <see cref="AppArchitecture.Auto"/> — ключа нет.</summary>
+    public AppArchitecture Architecture { get; init; }
+
     /// <summary>Аутентификация Windows; <c>null</c> — ключ не писать.</summary>
     public bool? WindowsAuthentication { get; init; } = true;
 
@@ -52,6 +55,7 @@ public sealed record InfoBaseDraft
             FolderPath = infoBase.FolderPath,
             App = infoBase.App,
             Version = infoBase.Version,
+            Architecture = infoBase.Architecture,
             WindowsAuthentication = infoBase.WindowsAuthentication,
             AdditionalParameters = infoBase.AdditionalParameters,
             OriginalConnection = connection,

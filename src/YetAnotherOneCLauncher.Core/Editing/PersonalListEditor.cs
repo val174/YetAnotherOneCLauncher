@@ -39,6 +39,7 @@ public static class PersonalListEditor
         section.Set(V8iKeys.App, AppValue(draft.App));
         SetOptional(section, V8iKeys.WindowsAuthentication, WaValue(draft.WindowsAuthentication));
         SetOptional(section, V8iKeys.Version, draft.Version);
+        SetOptional(section, V8iKeys.AppArch, AppArchitectures.ToV8iValue(draft.Architecture));
         SetOptional(section, V8iKeys.AdditionalParameters, draft.AdditionalParameters);
 
         document.Sections.Add(section);
@@ -79,6 +80,12 @@ public static class PersonalListEditor
 
         SetOptional(section, V8iKeys.WindowsAuthentication, WaValue(draft.WindowsAuthentication));
         SetOptional(section, V8iKeys.Version, draft.Version);
+        // Неизвестное значение AppArch читается как «авто» — его не трогаем, пока разрядность не поменяли.
+        if (AppArchitectures.Parse(section.Get(V8iKeys.AppArch)) != draft.Architecture)
+        {
+            SetOptional(section, V8iKeys.AppArch, AppArchitectures.ToV8iValue(draft.Architecture));
+        }
+
         SetOptional(section, V8iKeys.AdditionalParameters, draft.AdditionalParameters);
     }
 

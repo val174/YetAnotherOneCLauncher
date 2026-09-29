@@ -55,12 +55,16 @@ public static class PlatformSelector
         string? infoBaseVersion,
         string? starterDefaultVersion,
         PlatformArchitecture preferredArchitecture = PlatformArchitecture.X64,
-        string? userOverrideVersion = null)
+        string? userOverrideVersion = null,
+        bool architectureRequired = false)
     {
         ArgumentNullException.ThrowIfNull(installations);
 
         var warnings = new List<string>();
-        var candidates = installations.Where(i => i.Has(executable)).ToList();
+        // Разрядность, обязательная для базы (AppArch=x86 или x86_64): платформы другой разрядности не подходят.
+        var candidates = installations
+            .Where(i => i.Has(executable) && (!architectureRequired || i.Architecture == preferredArchitecture))
+            .ToList();
 
         var (mask, source) = ResolveMask(userOverrideVersion, infoBaseVersion, starterDefaultVersion, warnings);
         if (candidates.Count == 0)

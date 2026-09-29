@@ -15,4 +15,5 @@ public static class V8iKeys
     public const string Version = "Version";
     public const string DefaultApp = "DefaultApp";
     public const string AdditionalParameters = "AdditionalParameters";
+    public const string AppArch = "AppArch";
 }

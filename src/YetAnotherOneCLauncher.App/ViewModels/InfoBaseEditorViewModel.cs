@@ -33,6 +33,7 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
         Folder = draft.FolderPath;
         AppIndex = Math.Max(0, Array.IndexOf(Apps, draft.App));
         Version = draft.Version ?? string.Empty;
+        ArchitectureIndex = Math.Max(0, Array.IndexOf(Architectures, draft.Architecture));
         // Нет ключа WA — 1С по умолчанию пробует аутентификацию Windows; показываем так же.
         WindowsAuthentication = draft.WindowsAuthentication ?? true;
         AdditionalParameters = draft.AdditionalParameters ?? string.Empty;
@@ -45,6 +46,13 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     public IReadOnlyList<string> KindNames { get; } = ["На этом компьютере или в локальной сети", "На сервере 1С:Предприятия", "На веб-сервере"];
 
     public IReadOnlyList<string> AppNames { get; } = ["Выбирать автоматически", "Тонкий клиент", "Толстый клиент", "Веб-клиент"];
+
+    /// <summary>Разрядность клиента — как в свойствах базы штатного стартера (ключ AppArch).</summary>
+    public IReadOnlyList<string> ArchitectureNames { get; } =
+        ["Как в настройках лаунчера", "32 бита (x86)", "64 бита (x86-64)", "Предпочтительно 32 бита", "Предпочтительно 64 бита"];
+
+    private static readonly AppArchitecture[] Architectures =
+        [AppArchitecture.Auto, AppArchitecture.X86, AppArchitecture.X64, AppArchitecture.PreferX86, AppArchitecture.PreferX64];
 
     public IReadOnlyList<string> Folders { get; }
 
@@ -89,6 +97,9 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     public partial string Version { get; set; }
 
     [ObservableProperty]
+    public partial int ArchitectureIndex { get; set; }
+
+    [ObservableProperty]
     public partial bool WindowsAuthentication { get; set; }
 
     [ObservableProperty]
@@ -118,6 +129,7 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
             FolderPath = FolderPaths.Normalize(Folder),
             App = Apps[Math.Clamp(AppIndex, 0, Apps.Length - 1)],
             Version = string.IsNullOrWhiteSpace(Version) ? null : Version.Trim(),
+            Architecture = Architectures[Math.Clamp(ArchitectureIndex, 0, Architectures.Length - 1)],
             // Ключа не было и флажок не меняли — ключ не добавляем, чтобы не изменить поведение запуска.
             WindowsAuthentication = _original.WindowsAuthentication is null && WindowsAuthentication ? null : WindowsAuthentication,
             AdditionalParameters = string.IsNullOrWhiteSpace(AdditionalParameters) ? null : AdditionalParameters.Trim(),

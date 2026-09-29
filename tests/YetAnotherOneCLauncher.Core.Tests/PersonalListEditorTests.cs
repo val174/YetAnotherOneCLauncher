@@ -228,6 +228,34 @@ public class PersonalListEditorTests
         Assert.Equal("/Архивы", document.Sections[0].Get("Folder"));
     }
 
+    [Fact]
+    public void Architecture_is_written_to_AppArch_and_unknown_value_is_kept()
+    {
+        var document = V8iDocument.Parse(FruitList);
+        var section = PersonalListEditor.AddBase(document, new InfoBaseDraft
+        {
+            Name = "Новая",
+            FilePath = @"C:\n",
+            Architecture = AppArchitecture.X86,
+        });
+        Assert.Equal("x86", section.Get("AppArch"));
+        var infoBase = new InfoBase(section, Personal);
+        Assert.Equal(AppArchitecture.X86, infoBase.Architecture);
+
+        PersonalListEditor.UpdateBase(document, EntryRef.Of(infoBase), InfoBaseDraft.From(infoBase) with { Architecture = AppArchitecture.PreferX64 });
+        Assert.Equal("x86_64_prt", section.Get("AppArch"));
+
+        infoBase = new InfoBase(section, Personal);
+        PersonalListEditor.UpdateBase(document, EntryRef.Of(infoBase), InfoBaseDraft.From(infoBase) with { Architecture = AppArchitecture.Auto });
+        Assert.Null(section.Get("AppArch"));
+
+        // Значение, которого лаунчер не знает, читается как «авто» и не пропадает, пока разрядность не меняли.
+        section.Set("AppArch", "arm64");
+        infoBase = new InfoBase(section, Personal);
+        PersonalListEditor.UpdateBase(document, EntryRef.Of(infoBase), InfoBaseDraft.From(infoBase) with { Name = "Новая 2" });
+        Assert.Equal("arm64", section.Get("AppArch"));
+    }
+
     private const string FruitList = """
         [Яблоко]
         Connect=File="C:\a";

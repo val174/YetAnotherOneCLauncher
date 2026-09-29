@@ -59,8 +59,10 @@ public static class LaunchPlanner
         }
 
         var executable = client == ClientApp.ThinClient ? PlatformExecutable.ThinClient : PlatformExecutable.ThickClient;
+        // Разрядность: из свойств базы (AppArch), иначе из настроек лаунчера.
+        var (architecture, architectureRequired) = AppArchitectures.Resolve(infoBase.Architecture, options.PreferredArchitecture);
         var selection = PlatformSelector.Select(
-            installations, executable, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture, request.PlatformVersionOverride);
+            installations, executable, infoBase.Version, starterDefaultVersion, architecture, request.PlatformVersionOverride, architectureRequired);
 
         // При App=Auto тонкий клиент необязателен: если его нет, подойдёт толстый.
         var clientIsAutomatic = request.ClientOverride is null && infoBase.App == ClientApp.Auto;
@@ -69,7 +71,7 @@ public static class LaunchPlanner
             && clientIsAutomatic)
         {
             var thick = PlatformSelector.Select(
-                installations, PlatformExecutable.ThickClient, infoBase.Version, starterDefaultVersion, options.PreferredArchitecture, request.PlatformVersionOverride);
+                installations, PlatformExecutable.ThickClient, infoBase.Version, starterDefaultVersion, architecture, request.PlatformVersionOverride, architectureRequired);
             if (thick.Status == PlatformSelectionStatus.Selected || selection.Status == PlatformSelectionStatus.NothingInstalled)
             {
                 (selection, executable) = (thick, PlatformExecutable.ThickClient);
@@ -78,7 +80,10 @@ public static class LaunchPlanner
 
         if (selection.Status == PlatformSelectionStatus.NothingInstalled || selection.Installation is null)
         {
-            return new LaunchPlan.Failed(NothingInstalledMessage(executable, selection));
+            return new LaunchPlan.Failed(architectureRequired && installations.Any(i => i.Has(executable))
+                ? $"Для «{infoBase.Name}» в свойствах базы указана разрядность: только {AppArchitectures.Describe(architecture)} платформа, "
+                  + $"а такая не установлена. Установите её или выберите другую разрядность в свойствах базы."
+                : NothingInstalledMessage(executable, selection));
         }
 
         var command = BuildCommand(request, selection.Installation, executable);

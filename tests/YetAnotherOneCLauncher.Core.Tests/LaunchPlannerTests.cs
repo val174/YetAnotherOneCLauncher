@@ -210,6 +210,43 @@ public class LaunchPlannerTests
         Assert.EndsWith("/N admin /P ***", display, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("AppArch=x86", "8.3.18.1741", PlatformArchitecture.X86)] // только 32: единственная такая
+    [InlineData("AppArch=x86_64", "8.3.27.2130", PlatformArchitecture.X64)]
+    [InlineData("AppArch=x86_prt", "8.3.27.2130", PlatformArchitecture.X64)] // «предпочтительно»: 32 этой версии нет — любая
+    [InlineData("AppArch=что-то", "8.3.27.2130", PlatformArchitecture.X64)] // неизвестное — как «авто»
+    public void Base_architecture_selects_platform(string appArch, string version, PlatformArchitecture architecture)
+    {
+        var command = Run(InfoBase("Connect=Srvr=\"srv\";Ref=\"buh\";", appArch), LaunchMode.Designer);
+
+        Assert.Equal(version, command.Platform.Version.ToString());
+        Assert.Equal(architecture, command.Platform.Architecture);
+    }
+
+    [Fact]
+    public void Required_architecture_without_such_platform_fails_with_clear_message()
+    {
+        // 32-разрядная установлена, но без тонкого клиента — а клиент у базы тонкий.
+        var plan = LaunchPlanner.Plan(
+            new LaunchRequest(InfoBase("Connect=File=\"C:\\B\";", "App=ThinClient", "AppArch=x86"), LaunchMode.Enterprise), Installed, null);
+
+        var failed = Assert.IsType<LaunchPlan.Failed>(plan);
+        Assert.Contains("32-разрядная", failed.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Launcher_default_architecture_applies_only_without_AppArch()
+    {
+        var options = new LaunchOptions { PreferredArchitecture = PlatformArchitecture.X86 };
+        var both = new[] { Installation("8.3.27.2130"), Installation("8.3.27.2130", PlatformArchitecture.X86) };
+
+        var auto = LaunchPlanner.Plan(new LaunchRequest(InfoBase("Connect=Srvr=\"s\";Ref=\"b\";"), LaunchMode.Designer), both, null, options);
+        var x64 = LaunchPlanner.Plan(new LaunchRequest(InfoBase("Connect=Srvr=\"s\";Ref=\"b\";", "AppArch=x86_64"), LaunchMode.Designer), both, null, options);
+
+        Assert.Equal(PlatformArchitecture.X86, Assert.IsType<LaunchPlan.Run>(auto).Command.Platform.Architecture);
+        Assert.Equal(PlatformArchitecture.X64, Assert.IsType<LaunchPlan.Run>(x64).Command.Platform.Architecture);
+    }
+
     private static LaunchCommand Run(InfoBase infoBase, LaunchMode mode)
     {
         var plan = LaunchPlanner.Plan(new LaunchRequest(infoBase, mode), Installed, null);

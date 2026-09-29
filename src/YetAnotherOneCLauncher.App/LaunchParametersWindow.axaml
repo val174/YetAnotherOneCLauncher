@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.LaunchParametersWindow"
         x:DataType="vm:LaunchParametersViewModel"
         Title="{Binding Title}"
@@ -75,9 +76,19 @@
     </Border>
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
-      <Button x:Name="EnterpriseButton" Classes="accent" Content="1С: Предприятие" IsDefault="True" MinWidth="110" ToolTip.Tip="Enter, F3"
-              IsVisible="{Binding IsOneOff}" />
-      <Button x:Name="DesignerButton" Content="Конфигуратор" MinWidth="110" ToolTip.Tip="F4" IsVisible="{Binding IsOneOff}" />
+      <Button x:Name="EnterpriseButton" Classes="accent" IsDefault="True" MinWidth="110" ToolTip.Tip="Enter, F3"
+              IsVisible="{Binding IsOneOff}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" />
+          <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <Button x:Name="DesignerButton" MinWidth="110" ToolTip.Tip="F4" IsVisible="{Binding IsOneOff}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
+          <TextBlock Text="Конфигуратор" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
       <Button x:Name="SaveButton" Classes="accent" Content="Сохранить" MinWidth="100" IsVisible="{Binding !IsOneOff}" />
       <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
     </StackPanel>

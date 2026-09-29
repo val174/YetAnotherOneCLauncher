@@ -1,5 +1,6 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
              x:Class="YetAnotherOneCLauncher.App.LauncherApplication"
              RequestedThemeVariant="Default">
   <!-- Default = как в системе; переключается на лету из главного окна. -->
@@ -11,6 +12,9 @@
       <x:Double x:Key="ControlContentThemeFontSize">15</x:Double>
       <x:Double x:Key="SmallFontSize">13</x:Double>
       <x:Double x:Key="TitleFontSize">20</x:Double>
+      <!-- Значки кнопок запуска: «1С: Предприятие» — запуск (треугольник), «Конфигуратор» — разработка (&lt;/&gt;). -->
+      <StreamGeometry x:Key="EnterpriseIconGeometry">M 4.5,2.5 L 13.5,8 L 4.5,13.5 Z</StreamGeometry>
+      <StreamGeometry x:Key="DesignerIconGeometry">M 5,4 L 1.5,8 L 5,12 M 11,4 L 14.5,8 L 11,12 M 9.3,2.5 L 6.7,13.5</StreamGeometry>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="IconAddBrush" Color="#639922" />
@@ -48,6 +52,14 @@
   <Application.Styles>
     <FluentTheme />
     <!-- Значок всех окон лаунчера (заголовок, Alt+Tab); у .exe — ApplicationIcon в проекте. -->
+    <!-- Значок на кнопке с надписью: цвета надписи (белый на синей кнопке, бледный на недоступной), всегда контуром. -->
+    <Style Selector="c|ToolIcon.buttonIcon">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="StrokeThickness" Value="1.5" />
+      <Setter Property="c:ToolIcon.IconStyle" Value="Outline" />
+      <Setter Property="Brush" Value="{Binding $parent[ContentPresenter].Foreground}" />
+    </Style>
     <Style Selector="Window">
       <Setter Property="Icon" Value="/Assets/app.ico" />
       <Setter Property="FontSize" Value="{StaticResource AppFontSize}" />
