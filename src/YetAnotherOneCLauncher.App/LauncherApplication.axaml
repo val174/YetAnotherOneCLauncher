@@ -19,6 +19,7 @@
           <SolidColorBrush x:Key="IconSettingsBrush" Color="#5F5E5A" />
           <SolidColorBrush x:Key="IconRecentBrush" Color="#378ADD" />
           <SolidColorBrush x:Key="IconFavoriteBrush" Color="#E0900F" />
+          <SolidColorBrush x:Key="IconCopyBrush" Color="#7F77DD" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -32,6 +33,7 @@
           <SolidColorBrush x:Key="IconSettingsBrush" Color="#B4B2A9" />
           <SolidColorBrush x:Key="IconRecentBrush" Color="#85B7EB" />
           <SolidColorBrush x:Key="IconFavoriteBrush" Color="#FAC775" />
+          <SolidColorBrush x:Key="IconCopyBrush" Color="#AFA9EC" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

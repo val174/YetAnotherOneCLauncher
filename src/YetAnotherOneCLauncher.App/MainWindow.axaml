@@ -22,16 +22,12 @@
     <Style Selector="Button.icon">
       <Setter Property="Padding" Value="4" />
       <Setter Property="Background" Value="Transparent" />
-      <Setter Property="Width" Value="24" />
-      <Setter Property="Height" Value="24" />
-    </Style>
-    <Style Selector="Button.icon > Path">
-      <Setter Property="Width" Value="16" />
-      <Setter Property="Height" Value="16" />
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
     </Style>
     <!-- Цветные значки (docs/ICON-VARIANTS.md): у недоступной кнопки значок бледнеет —
          цвет значка от состояния кнопки не зависит. -->
-    <Style Selector="StackPanel#ToolbarButtons Button:disabled c|ToolIcon">
+    <Style Selector="StackPanel#ToolbarButtons Button:disabled c|ToolIcon, Button.icon:disabled c|ToolIcon">
       <Setter Property="Opacity" Value="0.35" />
     </Style>
     <!-- Звезда избранной базы в строке списка: чуть меньше значков папок. -->
@@ -274,15 +270,13 @@
                   <Button x:Name="CopyConnectionButton" Classes="icon" Command="{Binding CopyConnectionStringCommand}"
                           ToolTip.Tip="Копировать строку подключения">
                     <!-- Два листа. -->
-                    <Path Data="M 5,1.5 L 13.5,1.5 L 13.5,11 L 5,11 Z M 2.5,4.5 L 2.5,14 L 10.5,14"
-                          Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1.2" />
+                    <c:ToolIcon Brush="{DynamicResource IconCopyBrush}" Data="M 5,1.5 L 13.5,1.5 L 13.5,11 L 5,11 Z M 2.5,4.5 L 2.5,14 L 10.5,14" />
                   </Button>
                   <Button x:Name="OpenBaseFolderButton" Classes="icon" Command="{Binding OpenBaseFolderCommand}"
                           IsVisible="{Binding SelectedInfoBase.IsFileBase, FallbackValue=False}"
                           ToolTip.Tip="Открыть каталог базы">
                     <!-- Папка. -->
-                    <Path Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5"
-                          Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1.2" />
+                    <c:ToolIcon Brush="{DynamicResource IconFolderBrush}" Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5" />
                   </Button>
                 </StackPanel>
                 <SelectableTextBlock Text="{Binding SelectedInfoBase.ConnectionText}" TextWrapping="Wrap" />
