@@ -74,11 +74,10 @@
   </Window.Styles>
 
   <DockPanel>
-    <!-- Верх: поиск, вид, обновление, настройки. -->
+    <!-- Верх: кнопки слева над списком баз, поле поиска — всё остальное место до правого края. -->
     <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
-      <!-- Кнопки занимают ширину панели подробностей (задаётся в коде): поле поиска заканчивается над краем списка баз. -->
-      <Panel x:Name="ToolbarPanel" DockPanel.Dock="Right">
-      <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6" HorizontalAlignment="Right">
+      <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
+      <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
         <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}" Padding="8,6" VerticalAlignment="Stretch">
           <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconAddBrush}" Data="M 8,2 L 8,14 M 2,8 L 14,8" />
           <Button.Flyout>

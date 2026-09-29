@@ -87,7 +87,7 @@ public partial class MainWindow : Window
                 ApplyDetailsLayout();
             }
         };
-        DetailsSplitter.DragDelta += (_, _) => AlignToolbar(DetailsColumn.ActualWidth);
+        ToolbarButtons.SizeChanged += (_, _) => ReserveToolbarWidth();
         DetailsSplitter.DragCompleted += (_, _) =>
         {
             viewModel.DetailsWidth = DetailsColumn.ActualWidth;
@@ -109,16 +109,16 @@ public partial class MainWindow : Window
         DetailsColumn.MinWidth = vm.ShowDetails ? MainWindowViewModel.MinDetailsWidth : 0;
         DetailsColumn.MaxWidth = vm.ShowDetails ? MainWindowViewModel.MaxDetailsWidth : 0;
         DetailsColumn.Width = new GridLength(width);
-        AlignToolbar(width);
     }
 
-    /// <summary>Кнопки над панелью занимают её ширину — поле поиска заканчивается над краем списка баз.</summary>
-    private void AlignToolbar(double detailsWidth)
+    /// <summary>
+    /// Место под все кнопки, включая «Развернуть/Свернуть все»: они видны только в дереве, и без запаса поле поиска
+    /// прыгало бы влево при первом же введённом символе (поиск показывает результаты списком).
+    /// </summary>
+    private void ReserveToolbarWidth()
     {
-        var withDetails = ViewModel?.ShowDetails == true;
-        // Минимум, а не точная ширина: если кнопкам не хватает места над узкой панелью, они не наезжают на поиск.
-        ToolbarPanel.MinWidth = withDetails ? detailsWidth + DetailsSplitter.Width : 0;
-        ToolbarPanel.Margin = withDetails ? default : new Thickness(6, 0, 0, 0);
+        var hidden = new[] { ExpandAllButton, CollapseAllButton }.Count(b => !b.IsVisible);
+        ToolbarPanel.MinWidth = ToolbarButtons.Bounds.Width + (hidden * (ViewModeButton.Bounds.Width + ToolbarButtons.Spacing));
     }
 
     private MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;

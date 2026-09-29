@@ -140,7 +140,12 @@ public class MainWindowTests
         double RightEdge(Control c) => c.TranslatePoint(new Point(c.Bounds.Width, 0), window)!.Value.X;
 
         Assert.Equal(360, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth);
-        Assert.Equal(RightEdge(tree), RightEdge(search), tolerance: 1.5);
+        // Кнопки слева, поле поиска — до правого края окна при любой ширине панели подробностей.
+        var toolbar = window.FindControl<Panel>("ToolbarPanel")!;
+        double LeftEdge(Control c) => c.TranslatePoint(default, window)!.Value.X;
+        Assert.Equal(8, LeftEdge(toolbar), tolerance: 1.5);
+        Assert.True(LeftEdge(search) > RightEdge(toolbar));
+        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
 
         // Тянем разделитель на 100 пикселей влево — панель шире.
         var start = splitter.TranslatePoint(new Point(2, 200), window)!.Value;
@@ -152,14 +157,14 @@ public class MainWindowTests
 
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
-        Assert.Equal(RightEdge(tree), RightEdge(search), tolerance: 1.5);
+        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
         Snapshot(window, "11-details-wide");
 
-        // Без панели список — во всю ширину окна, кнопки над ним — своей обычной ширины.
+        // Без панели список — во всю ширину окна, поиск тоже.
         fixture.ViewModel.ShowDetails = false;
         Render();
         Assert.Equal(window.Bounds.Width - 8, RightEdge(tree), tolerance: 1.5);
-        Assert.Equal(0, window.FindControl<Panel>("ToolbarPanel")!.MinWidth);
+        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
         window.Close();
     }
 
@@ -249,13 +254,20 @@ public class MainWindowTests
         Assert.All(Folders(), f => Assert.True(f.IsExpanded));
         Assert.Empty(fixture.Settings.Settings.Ui.CollapsedFolders);
 
+        // Кнопки прячутся, но место под них остаётся: поле поиска не прыгает, пока вводишь текст.
+        var search = window.FindControl<TextBox>("SearchBox")!;
+        double SearchLeft() => search.TranslatePoint(default, window)!.Value.X;
+        var searchLeft = SearchLeft();
+
         vm.SearchText = "бух"; // результаты поиска — списком
         Render();
         Assert.False(collapse.IsEffectivelyVisible);
+        Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
         vm.SearchText = string.Empty;
         vm.IsTreeMode = false;
         Render();
         Assert.False(expand.IsEffectivelyVisible);
+        Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
         window.Close();
     }
 
