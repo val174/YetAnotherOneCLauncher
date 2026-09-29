@@ -167,6 +167,21 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public void Single_instance_and_tray_settings_are_saved()
+    {
+        using var fixture = new ViewModelFixture();
+        var ui = fixture.Settings.Settings.Ui;
+        Assert.False(ui.SingleInstance); // по умолчанию выключены
+        Assert.False(ui.MinimizeToTray);
+
+        fixture.ViewModel.SingleInstance = true;
+        fixture.ViewModel.MinimizeToTray = true;
+
+        Assert.True(ui.SingleInstance);
+        Assert.True(ui.MinimizeToTray);
+    }
+
+    [Fact]
     public async Task Designer_launch_and_after_launch_action()
     {
         using var fixture = new ViewModelFixture();

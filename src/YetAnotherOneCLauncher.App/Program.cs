@@ -13,10 +13,13 @@ internal static partial class Program
     {
         // Щелчок по базе в списке переходов Windows: если лаунчер уже открыт, база запускается в нём.
         var launchKey = LaunchArgument.Parse(args);
-        if (launchKey is not null && LaunchRequestChannel.TryForward(launchKey))
+        if (launchKey is not null && Forward(launchKey))
         {
             return 0;
         }
+
+        // Метка «лаунчер открыт» держится до выхода: по ней следующий экземпляр узнаёт, что он не первый.
+        using var instance = new InstanceLock(InstanceLock.DefaultName);
 
         if (OperatingSystem.IsWindows())
         {
@@ -47,6 +50,14 @@ internal static partial class Program
         var settings = services.GetRequiredService<UserSettingsService>();
         settings.LoadAsync().GetAwaiter().GetResult();
 
+        // Повторный запуск запрещён: показываем уже открытый лаунчер (в том числе из трея) и выходим.
+        if (!instance.IsFirst && settings.Settings.Ui.SingleInstance)
+        {
+            var shown = Forward(LaunchRequestChannel.ActivateCommand);
+            LogAlreadyRunning(logger, shown);
+            return 0;
+        }
+
         try
         {
             return BuildAvaloniaApp(services).StartWithClassicDesktopLifetime(args);
@@ -63,6 +74,17 @@ internal static partial class Program
         }
     }
 
+    /// <summary>Передать команду открытому лаунчеру и разрешить ему выйти на передний план.</summary>
+    private static bool Forward(string command)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Platform.Windows.WindowsForeground.AllowAnyProcess();
+        }
+
+        return LaunchRequestChannel.TryForward(command);
+    }
+
     // Используется дизайнером XAML в IDE: без контейнера зависимостей.
     public static AppBuilder BuildAvaloniaApp() => BuildAvaloniaApp(services: null);
 
@@ -75,6 +97,11 @@ internal static partial class Program
         Level = LogLevel.Information,
         Message = "Запуск YetAnotherOneCLauncher {Version}; ОС: {Os}; среда: {Runtime}; логи: {LogDirectory}")]
     private static partial void LogStarting(ILogger logger, string version, string os, string runtime, string logDirectory);
+
+    [LoggerMessage(
+        Level = LogLevel.Information,
+        Message = "Лаунчер уже открыт, повторный запуск запрещён настройкой; окно показано: {Shown}")]
+    private static partial void LogAlreadyRunning(ILogger logger, bool shown);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Приложение завершено")]
     private static partial void LogStopped(ILogger logger);

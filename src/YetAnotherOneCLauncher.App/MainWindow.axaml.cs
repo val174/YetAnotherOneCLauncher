@@ -78,6 +78,7 @@ public partial class MainWindow : Window
         };
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
+        InitTray(viewModel);
 
         // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
         ApplyDetailsLayout();
@@ -457,6 +458,13 @@ public partial class MainWindow : Window
     private WindowPlacement CapturePlacement()
     {
         var previous = ViewModel?.WindowPlacement;
+
+        // Закрыт свёрнутым (из трея, с панели задач): положение свёрнутого окна — за пределами экрана, не сохраняем.
+        if (WindowState == WindowState.Minimized && previous is not null)
+        {
+            return previous with { IsMaximized = _restoreState == WindowState.Maximized };
+        }
+
         var isMaximized = WindowState == WindowState.Maximized;
 
         // У развёрнутого окна сохраняем прежние размеры, чтобы после «восстановить» оно было нормальным.

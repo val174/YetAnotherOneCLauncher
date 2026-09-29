@@ -60,8 +60,23 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>Команда из канала приходит из фонового потока.</summary>
-    private void OnLaunchRequest(string identityKey)
+    internal void OnLaunchRequest(string identityKey)
     {
+        // Повторный запуск лаунчера при запрете: только показать окно.
+        if (identityKey == LaunchRequestChannel.ActivateCommand)
+        {
+            if (_uiContext is null)
+            {
+                _window.BringToFront();
+            }
+            else
+            {
+                _uiContext.Post(_ => _window.BringToFront(), null);
+            }
+
+            return;
+        }
+
         if (_uiContext is null)
         {
             _ = LaunchFromJumpListAsync(identityKey);

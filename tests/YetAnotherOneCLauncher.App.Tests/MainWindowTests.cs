@@ -631,6 +631,39 @@ public class MainWindowTests
         window.Close();
     }
 
+    [AvaloniaFact]
+    public async Task Minimized_window_hides_to_tray_and_comes_back_as_it_was()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        Assert.Null(window.TrayIcon); // настройка выключена — значка нет
+
+        // Без настройки свёрнутое окно остаётся на панели задач.
+        window.WindowState = WindowState.Minimized;
+        Render();
+        Assert.False(window.IsInTray);
+        Assert.True(window.IsVisible);
+        window.BringToFront();
+        Assert.Equal(WindowState.Normal, window.WindowState);
+
+        fixture.ViewModel.MinimizeToTray = true;
+        Assert.True(window.TrayIcon!.IsVisible);
+        window.WindowState = WindowState.Maximized;
+        window.WindowState = WindowState.Minimized;
+        Render();
+        Assert.True(window.IsInTray);
+        Assert.False(window.IsVisible);
+
+        window.BringToFront(); // щелчок по значку или повторный запуск лаунчера
+        Assert.True(window.IsVisible);
+        Assert.False(window.IsInTray);
+        Assert.Equal(WindowState.Maximized, window.WindowState);
+
+        fixture.ViewModel.MinimizeToTray = false;
+        Assert.False(window.TrayIcon.IsVisible);
+        window.Close();
+    }
+
     private static async Task<MainWindow> OpenAsync(ViewModelFixture fixture)
     {
         // Настоящее окно применяет тему через Application; в тестах — через подделку, поэтому ставим вручную.

@@ -116,6 +116,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsSortedByName = ui.SortMode != CatalogSortMode.Custom;
         ThemeIndex = (int)ui.Theme;
         AfterLaunchIndex = (int)ui.AfterLaunch;
+        SingleInstance = ui.SingleInstance;
+        MinimizeToTray = ui.MinimizeToTray;
         IconStyleIndex = Math.Max(0, Array.IndexOf(IconStyles, ui.IconStyle));
         ShowDetails = ui.ShowDetails;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
@@ -318,6 +320,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool ShowDetails { get; set; }
+
+    /// <summary>Запретить повторный запуск: действует со следующего запуска лаунчера.</summary>
+    [ObservableProperty]
+    public partial bool SingleInstance { get; set; }
+
+    /// <summary>Сворачивать в трей: окно прячется с панели задач, в области уведомлений — значок лаунчера.</summary>
+    [ObservableProperty]
+    public partial bool MinimizeToTray { get; set; }
 
     [ObservableProperty]
     public partial bool UseThickClientForFileBases { get; set; }
@@ -611,6 +621,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.Settings.Ui.AfterLaunch = Enum.IsDefined((AfterLaunchAction)value) ? (AfterLaunchAction)value : AfterLaunchAction.Nothing;
+        _settings.RequestSave();
+    }
+
+    partial void OnSingleInstanceChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.SingleInstance = value;
+        _settings.RequestSave();
+    }
+
+    partial void OnMinimizeToTrayChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.MinimizeToTray = value;
         _settings.RequestSave();
     }
 

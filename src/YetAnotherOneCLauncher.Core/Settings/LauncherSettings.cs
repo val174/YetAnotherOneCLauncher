@@ -147,6 +147,12 @@ public sealed class UiSettings
 
     public AfterLaunchAction AfterLaunch { get; set; } = AfterLaunchAction.Nothing;
 
+    /// <summary>Запретить повторный запуск: второй экземпляр не открывается, а показывает уже работающий лаунчер.</summary>
+    public bool SingleInstance { get; set; }
+
+    /// <summary>Свёрнутое окно убирается с панели задач в область уведомлений (трей).</summary>
+    public bool MinimizeToTray { get; set; }
+
     public WindowPlacement? Window { get; set; }
 
     /// <summary>Свёрнутые папки дерева (по полному пути). Новые папки раскрыты.</summary>

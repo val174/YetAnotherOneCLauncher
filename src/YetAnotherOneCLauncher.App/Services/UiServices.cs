@@ -58,6 +58,9 @@ public interface IWindowService
 {
     void Minimize();
 
+    /// <summary>Показать главное окно поверх остальных: развернуть из панели задач или из трея.</summary>
+    void BringToFront();
+
     void Close();
 }
 
@@ -184,6 +187,8 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
             window.WindowState = WindowState.Minimized;
         }
     }
+
+    public void BringToFront() => (MainWindow as MainWindow)?.BringToFront();
 
     public void Close() => MainWindow?.Close();
 

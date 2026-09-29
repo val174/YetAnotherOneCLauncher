@@ -128,6 +128,10 @@ internal sealed class FakeShell : IClipboardService, IWindowService, IThemeServi
 
     public void Minimize() => MinimizeCount++;
 
+    public int BringToFrontCount { get; private set; }
+
+    public void BringToFront() => BringToFrontCount++;
+
     public void Close() => CloseCount++;
 
     public void Apply(ThemeMode mode) => AppliedTheme = mode;

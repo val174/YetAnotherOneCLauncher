@@ -84,6 +84,34 @@ public class JumpListTests
         Assert.Contains("не найдена", Assert.Single(fixture.Dialogs.Messages), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public async Task Activate_command_from_second_instance_only_shows_window()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+
+        fixture.ViewModel.OnLaunchRequest(LaunchRequestChannel.ActivateCommand);
+
+        await WaitAsync(() => fixture.Shell.BringToFrontCount == 1);
+        Assert.Empty(fixture.Processes.Started);
+        Assert.Empty(fixture.Dialogs.Messages);
+    }
+
+    [Fact]
+    public void Instance_lock_tells_second_instance_it_is_not_first()
+    {
+        var name = "yaocl-test-" + Guid.NewGuid().ToString("N");
+        using (var first = new InstanceLock(name))
+        {
+            Assert.True(first.IsFirst);
+            using var second = new InstanceLock(name);
+            Assert.False(second.IsFirst);
+        }
+
+        using var afterExit = new InstanceLock(name); // первый закрылся — метка снята
+        Assert.True(afterExit.IsFirst);
+    }
+
     private static async Task WaitAsync(Func<bool> condition)
     {
         for (var i = 0; i < 100 && !condition(); i++)

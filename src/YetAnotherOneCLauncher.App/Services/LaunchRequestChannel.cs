@@ -58,6 +58,12 @@ public sealed partial class LaunchRequestChannel : ILaunchRequestChannel, IDispo
         _logger = logger;
     }
 
+    /// <summary>
+    /// Команда «показать окно» от повторно запущенного лаунчера (запрет повторного запуска).
+    /// С ключом базы не спутать: те начинаются с <c>id:</c> или со строки подключения.
+    /// </summary>
+    public const string ActivateCommand = "!activate";
+
     /// <summary>Имя канала: своё у каждого пользователя и сеанса Windows.</summary>
     public static string PipeName =>
         $"YetAnotherOneCLauncher-{Environment.UserName}-{Process.GetCurrentProcess().SessionId}";
