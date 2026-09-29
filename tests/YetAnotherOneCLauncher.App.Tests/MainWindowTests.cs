@@ -155,6 +155,13 @@ public class MainWindowTests
             Assert.Equal((icon.Foreground as Avalonia.Media.ISolidColorBrush)?.Color, (caption.Foreground as Avalonia.Media.ISolidColorBrush)?.Color);
         }
 
+        // Строка состояния: адрес выделенной базы и копирование строки подключения.
+        Assert.Equal(@"C:\Bases\BuhCopy", window.FindControl<TextBlock>("StatusAddressText")!.Text);
+        var statusCopy = window.FindControl<Button>("StatusCopyConnectionButton")!;
+        Assert.True(statusCopy.IsEffectivelyVisible);
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)statusCopy.Command!).ExecuteAsync(null);
+        Assert.Equal(@"File=""C:\Bases\BuhCopy"";", fixture.Shell.ClipboardText);
+
         Snapshot(window, "10-details-file-base");
 
         copy.Command!.Execute(copy.CommandParameter);
