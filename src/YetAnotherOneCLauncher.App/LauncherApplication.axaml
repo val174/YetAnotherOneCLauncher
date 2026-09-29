@@ -66,13 +66,17 @@
     <FluentTheme />
     <!-- Значок всех окон лаунчера (заголовок, Alt+Tab); у .exe — ApplicationIcon в проекте. -->
     <!-- Заголовок окна, продлённого на область заголовка (главное окно): Avalonia рисует свою строку — название
-         прячем (у окна своё, со значком, как у 1С), кнопку полноэкранного режима тоже: в Windows её не бывает. -->
+         прячем (у окна своё, со значком, как у 1С), кнопку полноэкранного режима тоже: в Windows её не бывает.
+         У скрытой кнопки обнуляется и ширина — иначе она держит место, и кнопки окна отодвигаются от края. -->
     <!-- Видимость самой панели названия задана в шаблоне привязкой (она сильнее стиля), поэтому прячется текст в ней. -->
     <Style Selector="chrome|WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
       <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="chrome|WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
       <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Width" Value="0" />
+      <Setter Property="MinWidth" Value="0" />
+      <Setter Property="Margin" Value="0" />
     </Style>
     <!-- Значок на кнопке с надписью: без своего цвета — берёт цвет надписи (белый на синей кнопке, бледный на недоступной); всегда без плашки. -->
     <Style Selector="c|ToolIcon.buttonIcon">
