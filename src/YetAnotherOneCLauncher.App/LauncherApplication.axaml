@@ -1,6 +1,7 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+             xmlns:chrome="using:Avalonia.Controls.Chrome"
              x:Class="YetAnotherOneCLauncher.App.LauncherApplication"
              RequestedThemeVariant="Default">
   <!-- Default = как в системе; переключается на лету из главного окна. -->
@@ -64,6 +65,15 @@
   <Application.Styles>
     <FluentTheme />
     <!-- Значок всех окон лаунчера (заголовок, Alt+Tab); у .exe — ApplicationIcon в проекте. -->
+    <!-- Заголовок окна, продлённого на область заголовка (главное окно): Avalonia рисует свою строку — название
+         прячем (у окна своё, со значком, как у 1С), кнопку полноэкранного режима тоже: в Windows её не бывает. -->
+    <!-- Видимость самой панели названия задана в шаблоне привязкой (она сильнее стиля), поэтому прячется текст в ней. -->
+    <Style Selector="chrome|WindowDrawnDecorations /template/ Panel#PART_TitleTextPanel > TextBlock">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="chrome|WindowDrawnDecorations /template/ Button#PART_FullScreenButton">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
     <!-- Значок на кнопке с надписью: без своего цвета — берёт цвет надписи (белый на синей кнопке, бледный на недоступной); всегда без плашки. -->
     <Style Selector="c|ToolIcon.buttonIcon">
       <Setter Property="Width" Value="16" />

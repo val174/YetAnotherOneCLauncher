@@ -2,11 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        xmlns:chrome="using:Avalonia.Controls.Chrome"
         x:Class="YetAnotherOneCLauncher.App.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Title="YetAnotherOneCLauncher"
         Width="1040" Height="660"
         MinWidth="600" MinHeight="360"
+        ExtendClientAreaToDecorationsHint="True"
+        ExtendClientAreaTitleBarHeightHint="34"
         c:ToolIcon.IconStyle="{Binding IconStyle}">
 
   <Window.Styles>
@@ -127,6 +130,15 @@
   </Window.Styles>
 
   <DockPanel>
+    <!-- Заголовок окна в стиле приложения (как у 1С): фон окна, свой значок и название, системные кнопки окна — справа
+         поверх строки. Высота — у области заголовка, которую отдаёт система; без продления в заголовок (например, в тестах) — 0. -->
+    <Border x:Name="TitleBar" DockPanel.Dock="Top" Height="{Binding $parent[Window].WindowDecorationMargin.Top}"
+            Background="Transparent" chrome:WindowDecorationProperties.ElementRole="TitleBar">
+      <StackPanel Orientation="Horizontal" Spacing="8" Margin="10,0,0,0" VerticalAlignment="Center" IsHitTestVisible="False">
+        <Image Source="/Assets/app.png" Width="18" Height="18" />
+        <TextBlock Text="{Binding $parent[Window].Title}" FontSize="{StaticResource SmallFontSize}" VerticalAlignment="Center" />
+      </StackPanel>
+    </Border>
     <!-- Верх: кнопки слева над списком баз, поле поиска справа — над панелью подробностей и её ширины (задаётся в коде). -->
     <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,12,4" LastChildFill="True">
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
