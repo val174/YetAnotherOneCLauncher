@@ -41,9 +41,6 @@
 
   <!-- Колонки таблицы и полей ввода совпадают: «Параметр» — 280, «Описание» — остальное. -->
   <DockPanel Margin="16">
-    <TextBlock DockPanel.Dock="Top" Classes="secondary" TextWrapping="Wrap" Margin="0,0,0,10"
-               Text="Параметры командной строки 1С — без «/»: он подставляется, когда параметр выбирают для запуска. Свои параметры появятся в списке шаблонов окна «Параметры запуска»; встроенные изменить нельзя." />
-
     <!-- Кнопки окна. -->
     <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
       <StackPanel Orientation="Horizontal" Spacing="8">
