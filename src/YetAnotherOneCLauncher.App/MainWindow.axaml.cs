@@ -88,7 +88,6 @@ public partial class MainWindow : Window
                 ApplyDetailsLayout();
             }
         };
-        ToolbarButtons.SizeChanged += (_, _) => ReserveToolbarWidth();
         HeaderPanel.SizeChanged += (_, _) => FitSearchBox();
         ToolbarPanel.SizeChanged += (_, _) => FitSearchBox();
         DetailsSplitter.DragDelta += (_, _) => FitSearchBox(DetailsColumn.ActualWidth);
@@ -131,16 +130,6 @@ public partial class MainWindow : Window
         var target = panelWidth + DetailsSplitter.Width - ToolbarPanel.Margin.Right;
         var available = HeaderPanel.Bounds.Width - ToolbarPanel.Bounds.Width - ToolbarPanel.Margin.Right;
         SearchBox.Width = available > 0 ? Math.Max(Math.Min(target, available), Math.Min(MinSearchWidth, available)) : target;
-    }
-
-    /// <summary>
-    /// Место под все кнопки, включая «Развернуть/Свернуть все»: они видны только в дереве, и без запаса поле поиска
-    /// прыгало бы влево при первом же введённом символе (поиск показывает результаты списком).
-    /// </summary>
-    private void ReserveToolbarWidth()
-    {
-        var hidden = new[] { ExpandAllButton, CollapseAllButton }.Count(b => !b.IsVisible);
-        ToolbarPanel.MinWidth = ToolbarButtons.Bounds.Width + (hidden * (ViewModeButton.Bounds.Width + ToolbarButtons.Spacing));
     }
 
     private MainWindowViewModel? ViewModel => DataContext as MainWindowViewModel;

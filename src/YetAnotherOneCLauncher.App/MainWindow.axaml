@@ -25,6 +25,31 @@
       <Setter Property="Width" Value="26" />
       <Setter Property="Height" Value="26" />
     </Style>
+    <!-- Кнопки запуска: основная часть на всю ширину и прикреплённая справа «Запустить с параметрами» — одним блоком. -->
+    <Style Selector="Button.launchMain">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Left" />
+      <Setter Property="Padding" Value="12,7" />
+      <Setter Property="CornerRadius" Value="4,0,0,4" />
+    </Style>
+    <Style Selector="Button.launchParameters">
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="10,0" />
+      <Setter Property="Margin" Value="1,0,0,0" />
+      <Setter Property="CornerRadius" Value="0,4,4,0" />
+    </Style>
+    <!-- Заголовок раздела правой панели. -->
+    <Style Selector="TextBlock.sectionHeader">
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="Margin" Value="0,0,0,8" />
+    </Style>
+    <!-- Значок пункта меню. -->
+    <Style Selector="c|ToolIcon.menuIcon">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+    </Style>
     <!-- Кнопка-значок в строке состояния: без фона, ниже кнопок панели подробностей. -->
     <Style Selector="Button.statusIcon">
       <Setter Property="Padding" Value="3" />
@@ -86,6 +111,11 @@
     <Style Selector="Button.columnHeader:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
+    <Style Selector="StackPanel#ToolbarButtons Button.keepSpace">
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+      <Setter Property="Focusable" Value="False" />
+    </Style>
     <!-- Кнопка текущего режима («Все базы» / «Недавние») подсвечена. -->
     <Style Selector="StackPanel#ToolbarButtons Button.active">
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
@@ -106,12 +136,43 @@
     <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
       <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
+        <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
+        <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}" Padding="8,6" VerticalAlignment="Stretch">
+          <Panel Width="18" Height="18">
+            <c:ToolIcon IsVisible="{Binding IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
+                        Data="M 1,2.5 L 11,2.5 M 3,2.5 L 3,13 M 3,7.75 L 6,7.75 M 3,13 L 6,13 M 8,7.75 L 15,7.75 M 8,13 L 15,13" />
+            <c:ToolIcon IsVisible="{Binding !IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
+                        Data="M 5,3 L 15,3 M 5,8 L 15,8 M 5,13 L 15,13 M 1,3 L 2.6,3 M 1,8 L 2.6,8 M 1,13 L 2.6,13" />
+          </Panel>
+          <ToolTip.Tip>
+            <Panel>
+              <TextBlock Text="Показано деревом папок. Нажмите для плоского списка" IsVisible="{Binding IsTreeMode}" />
+              <TextBlock Text="Показан плоский список. Нажмите для дерева папок" IsVisible="{Binding !IsTreeMode}" />
+            </Panel>
+          </ToolTip.Tip>
+        </Button>
+        <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом.
+             В списке и при поиске прозрачны, но место держат — остальные кнопки не сдвигаются. -->
+        <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}" Classes.keepSpace="{Binding !ShowTree}"
+                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Развернуть все папки">
+          <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
+                      Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
+        </Button>
+        <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}" Classes.keepSpace="{Binding !ShowTree}"
+                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Свернуть все папки">
+          <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
+                      Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
+        </Button>
         <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}" Padding="8,6" VerticalAlignment="Stretch">
           <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconAddBrush}" Data="M 8,2 L 8,14 M 2,8 L 14,8" />
           <Button.Flyout>
             <MenuFlyout Placement="BottomEdgeAlignedRight">
-              <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="Ctrl+N" />
-              <MenuItem Header="Новая папка…" Command="{Binding AddFolderCommand}" InputGesture="Ctrl+Shift+N" />
+              <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="Ctrl+N">
+                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconAddBrush}" Data="{StaticResource AddIconGeometry}" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Новая папка…" Command="{Binding AddFolderCommand}" InputGesture="Ctrl+Shift+N">
+                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+              </MenuItem>
               <Separator />
               <MenuItem Header="Загрузить из файла .v8i…" Command="{Binding ImportCommand}" />
             </MenuFlyout>
@@ -133,32 +194,6 @@
                 Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
           <c:ToolIcon Brush="{DynamicResource IconRecentBrush}"
                       Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
-        </Button>
-        <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
-        <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}" Padding="8,6" VerticalAlignment="Stretch">
-          <Panel Width="18" Height="18">
-            <c:ToolIcon IsVisible="{Binding IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
-                        Data="M 1,2.5 L 11,2.5 M 3,2.5 L 3,13 M 3,7.75 L 6,7.75 M 3,13 L 6,13 M 8,7.75 L 15,7.75 M 8,13 L 15,13" />
-            <c:ToolIcon IsVisible="{Binding !IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
-                        Data="M 5,3 L 15,3 M 5,8 L 15,8 M 5,13 L 15,13 M 1,3 L 2.6,3 M 1,8 L 2.6,8 M 1,13 L 2.6,13" />
-          </Panel>
-          <ToolTip.Tip>
-            <Panel>
-              <TextBlock Text="Показано деревом папок. Нажмите для плоского списка" IsVisible="{Binding IsTreeMode}" />
-              <TextBlock Text="Показан плоский список. Нажмите для дерева папок" IsVisible="{Binding !IsTreeMode}" />
-            </Panel>
-          </ToolTip.Tip>
-        </Button>
-        <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом. -->
-        <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsVisible="{Binding ShowTree}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Развернуть все папки">
-          <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
-                      Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
-        </Button>
-        <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsVisible="{Binding ShowTree}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Свернуть все папки">
-          <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
-                      Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
         </Button>
         <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}" Padding="8,6" VerticalAlignment="Stretch"
                 ToolTip.Tip="Обновить: перечитать списки баз и платформы (F5)">
@@ -197,7 +232,7 @@
                 <CheckBox IsChecked="{Binding UseThickClientForFileBases}" Margin="0,6,0,0">
                   <TextBlock TextWrapping="Wrap" Text="Файловые базы с клиентом «Автоматически» открывать в толстом клиенте" />
                 </CheckBox>
-                <CheckBox IsChecked="{Binding ShowDetails}" Content="Панель подробностей" />
+                <CheckBox IsChecked="{Binding ShowDetails}" Content="Свойства информационной базы" />
                 <CheckBox IsChecked="{Binding CheckAvailability}">
                   <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
                 </CheckBox>
@@ -244,7 +279,7 @@
           </ToggleButton>
           <!-- Значок «окно с правой панелью»: панель закрашена, когда подробности показаны. -->
           <ToggleButton x:Name="DetailsToggle" IsChecked="{Binding ShowDetails}" Padding="6,3" VerticalAlignment="Stretch"
-                        ToolTip.Tip="Показать или скрыть панель подробностей">
+                        ToolTip.Tip="Показать или скрыть свойства информационной базы">
             <Panel Width="16" Height="14">
               <Path Data="M 10,1.5 L 14.5,1.5 L 14.5,12.5 L 10,12.5 Z" Fill="{Binding $parent[ToggleButton].Foreground}"
                     IsVisible="{Binding ShowDetails}" />
@@ -285,15 +320,45 @@
     <!-- Список баз, разделитель и панель подробностей. Ширину колонки панели задаёт код (MainWindow.axaml.cs). -->
     <Grid x:Name="BodyGrid" ColumnDefinitions="*,Auto,340">
     <GridSplitter x:Name="DetailsSplitter" Grid.Column="1" Width="5" ResizeDirection="Columns" Background="Transparent"
-                  IsVisible="{Binding ShowDetails}" ToolTip.Tip="Потяните, чтобы изменить ширину панели подробностей" />
+                  IsVisible="{Binding ShowDetails}" ToolTip.Tip="Потяните, чтобы изменить ширину панели свойств" />
 
-    <!-- Справа: подробности выбранной базы. -->
+    <!-- Справа: запуск и свойства выбранной базы. -->
     <Border Grid.Column="2" IsVisible="{Binding ShowDetails}" Padding="12,4,12,8"
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <Panel>
         <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
-        <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
+        <DockPanel IsVisible="{Binding HasSelection}">
+          <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами». -->
+          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,12,12">
+            <Grid ColumnDefinitions="*,Auto">
+              <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
+                      ToolTip.Tip="F3, Enter или двойной щелчок">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
+                  <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+              <Button x:Name="EnterpriseParametersButton" Grid.Column="1" Classes="accent launchParameters"
+                      Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (F6)">
+                <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
+              </Button>
+            </Grid>
+            <Grid ColumnDefinitions="*,Auto">
+              <Button x:Name="LaunchDesignerButton" Classes="launchMain" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="F4">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
+                  <TextBlock Text="Конфигуратор" VerticalAlignment="Center" />
+                </StackPanel>
+              </Button>
+              <Button x:Name="DesignerParametersButton" Grid.Column="1" Classes="launchParameters"
+                      Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (F6)">
+                <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
+              </Button>
+            </Grid>
+          </StackPanel>
+          <TextBlock DockPanel.Dock="Top" Classes="sectionHeader" Text="Свойства информационной базы" />
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
           <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
           <StackPanel Spacing="10" Margin="0,0,12,0">
             <DockPanel>
@@ -306,22 +371,6 @@
               </Button>
               <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
             </DockPanel>
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-              <Button x:Name="LaunchEnterpriseButton" Classes="accent" Command="{Binding LaunchEnterpriseCommand}" ToolTip.Tip="F3, Enter или двойной щелчок">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
-                  <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
-                </StackPanel>
-              </Button>
-              <Button x:Name="LaunchDesignerButton" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="F4">
-                <StackPanel Orientation="Horizontal" Spacing="6">
-                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
-                  <TextBlock Text="Конфигуратор" VerticalAlignment="Center" />
-                </StackPanel>
-              </Button>
-              <Button Content="…" Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="Запустить с параметрами (F6)" />
-            </StackPanel>
 
             <Grid ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Classes="label" Text="Подключение" />
@@ -373,10 +422,11 @@
               <Button Content="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" Margin="0,0,6,6"
                       ToolTip.Tip="Параметры командной строки, пользователь и пароль — хранятся в лаунчере" />
               <Button Content="Очистить кэш" Command="{Binding ClearCacheCommand}" Margin="0,0,6,6"
-                      ToolTip.Tip="Удалить кэш базы (в корзину); 1С заполнит его заново при запуске" />
+                      ToolTip.Tip="Удалить кэш базы; 1С заполнит его заново при запуске" />
             </WrapPanel>
           </StackPanel>
         </ScrollViewer>
+        </DockPanel>
       </Panel>
     </Border>
 
@@ -408,28 +458,54 @@
     <Panel>
       <Panel.ContextMenu>
         <ContextMenu>
-          <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="F3" />
-          <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="F4" />
-          <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="F6" />
+          <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="F3">
+            <MenuItem.Icon><c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Конфигуратор" Command="{Binding LaunchDesignerCommand}" InputGesture="F4">
+            <MenuItem.Icon><c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Запустить с параметрами…" Command="{Binding LaunchWithParametersCommand}" InputGesture="F6">
+            <MenuItem.Icon><c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <MenuItem Header="Параметры запуска…" Command="{Binding EditLaunchSettingsCommand}" />
           <MenuItem Header="Очистить кэш и запустить" Command="{Binding ClearCacheAndLaunchCommand}" />
           <Separator />
-          <MenuItem Header="Изменить…" Command="{Binding EditCommand}" InputGesture="F2" />
+          <MenuItem Header="Изменить…" Command="{Binding EditCommand}" InputGesture="F2">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource EditIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <MenuItem Header="Изменить как текст…" Command="{Binding EditAsTextCommand}" />
-          <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" InputGesture="Delete" />
-          <MenuItem Header="Выше" Command="{Binding MoveUpCommand}" InputGesture="Alt+Up" />
-          <MenuItem Header="Ниже" Command="{Binding MoveDownCommand}" InputGesture="Alt+Down" />
+          <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" InputGesture="Delete">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource DeleteIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Выше" Command="{Binding MoveUpCommand}" InputGesture="Alt+Up">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource UpIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Ниже" Command="{Binding MoveDownCommand}" InputGesture="Alt+Down">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DownIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <MenuItem Header="Упорядочить папку по наименованию" Command="{Binding SortFolderByNameCommand}"
                     ToolTip.Tip="Записи внутри выбранной папки (у базы — её папки) — по алфавиту, сначала папки. Порядок сохраняется в списке баз." />
           <MenuItem Header="Скопировать в личный список" Command="{Binding CopyToPersonalCommand}" />
           <Separator />
-          <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="Ctrl+N" />
-          <MenuItem Header="Новая папка…" Command="{Binding AddFolderCommand}" InputGesture="Ctrl+Shift+N" />
+          <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="Ctrl+N">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconAddBrush}" Data="{StaticResource AddIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Новая папка…" Command="{Binding AddFolderCommand}" InputGesture="Ctrl+Shift+N">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <Separator />
-          <MenuItem Header="Избранное" Command="{Binding ToggleFavoriteCommand}" InputGesture="Ctrl+D" />
-          <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}" />
-          <MenuItem Header="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}" />
-          <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}" />
+          <MenuItem Header="Избранное" Command="{Binding ToggleFavoriteCommand}" InputGesture="Ctrl+D">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource CopyIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource CacheIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <MenuItem Header="Выгрузить в файл…" Command="{Binding ExportCommand}" />
           <MenuItem Header="Загрузить из файла…" Command="{Binding ImportCommand}" />
         </ContextMenu>

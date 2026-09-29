@@ -15,6 +15,18 @@
       <!-- Значки кнопок запуска: «1С: Предприятие» — запуск (треугольник), «Конфигуратор» — разработка (&lt;/&gt;). -->
       <StreamGeometry x:Key="EnterpriseIconGeometry">M 4.5,2.5 L 13.5,8 L 4.5,13.5 Z</StreamGeometry>
       <StreamGeometry x:Key="DesignerIconGeometry">M 5,4 L 1.5,8 L 5,12 M 11,4 L 14.5,8 L 11,12 M 9.3,2.5 L 6.7,13.5</StreamGeometry>
+      <!-- Общие значки кнопок главного окна и пунктов контекстного меню (сетка 16×16). -->
+      <StreamGeometry x:Key="ParametersIconGeometry">M 1.5,4 L 14.5,4 M 1.5,8 L 14.5,8 M 1.5,12 L 14.5,12</StreamGeometry>
+      <StreamGeometry x:Key="ParametersKnobsIconGeometry">M 3.2,4 A 1.8,1.8 0 1 1 6.8,4 A 1.8,1.8 0 1 1 3.2,4 Z M 8.7,8 A 1.8,1.8 0 1 1 12.3,8 A 1.8,1.8 0 1 1 8.7,8 Z M 4.7,12 A 1.8,1.8 0 1 1 8.3,12 A 1.8,1.8 0 1 1 4.7,12 Z</StreamGeometry>
+      <StreamGeometry x:Key="AddIconGeometry">M 8,2 L 8,14 M 2,8 L 14,8</StreamGeometry>
+      <StreamGeometry x:Key="DeleteIconGeometry">M 2,4 L 14,4 M 6,4 L 6,1.8 L 10,1.8 L 10,4 M 3.6,4 L 4.5,14.5 L 11.5,14.5 L 12.4,4 M 6.5,6.8 L 6.5,12 M 9.5,6.8 L 9.5,12</StreamGeometry>
+      <StreamGeometry x:Key="FolderIconGeometry">M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5</StreamGeometry>
+      <StreamGeometry x:Key="CopyIconGeometry">M 5,1.5 L 13.5,1.5 L 13.5,11 L 5,11 Z M 2.5,4.5 L 2.5,14 L 10.5,14</StreamGeometry>
+      <StreamGeometry x:Key="StarIconGeometry">M 8,1.6 L 9.71,6.05 L 14.47,6.3 L 10.76,9.3 L 12,13.9 L 8,11.3 L 4,13.9 L 5.24,9.3 L 1.53,6.3 L 6.29,6.05 Z</StreamGeometry>
+      <StreamGeometry x:Key="CacheIconGeometry">M 1.5,4 A 5.5,2 0 1 0 12.5,4 A 5.5,2 0 1 0 1.5,4 M 1.5,4 L 1.5,12 A 5.5,2 0 0 0 8.5,13.8 M 12.5,4 L 12.5,8.5 M 10.2,10.2 L 14.8,14.8 M 14.8,10.2 L 10.2,14.8</StreamGeometry>
+      <StreamGeometry x:Key="EditIconGeometry">M 10.5,2.5 L 13.5,5.5 L 5.5,13.5 L 2,14 L 2.5,10.5 Z M 9,4 L 12,7</StreamGeometry>
+      <StreamGeometry x:Key="UpIconGeometry">M 8,13.5 L 8,2.5 M 3.5,7 L 8,2.5 L 12.5,7</StreamGeometry>
+      <StreamGeometry x:Key="DownIconGeometry">M 8,2.5 L 8,13.5 M 3.5,9 L 8,13.5 L 12.5,9</StreamGeometry>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="IconAddBrush" Color="#639922" />

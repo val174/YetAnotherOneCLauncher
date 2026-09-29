@@ -309,16 +309,30 @@ public class MainWindowTests
         var search = window.FindControl<TextBox>("SearchBox")!;
         double SearchLeft() => search.TranslatePoint(default, window)!.Value.X;
         var searchLeft = SearchLeft();
+        var add = window.FindControl<Button>("AddButton")!;
+        double AddLeft() => add.TranslatePoint(default, window)!.Value.X;
+        var addLeft = AddLeft();
 
         vm.SearchText = "бух"; // результаты поиска — списком
         Render();
-        Assert.False(collapse.IsEffectivelyVisible);
+        Assert.False(collapse.IsEffectivelyEnabled); // скрыта, но место держит
+        Assert.Equal(0, collapse.Opacity);
         Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
         vm.SearchText = string.Empty;
         vm.IsTreeMode = false;
         Render();
-        Assert.False(expand.IsEffectivelyVisible);
+        Assert.False(expand.IsEffectivelyEnabled);
+        Assert.Equal(0, expand.Opacity);
         Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
+        Assert.Equal(addLeft, AddLeft(), tolerance: 0.5); // кнопки после «Развернуть/Свернуть» не сдвигаются
+
+        // Пункты контекстного меню — со значками, как у кнопок главного окна.
+        var menu = window.GetVisualDescendants().OfType<Panel>().Select(p => p.ContextMenu).First(m => m is not null)!;
+        var items = menu.Items.OfType<MenuItem>().ToDictionary(i => (string)i.Header!);
+        foreach (var header in new[] { "1С: Предприятие", "Конфигуратор", "Запустить с параметрами…", "Удалить", "Новая база…", "Избранное", "Копировать строку подключения" })
+        {
+            Assert.IsType<ToolIcon>(items[header].Icon);
+        }
         window.Close();
     }
 
@@ -329,11 +343,10 @@ public class MainWindowTests
         var window = await OpenAsync(fixture);
         var vm = fixture.ViewModel;
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
-        Assert.Equal("AddButton", toolbar[0].Name);
+        // Сначала — вид списка/дерева, затем правка списка и режимы.
         Assert.Equal(
-            new[] { "AllBasesButton", "RecentButton", "ViewModeButton", "ExpandAllButton", "CollapseAllButton" },
-            toolbar.Skip(2).Take(5).Select(b => b.Name));
-        Assert.Equal("DeleteButton", toolbar[1].Name);
+            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "DeleteButton", "AllBasesButton", "RecentButton" },
+            toolbar.Take(7).Select(b => b.Name));
         Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;
