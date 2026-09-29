@@ -35,6 +35,9 @@ public interface IDialogService
     Task ShowCacheManagerAsync(CacheManagerViewModel cache);
 
     Task ShowAboutAsync(AboutViewModel about);
+
+    /// <summary>Окно своих шаблонов параметров; <c>true</c> — сохранить.</summary>
+    Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -115,6 +118,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task ShowAboutAsync(AboutViewModel about) =>
         Owner is { } owner ? new AboutWindow(about).ShowDialog(owner) : Task.CompletedTask;
+
+    public Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates) =>
+        Owner is { } owner ? new ParameterTemplatesWindow(templates).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {

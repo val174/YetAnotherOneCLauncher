@@ -85,6 +85,12 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task ShowCacheManagerAsync(CacheManagerViewModel cache) => CacheManager(cache);
 
+    /// <summary>Что сделать в окне своих шаблонов; возвращает «Сохранить».</summary>
+    public Func<ParameterTemplatesViewModel, bool> ParameterTemplatesEditor { get; set; } = _ => false;
+
+    public Task<bool> EditParameterTemplatesAsync(ParameterTemplatesViewModel templates) =>
+        Task.FromResult(ParameterTemplatesEditor(templates));
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)

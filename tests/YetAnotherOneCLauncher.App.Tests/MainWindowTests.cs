@@ -632,6 +632,36 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public void Parameter_templates_window_adds_by_enter_and_deletes_by_del()
+    {
+        Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+        var form = new ViewModels.ParameterTemplatesViewModel([ParameterLibrary.Custom("/N Тест", "Тестовый вход")]);
+        var window = new ParameterTemplatesWindow(form);
+        window.Show();
+        Render();
+
+        var rows = window.FindControl<ListBox>("RowsList")!;
+        Assert.Equal(form.Rows.Count, rows.ItemCount);
+        Assert.False(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled);
+
+        var parameter = window.FindControl<TextBox>("NewParameterBox")!;
+        parameter.Focus();
+        form.NewParameter = "/L en";
+        form.NewDescription = "Английский интерфейс";
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Render();
+        Assert.Equal(2, form.CustomTemplates.Count);
+        Assert.True(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled); // выделен добавленный
+        Snapshot(window, "09-parameter-templates");
+
+        rows.ContainerFromItem(form.SelectedRow!)!.Focus(); // как после щелчка по строке
+        window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+        Render();
+        Assert.Single(form.CustomTemplates);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task About_window_shows_version_and_author()
     {
         using var fixture = new ViewModelFixture();

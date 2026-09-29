@@ -316,40 +316,20 @@ public sealed partial class MainWindowViewModel
             : $"Параметры папки «{folder.Name}» сохранены.";
     }
 
-    /// <summary>Свои шаблоны параметров: по строке «Название = параметры».</summary>
+    /// <summary>Свои шаблоны параметров: таблица известных параметров, добавление и удаление своих.</summary>
     [RelayCommand]
     private async Task EditParameterTemplatesAsync()
     {
-        var text = string.Join(
-            Environment.NewLine,
-            _settings.Settings.ParameterTemplates.Select(t => $"{t.Name} = {t.Text}"));
-        var edited = await _dialogs.EditTextAsync(
-            "Свои шаблоны параметров",
-            "Каждая строка — шаблон: «Название = параметры», например «Тестовый вход = /N Тест /DisableStartupMessages». Сохранить — Ctrl+Enter.",
-            text);
-        if (edited is null)
+        var templates = new ParameterTemplatesViewModel(_settings.Settings.ParameterTemplates);
+        if (!await _dialogs.EditParameterTemplatesAsync(templates))
         {
             return;
         }
 
-        _settings.Settings.ParameterTemplates = ParseTemplates(edited);
+        _settings.Settings.ParameterTemplates = templates.CustomTemplates;
         _settings.RequestSave();
         StatusText = $"Своих шаблонов параметров: {_settings.Settings.ParameterTemplates.Count}.";
     }
-
-    internal static List<ParameterTemplate> ParseTemplates(string text) =>
-        text.Split('\n')
-            .Select(line => line.Trim())
-            .Where(line => line.Length > 0)
-            .Select(line =>
-            {
-                var separator = line.IndexOf('=', StringComparison.Ordinal);
-                var name = separator > 0 ? line[..separator].Trim() : line;
-                var parameters = separator > 0 ? line[(separator + 1)..].Trim() : line;
-                return new ParameterTemplate { Name = name.Length > 0 ? name : parameters, Text = parameters };
-            })
-            .Where(t => t.Text.Length > 0)
-            .ToList();
 
     /// <summary>Параметры папок от корня до <paramref name="folderPath"/> включительно.</summary>
     private List<string> FolderParameterChain(string folderPath)

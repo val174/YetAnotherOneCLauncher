@@ -122,7 +122,116 @@ public static class ParameterLibrary
             Text = "/ClearCache",
             Description = "Очистить кэш клиент-серверных вызовов и метаданных при запуске.",
         },
+        new()
+        {
+            Name = "Без входа по пользователю Windows (/WA-)",
+            Text = "/WA-",
+            Description = "Не входить по пользователю Windows (аутентификация ОС) — спросить имя и пароль 1С.",
+        },
+        new()
+        {
+            Name = "Вход по пользователю Windows (/WA+)",
+            Text = "/WA+",
+            Description = "Входить по пользователю Windows (аутентификация ОС), если это разрешено в базе.",
+        },
+        new()
+        {
+            Name = "Без заставки",
+            Text = "/DisableSplash",
+            Description = "Не показывать заставку при запуске.",
+        },
+        new()
+        {
+            Name = "Команда «Все функции»",
+            Text = "/DisplayAllFunctions",
+            Description = "Показать команду «Все функции» в главном меню.",
+        },
+        new()
+        {
+            Name = "Интерфейс «Такси»",
+            Text = "/iTaxi",
+            Description = "Запустить в интерфейсе «Такси».",
+        },
+        new()
+        {
+            Name = "Режим отладки",
+            Text = "/Debug",
+            Description = "Запуск в режиме отладки: к сеансу можно подключиться отладчиком.",
+        },
+        new()
+        {
+            Name = "Показывать производительность",
+            Text = "/DisplayPerformance",
+            Description = "Показывать число вызовов сервера и объём переданных данных.",
+        },
+        new()
+        {
+            Name = "Низкая скорость соединения",
+            Text = "/O Low",
+            Description = "Режим низкой скорости соединения: меньше данных по сети (тонкий клиент).",
+        },
+        new()
+        {
+            Name = "Привилегированный режим",
+            Text = "/UsePrivilegedMode",
+            Description = "Сеанс в привилегированном режиме — нужны административные права.",
+        },
+        new()
+        {
+            Name = "Выполнять регламентные задания",
+            Text = "/AllowExecuteScheduledJobs -Force",
+            Description = "Файловая база: выполнять регламентные задания в этом сеансе.",
+        },
+        new()
+        {
+            Name = "Менеджер тестирования",
+            Text = "/TESTMANAGER",
+            Description = "Запуск менеджером автоматизированного тестирования.",
+        },
+        new()
+        {
+            Name = "Клиент тестирования",
+            Text = "/TESTCLIENT",
+            Description = "Запуск клиентом автоматизированного тестирования.",
+        },
+        new()
+        {
+            Name = "Журнал действий пользователя",
+            Text = "/LogUI",
+            Description = "Записывать действия пользователя в интерфейсе — для сценариев тестирования.",
+        },
+        new()
+        {
+            Name = "Файл служебных сообщений (/Out)",
+            Text = "/Out",
+            Value = ParameterValueKind.File,
+            Description = "Файл, в который выводятся служебные сообщения (например, результат пакетного режима).",
+        },
     ];
+
+    /// <summary>
+    /// Свой параметр из окна «Свои шаблоны параметров»: в списке шаблонов называется описанием
+    /// (или самим параметром, если описания нет) и вставляется как есть.
+    /// </summary>
+    public static ParameterTemplate Custom(string parameter, string? description)
+    {
+        ArgumentNullException.ThrowIfNull(parameter);
+        var text = parameter.Trim();
+        var about = description?.Trim() ?? string.Empty;
+        return new ParameterTemplate { Name = about.Length > 0 ? about : text, Text = text, Description = about };
+    }
+
+    /// <summary>Описание для таблицы: у старых своих шаблонов описания нет — тогда их название.</summary>
+    public static string DescriptionOf(ParameterTemplate template)
+    {
+        ArgumentNullException.ThrowIfNull(template);
+        if (!string.IsNullOrWhiteSpace(template.Description))
+        {
+            return template.Description;
+        }
+
+        return template.Name == template.Text ? string.Empty : template.Name;
+    }
 
     /// <summary>Добавляет фрагмент к тексту параметров через пробел.</summary>
     public static string Append(string? text, string fragment)

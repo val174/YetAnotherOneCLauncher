@@ -1,0 +1,103 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        x:Class="YetAnotherOneCLauncher.App.ParameterTemplatesWindow"
+        x:DataType="vm:ParameterTemplatesViewModel"
+        Title="Свои шаблоны параметров"
+        Width="820" Height="580" MinWidth="560" MinHeight="360"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <Window.Styles>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+    </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="TextBlock.parameter">
+      <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, monospace" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="LineHeight" Value="22" />
+    </Style>
+    <!-- Метка своего параметра. -->
+    <Style Selector="Border.customTag">
+      <Setter Property="Background" Value="{DynamicResource IconAddBrush}" />
+      <Setter Property="CornerRadius" Value="3" />
+      <Setter Property="Padding" Value="5,0" />
+      <Setter Property="Margin" Value="8,1,0,0" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+    <Style Selector="Border.customTag > TextBlock">
+      <Setter Property="Foreground" Value="White" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+    </Style>
+    <Style Selector="c|ToolIcon.buttonIcon">
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+  </Window.Styles>
+
+  <!-- Колонки таблицы и полей ввода совпадают: «Параметр» — 280, «Описание» — остальное. -->
+  <DockPanel Margin="16">
+    <TextBlock DockPanel.Dock="Top" Classes="secondary" TextWrapping="Wrap" Margin="0,0,0,10"
+               Text="Параметры командной строки 1С. Свои параметры появятся в списке шаблонов окна «Параметры запуска»; встроенные изменить нельзя." />
+
+    <!-- Кнопки окна. -->
+    <Grid DockPanel.Dock="Bottom" ColumnDefinitions="Auto,*,Auto" Margin="0,12,0,0">
+      <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" ToolTip.Tip="Удалить выбранный свой параметр (Del)">
+        <StackPanel Orientation="Horizontal">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DeleteIconGeometry}" />
+          <TextBlock Text="Удалить" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+        <Button x:Name="SaveButton" Content="Сохранить" Classes="accent" MinWidth="100" HorizontalContentAlignment="Center" />
+        <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" HorizontalContentAlignment="Center" />
+      </StackPanel>
+    </Grid>
+
+    <!-- Новый параметр: параметр и описание. -->
+    <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,10,0,0">
+      <TextBlock Text="Новый параметр" />
+      <Grid ColumnDefinitions="280,*,Auto">
+        <TextBox x:Name="NewParameterBox" Text="{Binding NewParameter}" FontFamily="Consolas, DejaVu Sans Mono, monospace"
+                 PlaceholderText="Параметр, например /N Иванов" Margin="0,0,8,0" />
+        <TextBox x:Name="NewDescriptionBox" Grid.Column="1" Text="{Binding NewDescription}"
+                 PlaceholderText="Описание" Margin="0,0,8,0" />
+        <Button x:Name="AddButton" Grid.Column="2" Command="{Binding AddCommand}" ToolTip.Tip="Добавить параметр (Enter)">
+          <StackPanel Orientation="Horizontal">
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource AddIconGeometry}" />
+            <TextBlock Text="Добавить" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+      </Grid>
+      <TextBlock x:Name="ErrorText" Text="{Binding ErrorText}" IsVisible="{Binding HasError}" Foreground="#C42B1C" />
+    </StackPanel>
+
+    <!-- Таблица. -->
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="280,*" Margin="12,0,12,4">
+      <TextBlock Classes="columnHeader" Text="Параметр" />
+      <TextBlock Grid.Column="1" Classes="columnHeader" Text="Описание" />
+    </Grid>
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
+      <ListBox x:Name="RowsList" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+               ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+        <ListBox.ItemTemplate>
+          <DataTemplate DataType="vm:ParameterTemplateRow">
+            <Grid ColumnDefinitions="280,*" Background="Transparent">
+              <DockPanel Margin="0,0,12,0">
+                <Border DockPanel.Dock="Right" Classes="customTag" IsVisible="{Binding IsCustom}">
+                  <TextBlock Text="свой" />
+                </Border>
+                <TextBlock Classes="parameter" Text="{Binding Parameter}" />
+              </DockPanel>
+              <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" LineHeight="22" />
+            </Grid>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Border>
+  </DockPanel>
+</Window>

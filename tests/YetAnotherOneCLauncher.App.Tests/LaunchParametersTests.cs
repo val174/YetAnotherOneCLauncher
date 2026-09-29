@@ -261,13 +261,61 @@ public class LaunchParametersTests
     }
 
     [Fact]
-    public void Own_templates_are_parsed_from_lines()
+    public void Own_parameters_are_added_with_description_and_only_they_can_be_deleted()
     {
-        var templates = MainWindowViewModel.ParseTemplates("Тест = /N Тест /DisableStartupMessages\r\n\r\n/ClearCache\nПустой =");
+        // Старый свой шаблон (без описания): в колонке «Описание» — его название.
+        var form = new ParameterTemplatesViewModel([new ParameterTemplate { Name = "Тестовый вход", Text = "/N Тест" }]);
+        Assert.Equal(1 + ParameterLibrary.BuiltIn.Count, form.Rows.Count);
+        Assert.Equal(("/N Тест", "Тестовый вход", true), (form.Rows[0].Parameter, form.Rows[0].Description, form.Rows[0].IsCustom));
+        Assert.False(form.AddCommand.CanExecute(null)); // без параметра добавлять нечего
 
-        Assert.Equal(2, templates.Count);
-        Assert.Equal(("Тест", "/N Тест /DisableStartupMessages"), (templates[0].Name, templates[0].Text));
-        Assert.Equal(("/ClearCache", "/ClearCache"), (templates[1].Name, templates[1].Text));
+        form.NewParameter = "  /L en ";
+        form.NewDescription = "Английский интерфейс";
+        form.AddCommand.Execute(null);
+        var added = form.Rows[1]; // после своих, перед встроенными
+        Assert.Equal(("/L en", "Английский интерфейс", true), (added.Parameter, added.Description, added.IsCustom));
+        Assert.Equal("Английский интерфейс", added.Template.Name); // так он называется в списке шаблонов
+        Assert.Same(added, form.SelectedRow);
+        Assert.Equal((string.Empty, string.Empty), (form.NewParameter, form.NewDescription));
+
+        form.NewParameter = "/clearcache"; // уже есть среди встроенных
+        form.AddCommand.Execute(null);
+        Assert.Contains("встроенных", form.ErrorText, StringComparison.Ordinal);
+        Assert.False(form.SelectedRow!.IsCustom);
+        Assert.False(form.DeleteCommand.CanExecute(null)); // встроенный не удаляется
+
+        form.SelectedRow = form.Rows[0];
+        form.DeleteCommand.Execute(null);
+        Assert.Equal(["/L en"], form.CustomTemplates.Select(t => t.Text));
+        Assert.Same(form.Rows[0], form.SelectedRow); // выделение — на оставшийся свой
+    }
+
+    [Fact]
+    public async Task Own_templates_are_saved_only_on_save()
+    {
+        using var fixture = new ViewModelFixture();
+        fixture.Dialogs.ParameterTemplatesEditor = form =>
+        {
+            form.NewParameter = "/N Тест";
+            form.NewDescription = "Тестовый вход";
+            form.AddCommand.Execute(null);
+            return false; // «Отмена»
+        };
+        await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
+        Assert.Empty(fixture.Settings.Settings.ParameterTemplates);
+
+        fixture.Dialogs.ParameterTemplatesEditor = form =>
+        {
+            form.NewParameter = "/N Тест";
+            form.NewDescription = "Тестовый вход";
+            form.AddCommand.Execute(null);
+            return true;
+        };
+        await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
+
+        var saved = Assert.Single(fixture.Settings.Settings.ParameterTemplates);
+        Assert.Equal(("Тестовый вход", "/N Тест", "Тестовый вход"), (saved.Name, saved.Text, saved.Description));
+        Assert.Equal(saved, fixture.Settings.UserData.ParameterTemplates()[0]); // первым — в списке шаблонов окна параметров
     }
 
     private static void SelectBase(ViewModelFixture fixture, string name)
