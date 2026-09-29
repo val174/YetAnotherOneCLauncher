@@ -199,6 +199,9 @@ public class MainWindowTests
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
         Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5);
 
+        var launch = window.FindControl<Button>("LaunchEnterpriseButton")!;
+        var launchWidth = launch.Bounds.Width;
+
         // Тянем разделитель на 100 пикселей влево — панель шире.
         var start = splitter.TranslatePoint(new Point(2, 200), window)!.Value;
         window.MouseDown(start, MouseButton.Left);
@@ -208,6 +211,7 @@ public class MainWindowTests
         Render();
 
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
+        Assert.Equal(launchWidth, launch.Bounds.Width, tolerance: 0.5); // кнопки запуска не растут вместе с панелью
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
         Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5); // поле растёт вместе с панелью
@@ -323,14 +327,14 @@ public class MainWindowTests
 
         vm.SearchText = "бух"; // результаты поиска — списком
         Render();
-        Assert.False(collapse.IsEffectivelyEnabled); // скрыта, но место держит
-        Assert.Equal(0, collapse.Opacity);
+        Assert.False(collapse.IsEffectivelyEnabled); // видна, но недоступна
+        Assert.True(collapse.IsEffectivelyVisible);
         Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
         vm.SearchText = string.Empty;
         vm.IsTreeMode = false;
         Render();
         Assert.False(expand.IsEffectivelyEnabled);
-        Assert.Equal(0, expand.Opacity);
+        Assert.True(expand.IsEffectivelyVisible);
         Assert.Equal(searchLeft, SearchLeft(), tolerance: 0.5);
         Assert.Equal(addLeft, AddLeft(), tolerance: 0.5); // кнопки после «Развернуть/Свернуть» не сдвигаются
 

@@ -111,11 +111,6 @@
     <Style Selector="Button.columnHeader:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
-    <Style Selector="StackPanel#ToolbarButtons Button.keepSpace">
-      <Setter Property="Opacity" Value="0" />
-      <Setter Property="IsHitTestVisible" Value="False" />
-      <Setter Property="Focusable" Value="False" />
-    </Style>
     <!-- Кнопка текущего режима («Все базы» / «Недавние») подсвечена. -->
     <Style Selector="StackPanel#ToolbarButtons Button.active">
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
@@ -152,13 +147,13 @@
           </ToolTip.Tip>
         </Button>
         <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом.
-             В списке и при поиске прозрачны, но место держат — остальные кнопки не сдвигаются. -->
-        <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}" Classes.keepSpace="{Binding !ShowTree}"
+             В списке и при поиске недоступны (видны бледными) — остальные кнопки не сдвигаются. -->
+        <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}"
                 Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Развернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
         </Button>
-        <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}" Classes.keepSpace="{Binding !ShowTree}"
+        <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}"
                 Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Свернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
@@ -326,8 +321,9 @@
     <Border Grid.Column="2" Padding="12,4,12,8"
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
         <DockPanel>
-          <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами». -->
-          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,12,12">
+          <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами».
+               Ширина постоянная: при расширении панели кнопки не растут. -->
+          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,12,12" Width="220" HorizontalAlignment="Left">
             <Grid ColumnDefinitions="*,Auto">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
                       ToolTip.Tip="F3, Enter или двойной щелчок">
