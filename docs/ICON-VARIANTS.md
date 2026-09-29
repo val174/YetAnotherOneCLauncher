@@ -16,6 +16,8 @@
 | Тема: светлая | `IconLightThemeBrush` | `#BA7517` | `#EF9F27` |
 | Тема: тёмная | `IconDarkThemeBrush` | `#7F77DD` | `#AFA9EC` |
 | Настройки | `IconSettingsBrush` | `#5F5E5A` | `#B4B2A9` |
+| Дерево: папка | `IconFolderBrush` | `#BA7517` | `#EF9F27` |
+| Дерево: «Недавние» (часы) | `IconRecentBrush` | `#378ADD` | `#85B7EB` |
 
 Кисти заданы в `LauncherApplication.axaml` (ThemeDictionaries), так что меняются вместе с темой.
 Недоступная кнопка (например, «Удалить» без выбранной базы) показывает значок полупрозрачным.

@@ -9,8 +9,6 @@ public abstract partial class TreeNodeViewModel : ObservableObject
 {
     public abstract string Name { get; }
 
-    public virtual string Icon => string.Empty;
-
     [ObservableProperty]
     public partial bool IsExpanded { get; set; }
 }
@@ -48,12 +46,12 @@ public sealed class FolderNodeViewModel : TreeNodeViewModel
     /// <summary>Папку можно переименовать, удалить, перемещать: она из личного списка.</summary>
     public bool IsEditable { get; init; }
 
-    public override string Icon => Kind switch
-    {
-        FolderKind.Favorites => "★",
-        FolderKind.Recent => "🕘",
-        _ => "📁",
-    };
+    // Значок папки выбирается в шаблоне дерева: обычная папка и «Недавние» — рисованные, «Избранное» — звезда.
+    public bool IsRegularFolder => Kind == FolderKind.Regular;
+
+    public bool IsFavorites => Kind == FolderKind.Favorites;
+
+    public bool IsRecent => Kind == FolderKind.Recent;
 
     public ObservableCollection<TreeNodeViewModel> Children { get; } = [];
 

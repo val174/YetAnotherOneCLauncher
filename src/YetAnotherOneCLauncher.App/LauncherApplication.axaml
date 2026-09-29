@@ -17,6 +17,7 @@
           <SolidColorBrush x:Key="IconLightThemeBrush" Color="#BA7517" />
           <SolidColorBrush x:Key="IconDarkThemeBrush" Color="#7F77DD" />
           <SolidColorBrush x:Key="IconSettingsBrush" Color="#5F5E5A" />
+          <SolidColorBrush x:Key="IconRecentBrush" Color="#378ADD" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -28,6 +29,7 @@
           <SolidColorBrush x:Key="IconLightThemeBrush" Color="#EF9F27" />
           <SolidColorBrush x:Key="IconDarkThemeBrush" Color="#AFA9EC" />
           <SolidColorBrush x:Key="IconSettingsBrush" Color="#B4B2A9" />
+          <SolidColorBrush x:Key="IconRecentBrush" Color="#85B7EB" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
