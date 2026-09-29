@@ -6,6 +6,11 @@
   <Application.Resources>
     <!-- Цвета значков командной панели (docs/ICON-VARIANTS.md): для тёмной темы — светлее, чтобы хватало контраста. -->
     <ResourceDictionary>
+      <!-- Размеры шрифта: основной (Fluent по умолчанию — 14), мелкий (подписи, строка состояния), заголовок базы. -->
+      <x:Double x:Key="AppFontSize">15</x:Double>
+      <x:Double x:Key="ControlContentThemeFontSize">15</x:Double>
+      <x:Double x:Key="SmallFontSize">13</x:Double>
+      <x:Double x:Key="TitleFontSize">20</x:Double>
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="IconAddBrush" Color="#639922" />
@@ -43,6 +48,7 @@
     <!-- Значок всех окон лаунчера (заголовок, Alt+Tab); у .exe — ApplicationIcon в проекте. -->
     <Style Selector="Window">
       <Setter Property="Icon" Value="/Assets/app.ico" />
+      <Setter Property="FontSize" Value="{StaticResource AppFontSize}" />
     </Style>
   </Application.Styles>
 </Application>

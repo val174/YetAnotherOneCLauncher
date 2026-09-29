@@ -52,30 +52,30 @@
       <Setter Property="Margin" Value="8,0,0,0" />
     </Style>
     <Style Selector="TextBlock.platform">
-      <Setter Property="Width" Value="110" />
+      <Setter Property="Width" Value="120" />
     </Style>
     <Style Selector="TextBlock.mode">
-      <Setter Property="Width" Value="90" />
+      <Setter Property="Width" Value="100" />
     </Style>
     <Style Selector="TextBlock.date">
-      <Setter Property="Width" Value="110" />
+      <Setter Property="Width" Value="130" />
     </Style>
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
     <Style Selector="TextBlock.columnHeader">
       <Setter Property="Opacity" Value="0.65" />
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
     </Style>
     <Style Selector="TextBlock.secondary">
       <Setter Property="Opacity" Value="0.6" />
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
     </Style>
   </Window.Styles>
 
   <DockPanel>
-    <!-- Верх: кнопки слева над списком баз, поле поиска — всё остальное место до правого края. -->
-    <DockPanel DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
+    <!-- Верх: кнопки слева над списком баз, поле поиска справа — над панелью подробностей и её ширины (задаётся в коде). -->
+    <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
       <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
         <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}" Padding="8,6" VerticalAlignment="Stretch">
@@ -171,9 +171,10 @@
       </StackPanel>
       </Panel>
 
-      <TextBox x:Name="SearchBox"
+      <TextBox x:Name="SearchBox" HorizontalAlignment="Right"
                Text="{Binding SearchText}"
-               PlaceholderText="Поиск: имя, сервер, путь — можно в любой раскладке (Ctrl+F)">
+               PlaceholderText="Поиск: имя, сервер, путь (Ctrl+F)"
+               ToolTip.Tip="Поиск по имени, серверу и пути; можно набирать в любой раскладке">
         <TextBox.InnerRightContent>
           <Button Content="✕" Command="{Binding ClearSearchCommand}" IsVisible="{Binding HasSearch}"
                   Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc, Ctrl+Q)" />
@@ -185,19 +186,19 @@
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4">
-          <Button Padding="8,2" FontSize="12" Content="{Binding CacheSummaryText}" Command="{Binding OpenCacheManagerCommand}"
+          <Button Padding="8,2" FontSize="{StaticResource SmallFontSize}" Content="{Binding CacheSummaryText}" Command="{Binding OpenCacheManagerCommand}"
                   IsVisible="{Binding CacheSummaryText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                   ToolTip.Tip="Кэш всех баз: размеры, кэш без хозяина, очистка" />
-          <ToggleButton x:Name="PlatformsToggle" Padding="8,2" FontSize="12">
+          <ToggleButton x:Name="PlatformsToggle" Padding="8,2" FontSize="{StaticResource SmallFontSize}">
             <TextBlock>
               <Run Text="Платформы: " /><Run Text="{Binding PlatformCount}" />
             </TextBlock>
           </ToggleButton>
-          <TextBlock FontSize="12" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding HasUnavailable}"
+          <TextBlock FontSize="{StaticResource SmallFontSize}" VerticalAlignment="Center" Margin="4,0" IsVisible="{Binding HasUnavailable}"
                      ToolTip.Tip="Базы, которые не ответили при проверке, отмечены ⚠">
             <Run Text="⚠ недоступно: " /><Run Text="{Binding UnavailableCount}" />
           </TextBlock>
-          <ToggleButton x:Name="WarningsToggle" Padding="8,2" FontSize="12" IsVisible="{Binding HasWarnings}">
+          <ToggleButton x:Name="WarningsToggle" Padding="8,2" FontSize="{StaticResource SmallFontSize}" IsVisible="{Binding HasWarnings}">
             <TextBlock>
               <Run Text="Предупреждения: " /><Run Text="{Binding WarningCount}" />
             </TextBlock>
@@ -220,14 +221,14 @@
     <Border DockPanel.Dock="Bottom" Padding="8" IsVisible="{Binding #PlatformsToggle.IsChecked}"
             BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <ScrollViewer MaxHeight="160">
-        <SelectableTextBlock Text="{Binding PlatformsText}" FontFamily="Consolas, DejaVu Sans Mono, monospace" FontSize="12" />
+        <SelectableTextBlock Text="{Binding PlatformsText}" FontFamily="Consolas, DejaVu Sans Mono, monospace" FontSize="{StaticResource SmallFontSize}" />
       </ScrollViewer>
     </Border>
 
     <Border DockPanel.Dock="Bottom" Padding="8" IsVisible="{Binding #WarningsToggle.IsChecked}"
             BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <ScrollViewer MaxHeight="160">
-        <SelectableTextBlock Text="{Binding WarningsText}" TextWrapping="Wrap" FontSize="12" />
+        <SelectableTextBlock Text="{Binding WarningsText}" TextWrapping="Wrap" FontSize="{StaticResource SmallFontSize}" />
       </ScrollViewer>
     </Border>
 
@@ -253,7 +254,7 @@
                   <TextBlock Text="☆ В избранное" IsVisible="{Binding !SelectedInfoBase.IsFavorite, FallbackValue=False}" />
                 </Panel>
               </Button>
-              <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
+              <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
             </DockPanel>
 
             <StackPanel Orientation="Horizontal" Spacing="8">

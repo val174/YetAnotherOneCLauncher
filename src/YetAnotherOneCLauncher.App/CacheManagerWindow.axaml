@@ -10,7 +10,7 @@
   <Window.Styles>
     <Style Selector="TextBlock.secondary">
       <Setter Property="Opacity" Value="0.65" />
-      <Setter Property="FontSize" Value="12" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
     </Style>
     <Style Selector="Path.icon">
       <Setter Property="Width" Value="16" />

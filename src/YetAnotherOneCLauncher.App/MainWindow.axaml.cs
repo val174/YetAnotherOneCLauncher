@@ -29,6 +29,7 @@ public partial class MainWindow : Window
 
     /// <summary>Список баз не сжимается уже этого, сколько ни тяни разделитель.</summary>
     private const double MinListWidth = 280;
+    private const double MinSearchWidth = 200;
 
     private PointerPressedEventArgs? _dragStart;
     private bool _focusRestorePending;
@@ -78,7 +79,7 @@ public partial class MainWindow : Window
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
 
-        // Панель подробностей: ширина — из настроек, меняется разделителем; кнопки над ней следуют за шириной.
+        // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
         ApplyDetailsLayout();
         viewModel.PropertyChanged += (_, e) =>
         {
@@ -88,6 +89,9 @@ public partial class MainWindow : Window
             }
         };
         ToolbarButtons.SizeChanged += (_, _) => ReserveToolbarWidth();
+        HeaderPanel.SizeChanged += (_, _) => FitSearchBox();
+        ToolbarPanel.SizeChanged += (_, _) => FitSearchBox();
+        DetailsSplitter.DragDelta += (_, _) => FitSearchBox(DetailsColumn.ActualWidth);
         DetailsSplitter.DragCompleted += (_, _) =>
         {
             viewModel.DetailsWidth = DetailsColumn.ActualWidth;
@@ -109,6 +113,24 @@ public partial class MainWindow : Window
         DetailsColumn.MinWidth = vm.ShowDetails ? MainWindowViewModel.MinDetailsWidth : 0;
         DetailsColumn.MaxWidth = vm.ShowDetails ? MainWindowViewModel.MaxDetailsWidth : 0;
         DetailsColumn.Width = new GridLength(width);
+        FitSearchBox();
+    }
+
+    /// <summary>
+    /// Поле поиска — над панелью подробностей и той же ширины (левый край — над разделителем).
+    /// Без панели ширина та же, что была бы у панели. Если места не хватает, поле сужается, но не уже <see cref="MinSearchWidth"/>.
+    /// </summary>
+    private void FitSearchBox(double? detailsWidth = null)
+    {
+        if (ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        var panelWidth = detailsWidth ?? vm.DetailsWidth;
+        var target = panelWidth + DetailsSplitter.Width - ToolbarPanel.Margin.Right;
+        var available = HeaderPanel.Bounds.Width - ToolbarPanel.Bounds.Width - ToolbarPanel.Margin.Right;
+        SearchBox.Width = available > 0 ? Math.Max(Math.Min(target, available), Math.Min(MinSearchWidth, available)) : target;
     }
 
     /// <summary>

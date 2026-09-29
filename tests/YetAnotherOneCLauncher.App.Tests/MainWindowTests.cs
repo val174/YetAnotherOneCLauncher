@@ -140,12 +140,13 @@ public class MainWindowTests
         double RightEdge(Control c) => c.TranslatePoint(new Point(c.Bounds.Width, 0), window)!.Value.X;
 
         Assert.Equal(360, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth);
-        // Кнопки слева, поле поиска — до правого края окна при любой ширине панели подробностей.
+        // Кнопки слева; поле поиска — до правого края окна, над панелью подробностей и её ширины.
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!;
         double LeftEdge(Control c) => c.TranslatePoint(default, window)!.Value.X;
         Assert.Equal(8, LeftEdge(toolbar), tolerance: 1.5);
         Assert.True(LeftEdge(search) > RightEdge(toolbar));
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5);
 
         // Тянем разделитель на 100 пикселей влево — панель шире.
         var start = splitter.TranslatePoint(new Point(2, 200), window)!.Value;
@@ -158,13 +159,16 @@ public class MainWindowTests
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5); // поле растёт вместе с панелью
         Snapshot(window, "11-details-wide");
 
-        // Без панели список — во всю ширину окна, поиск тоже.
+        // Без панели список — во всю ширину окна, поле поиска — прежней ширины у правого края.
+        var searchWidth = search.Bounds.Width;
         fixture.ViewModel.ShowDetails = false;
         Render();
         Assert.Equal(window.Bounds.Width - 8, RightEdge(tree), tolerance: 1.5);
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(searchWidth, search.Bounds.Width, tolerance: 0.5);
         window.Close();
     }
 
