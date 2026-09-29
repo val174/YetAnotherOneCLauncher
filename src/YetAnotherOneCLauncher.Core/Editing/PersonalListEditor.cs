@@ -442,18 +442,47 @@ public static class PersonalListEditor
     public static void SortByName(V8iDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
-        var personal = new ListSource(ListSourceKind.Personal, string.Empty);
         var groups = document.Sections
             .Where(s => !string.IsNullOrWhiteSpace(s.Name))
             .GroupBy(s => FolderPaths.Normalize(s.Get(V8iKeys.Folder)), StringComparer.OrdinalIgnoreCase);
         foreach (var group in groups)
         {
-            Renumber(group
-                .OrderBy(s => V8iSections.IsFolder(s) ? 0 : 1)
-                .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
-                .ThenBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? double.MaxValue)
-                .ToList());
+            RenumberByName(group);
         }
+    }
+
+    /// <summary>
+    /// Порядок по наименованию только внутри папки <paramref name="folderPath"/> (сначала папки, затем базы);
+    /// с <paramref name="includeSubfolders"/> — и во всех вложенных. Остальные папки не меняются.
+    /// </summary>
+    /// <returns>Сколько записей получили новый порядок; 0 — в папке нет записей личного списка.</returns>
+    public static int SortFolderByName(V8iDocument document, string folderPath, bool includeSubfolders = false)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var root = FolderPaths.Normalize(folderPath);
+        var groups = document.Sections
+            .Where(s => !string.IsNullOrWhiteSpace(s.Name))
+            .GroupBy(s => FolderPaths.Normalize(s.Get(V8iKeys.Folder)), StringComparer.OrdinalIgnoreCase)
+            .Where(g => string.Equals(g.Key, root, StringComparison.OrdinalIgnoreCase) || (includeSubfolders && IsInside(g.Key, root)));
+        var count = 0;
+        foreach (var group in groups)
+        {
+            count += RenumberByName(group);
+        }
+
+        return count;
+    }
+
+    private static int RenumberByName(IEnumerable<V8iSection> siblings)
+    {
+        var personal = new ListSource(ListSourceKind.Personal, string.Empty);
+        var ordered = siblings
+            .OrderBy(s => V8iSections.IsFolder(s) ? 0 : 1)
+            .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ThenBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? double.MaxValue)
+            .ToList();
+        Renumber(ordered);
+        return ordered.Count;
     }
 
     private static void Renumber(List<V8iSection> ordered)

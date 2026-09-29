@@ -391,6 +391,8 @@
           <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" InputGesture="Delete" />
           <MenuItem Header="Выше" Command="{Binding MoveUpCommand}" InputGesture="Alt+Up" />
           <MenuItem Header="Ниже" Command="{Binding MoveDownCommand}" InputGesture="Alt+Down" />
+          <MenuItem Header="Упорядочить папку по наименованию" Command="{Binding SortFolderByNameCommand}"
+                    ToolTip.Tip="Записи внутри выбранной папки (у базы — её папки) — по алфавиту, сначала папки. Порядок сохраняется в списке баз." />
           <MenuItem Header="Скопировать в личный список" Command="{Binding CopyToPersonalCommand}" />
           <Separator />
           <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="Ctrl+N" />

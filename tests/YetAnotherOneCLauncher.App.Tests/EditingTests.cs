@@ -206,6 +206,38 @@ public class EditingTests
     }
 
     [Fact]
+    public async Task Selected_folder_can_be_sorted_by_name_in_custom_order()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        vm.ToggleSortCommand.Execute(null); // свой порядок
+        var children = () => Folder(vm, "Рабочие").Children.Select(n => n.Name).ToList();
+
+        // Переставим базы в папке, чтобы порядок стал не алфавитным.
+        vm.SelectedTreeItem = Folder(vm, "Рабочие").Children.Single(n => n.Name == "Зарплата и управление персоналом");
+        await vm.MoveUpCommand.ExecuteAsync(null);
+        Assert.Equal(new[] { "Зарплата и управление персоналом", "Бухгалтерия предприятия" }, children());
+        var root = vm.TreeItems.Select(n => n.Name).ToList();
+
+        vm.SelectedTreeItem = Folder(vm, "Рабочие");
+        Assert.True(vm.SortFolderByNameCommand.CanExecute(null));
+        await vm.SortFolderByNameCommand.ExecuteAsync(null);
+
+        Assert.Equal(new[] { "Бухгалтерия предприятия", "Зарплата и управление персоналом" }, children());
+        Assert.Equal(root, vm.TreeItems.Select(n => n.Name)); // остальные папки не тронуты
+        Assert.False(vm.IsSortedByName); // режим прежний — свой порядок
+        Assert.Contains("упорядочены по наименованию", vm.StatusText, StringComparison.Ordinal);
+
+        // У выделенной базы упорядочивается папка, в которой она лежит.
+        vm.SelectedTreeItem = vm.TreeItems.OfType<BaseNodeViewModel>().First();
+        Assert.True(vm.SortFolderByNameCommand.CanExecute(null));
+
+        vm.ShowRecentCommand.Execute(null);
+        Assert.False(vm.SortFolderByNameCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task Drag_base_into_folder_and_onto_favorites()
     {
         using var fixture = new ViewModelFixture();

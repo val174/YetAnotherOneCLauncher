@@ -272,6 +272,31 @@ public class PersonalListEditorTests
     }
 
     [Fact]
+    public void SortFolderByName_changes_only_that_folder()
+    {
+        var document = V8iDocument.Parse(FruitList + """
+
+            [Слива]
+            Connect=File="C:\d";
+            Folder=/Папка
+            OrderInTree=16384
+            [Абрикос]
+            Connect=File="C:\e";
+            Folder=/Папка
+            OrderInTree=32768
+            """);
+
+        Assert.Equal(2, PersonalListEditor.SortFolderByName(document, "/Папка"));
+
+        Assert.Equal(new[] { "Абрикос", "Слива" }, Order(document, "/Папка"));
+        Assert.Equal(new[] { "Яблоко", "Банан", "Папка", "Вишня" }, Order(document, "/")); // корень не тронут
+
+        Assert.Equal(4, PersonalListEditor.SortFolderByName(document, "/"));
+        Assert.Equal(new[] { "Папка", "Банан", "Вишня", "Яблоко" }, Order(document, "/"));
+        Assert.Equal(0, PersonalListEditor.SortFolderByName(document, "/Нет такой"));
+    }
+
+    [Fact]
     public void Moves_made_in_name_order_write_that_order_first()
     {
         var document = V8iDocument.Parse(FruitList);

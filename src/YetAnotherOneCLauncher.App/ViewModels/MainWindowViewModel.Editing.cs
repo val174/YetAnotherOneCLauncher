@@ -205,6 +205,34 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(CanReorderOrDelete))]
     private Task MoveDownAsync() => MoveByAsync(+1);
 
+    /// <summary>
+    /// Упорядочить по наименованию содержимое выбранной папки (у выделенной базы — папки, где она лежит):
+    /// порядок записывается в список баз, так что виден и при своём порядке, и в штатном стартере.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanSortFolderByName))]
+    private async Task SortFolderByNameAsync()
+    {
+        if (SortTargetFolder() is not { } folder)
+        {
+            return;
+        }
+
+        var key = CurrentSelectionKey();
+        var count = 0;
+        var title = folder == FolderPaths.Root ? "корне списка" : $"папке «{folder}»";
+        await EditListAsync(
+            document => count = PersonalListEditor.SortFolderByName(document, folder),
+            () => count > 0
+                ? $"Записи в {title} упорядочены по наименованию."
+                : $"В {title} нет записей личного списка — упорядочивать нечего.",
+            () => key);
+    }
+
+    private string? SortTargetFolder() =>
+        SelectedFolder is { Kind: FolderKind.Regular } folder ? folder.Path : SelectedInfoBase?.InfoBase.FolderPath;
+
+    private bool CanSortFolderByName() => _store is not null && !IsRecentMode && SortTargetFolder() is not null;
+
     /// <summary>Копия базы из общего списка в личном — чтобы изменить её настройки.</summary>
     [RelayCommand(CanExecute = nameof(CanCopyToPersonal))]
     private async Task CopyToPersonalAsync()

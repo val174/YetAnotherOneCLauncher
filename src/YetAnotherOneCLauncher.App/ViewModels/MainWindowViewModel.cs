@@ -206,7 +206,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
         nameof(AddBaseCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
-        nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
+        nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
     public partial bool IsRecentMode { get; set; }
 
     public bool IsAllBasesMode => !IsRecentMode;
@@ -251,6 +251,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(DeleteCommand),
         nameof(MoveUpCommand),
         nameof(MoveDownCommand),
+        nameof(SortFolderByNameCommand),
         nameof(CopyToPersonalCommand),
         nameof(ExportCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
@@ -259,7 +260,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Выделенная обычная папка дерева (не «Избранное»).</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]
