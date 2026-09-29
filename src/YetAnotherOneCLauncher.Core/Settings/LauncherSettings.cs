@@ -92,6 +92,19 @@ public enum ThemeMode
     Dark,
 }
 
+/// <summary>Стиль цветных значков (docs/ICON-VARIANTS.md).</summary>
+public enum IconStyle
+{
+    /// <summary>Линия значка окрашена цветом кнопки.</summary>
+    Outline,
+
+    /// <summary>Контур цвета текста и полупрозрачная цветная заливка.</summary>
+    Duotone,
+
+    /// <summary>Белый знак на цветной плашке.</summary>
+    Plate,
+}
+
 /// <summary>Что делать с окном лаунчера после запуска базы.</summary>
 public enum AfterLaunchAction
 {
@@ -123,6 +136,8 @@ public sealed record WindowPlacement
 public sealed class UiSettings
 {
     public ThemeMode Theme { get; set; } = ThemeMode.System;
+
+    public IconStyle IconStyle { get; set; } = IconStyle.Outline;
 
     public CatalogViewMode ViewMode { get; set; } = CatalogViewMode.Tree;
 

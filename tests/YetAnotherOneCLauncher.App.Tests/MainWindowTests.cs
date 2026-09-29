@@ -7,6 +7,8 @@ using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.Media.Imaging;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -292,6 +294,40 @@ public class MainWindowTests
         }
 
         Assert.Contains("светлая", vm.ThemeToolTip, StringComparison.Ordinal);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Icon_style_switches_all_icons_and_is_saved()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        window.KeyTextInput("зуп");
+        Render();
+        window.KeyPress(Key.D, RawInputModifiers.Control, PhysicalKey.D, "d"); // «Избранное» и «Недавние» в дереве
+        window.KeyPress(Key.F4, RawInputModifiers.None, PhysicalKey.F4, null);
+        await WaitAsync(() => fixture.Processes.Started.Count > 0);
+        window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
+        Render();
+
+        Assert.Equal(IconStyle.Outline, vm.IconStyle);
+        Assert.Equal(3, vm.IconStyleNames.Count);
+        var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
+        foreach (var style in new[] { IconStyle.Duotone, IconStyle.Plate, IconStyle.Outline })
+        {
+            vm.IconStyleIndex = (int)style;
+            foreach (var variant in new[] { Avalonia.Styling.ThemeVariant.Light, Avalonia.Styling.ThemeVariant.Dark })
+            {
+                Avalonia.Application.Current!.RequestedThemeVariant = variant;
+                Render();
+                Assert.Equal(style, ToolIcon.GetIconStyle(addIcon)); // стиль наследуется от окна
+                Assert.Equal(style, fixture.Settings.Settings.Ui.IconStyle);
+                Snapshot(window, $"16-icons-{style.ToString().ToLowerInvariant()}-{variant.Key.ToString()!.ToLowerInvariant()}");
+            }
+        }
+
+        Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
         window.Close();
     }
 

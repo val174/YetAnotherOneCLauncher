@@ -116,6 +116,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
         ThemeIndex = (int)ui.Theme;
         AfterLaunchIndex = (int)ui.AfterLaunch;
+        IconStyleIndex = Enum.IsDefined(ui.IconStyle) ? (int)ui.IconStyle : (int)IconStyle.Outline;
         ShowDetails = ui.ShowDetails;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
@@ -129,6 +130,27 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
     public IReadOnlyList<string> AfterLaunchNames { get; } = ["Ничего не делать", "Свернуть окно", "Закрыть лаунчер"];
+
+    /// <summary>Порядок — как в <see cref="Core.Settings.IconStyle"/>.</summary>
+    public IReadOnlyList<string> IconStyleNames { get; } = ["Цветной контур", "Двухтоновые", "Цветная плашка"];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IconStyle))]
+    public partial int IconStyleIndex { get; set; }
+
+    /// <summary>Стиль значков окна: наследуется всеми значками (<see cref="Controls.ToolIcon"/>).</summary>
+    public IconStyle IconStyle => Enum.IsDefined((IconStyle)IconStyleIndex) ? (IconStyle)IconStyleIndex : IconStyle.Outline;
+
+    partial void OnIconStyleIndexChanged(int value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.IconStyle = IconStyle;
+        _settings.RequestSave();
+    }
 
     /// <summary>Все загруженные базы.</summary>
     public IReadOnlyList<InfoBaseViewModel> InfoBases => _bases;
