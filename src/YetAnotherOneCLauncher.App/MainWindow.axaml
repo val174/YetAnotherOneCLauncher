@@ -128,7 +128,7 @@
 
   <DockPanel>
     <!-- Верх: кнопки слева над списком баз, поле поиска справа — над панелью подробностей и её ширины (задаётся в коде). -->
-    <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,8,4" LastChildFill="True">
+    <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,12,4" LastChildFill="True">
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
       <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
         <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
@@ -318,12 +318,12 @@
                   ToolTip.Tip="Потяните, чтобы изменить ширину правой панели" />
 
     <!-- Справа: кнопки запуска видны всегда, под ними — свойства выбранной базы (скрываются кнопкой в строке состояния). -->
-    <Border Grid.Column="2" Padding="12,4,12,8"
+    <Border x:Name="DetailsBorder" Grid.Column="2" Padding="12,4,12,8"
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
         <DockPanel>
           <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами».
-               Ширина постоянная: при расширении панели кнопки не растут. -->
-          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,12,12" Width="220" HorizontalAlignment="Left">
+               Ширина постоянная, прижаты вправо: при расширении панели кнопки не растут. -->
+          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Right">
             <Grid ColumnDefinitions="*,Auto">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
                       ToolTip.Tip="F3, Enter или двойной щелчок">

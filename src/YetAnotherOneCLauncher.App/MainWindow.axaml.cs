@@ -116,7 +116,7 @@ public partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Поле поиска — над панелью подробностей и той же ширины (левый край — над разделителем).
+    /// Поле поиска — над правой панелью: левый край — вровень с её содержимым, правее разделителя.
     /// Без панели ширина та же, что была бы у панели. Если места не хватает, поле сужается, но не уже <see cref="MinSearchWidth"/>.
     /// </summary>
     private void FitSearchBox(double? detailsWidth = null)
@@ -127,7 +127,9 @@ public partial class MainWindow : Window
         }
 
         var panelWidth = detailsWidth ?? vm.DetailsWidth;
-        var target = panelWidth + DetailsSplitter.Width - ToolbarPanel.Margin.Right;
+        // Правый край поля — у отступа верхней строки от края окна, левый — там же, где начинается содержимое панели
+        // (линия разделителя плюс внутренний отступ панели): поле не заходит за разделитель.
+        var target = panelWidth - HeaderPanel.Margin.Right - DetailsBorder.Padding.Left;
         var available = HeaderPanel.Bounds.Width - ToolbarPanel.Bounds.Width - ToolbarPanel.Margin.Right;
         SearchBox.Width = available > 0 ? Math.Max(Math.Min(target, available), Math.Min(MinSearchWidth, available)) : target;
     }

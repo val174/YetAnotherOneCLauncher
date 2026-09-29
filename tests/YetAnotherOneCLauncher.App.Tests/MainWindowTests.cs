@@ -196,8 +196,9 @@ public class MainWindowTests
         double LeftEdge(Control c) => c.TranslatePoint(default, window)!.Value.X;
         Assert.Equal(8, LeftEdge(toolbar), tolerance: 1.5);
         Assert.True(LeftEdge(search) > RightEdge(toolbar));
-        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
-        Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5);
+        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(RightEdge(splitter) + 12, LeftEdge(search), tolerance: 1.5); // правее разделителя, вровень с содержимым панели
+        Assert.Equal(RightEdge(search), RightEdge(window.FindControl<StackPanel>("LaunchButtons")!), tolerance: 1.5); // кнопки запуска — у правого края
 
         var launch = window.FindControl<Button>("LaunchEnterpriseButton")!;
         var launchWidth = launch.Bounds.Width;
@@ -213,8 +214,9 @@ public class MainWindowTests
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
         Assert.Equal(launchWidth, launch.Bounds.Width, tolerance: 0.5); // кнопки запуска не растут вместе с панелью
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
-        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
-        Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5); // поле растёт вместе с панелью
+        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(RightEdge(splitter) + 12, LeftEdge(search), tolerance: 1.5); // правее разделителя, вровень с содержимым панели
+        Assert.Equal(RightEdge(search), RightEdge(window.FindControl<StackPanel>("LaunchButtons")!), tolerance: 1.5); // поле растёт вместе с панелью, кнопки — у правого края
         Snapshot(window, "11-details-wide");
 
         // Свойства скрыты — кнопки запуска остаются на месте, ширина колонки и поиска прежние.
@@ -225,7 +227,7 @@ public class MainWindowTests
         Assert.False(window.FindControl<Panel>("PropertiesPanel")!.IsEffectivelyVisible);
         Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
         Assert.Equal(treeRight, RightEdge(tree), tolerance: 1.5);
-        Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
         Assert.Equal(searchWidth, search.Bounds.Width, tolerance: 0.5);
         Snapshot(window, "09b-properties-hidden");
         window.Close();
