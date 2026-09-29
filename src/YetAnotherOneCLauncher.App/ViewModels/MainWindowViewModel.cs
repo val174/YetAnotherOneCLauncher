@@ -116,7 +116,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
         ThemeIndex = (int)ui.Theme;
         AfterLaunchIndex = (int)ui.AfterLaunch;
-        IconStyleIndex = Enum.IsDefined(ui.IconStyle) ? (int)ui.IconStyle : (int)IconStyle.Outline;
+        IconStyleIndex = Math.Max(0, Array.IndexOf(IconStyles, ui.IconStyle));
         ShowDetails = ui.ShowDetails;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
@@ -131,15 +131,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public IReadOnlyList<string> AfterLaunchNames { get; } = ["Ничего не делать", "Свернуть окно", "Закрыть лаунчер"];
 
-    /// <summary>Порядок — как в <see cref="Core.Settings.IconStyle"/>.</summary>
-    public IReadOnlyList<string> IconStyleNames { get; } = ["Цветной контур", "Двухтоновые", "Цветная плашка"];
+    /// <summary>Стили значков в порядке списка «Стиль значков».</summary>
+    private static readonly IconStyle[] IconStyles = [IconStyle.Outline, IconStyle.Plate];
+
+    public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2"];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconStyle))]
     public partial int IconStyleIndex { get; set; }
 
     /// <summary>Стиль значков окна: наследуется всеми значками (<see cref="Controls.ToolIcon"/>).</summary>
-    public IconStyle IconStyle => Enum.IsDefined((IconStyle)IconStyleIndex) ? (IconStyle)IconStyleIndex : IconStyle.Outline;
+    public IconStyle IconStyle => IconStyleIndex >= 0 && IconStyleIndex < IconStyles.Length ? IconStyles[IconStyleIndex] : IconStyle.Outline;
 
     partial void OnIconStyleIndexChanged(int value)
     {

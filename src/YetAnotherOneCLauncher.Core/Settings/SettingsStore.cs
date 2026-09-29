@@ -72,6 +72,11 @@ public sealed class SettingsStore
         settings.ParameterTemplates ??= [];
         settings.Ui ??= new UiSettings();
         settings.Ui.CollapsedFolders ??= [];
+        if (settings.Ui.IconStyle is not (IconStyle.Outline or IconStyle.Plate))
+        {
+            settings.Ui.IconStyle = IconStyle.Outline; // двухтоновые значки убраны, неизвестное значение — тоже сюда
+        }
+
         settings.Launch ??= new LaunchSettings();
         settings.Cache ??= new CacheSettings();
         settings.Network ??= new NetworkSettings();

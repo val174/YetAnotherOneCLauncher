@@ -95,14 +95,14 @@ public enum ThemeMode
 /// <summary>Стиль цветных значков (docs/ICON-VARIANTS.md).</summary>
 public enum IconStyle
 {
-    /// <summary>Линия значка окрашена цветом кнопки.</summary>
-    Outline,
+    /// <summary>«Стиль 1»: линия значка окрашена цветом кнопки.</summary>
+    Outline = 0,
 
-    /// <summary>Контур цвета текста и полупрозрачная цветная заливка.</summary>
-    Duotone,
+    /// <summary>Двухтоновые значки — убраны; значение осталось, чтобы старые настройки читались (заменяется на <see cref="Outline"/>).</summary>
+    Duotone = 1,
 
-    /// <summary>Белый знак на цветной плашке.</summary>
-    Plate,
+    /// <summary>«Стиль 2»: знак на цветной плашке.</summary>
+    Plate = 2,
 }
 
 /// <summary>Что делать с окном лаунчера после запуска базы.</summary>

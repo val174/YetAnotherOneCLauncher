@@ -312,11 +312,11 @@ public class MainWindowTests
         Render();
 
         Assert.Equal(IconStyle.Outline, vm.IconStyle);
-        Assert.Equal(3, vm.IconStyleNames.Count);
+        Assert.Equal(new[] { "Стиль 1", "Стиль 2" }, vm.IconStyleNames);
         var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
-        foreach (var style in new[] { IconStyle.Duotone, IconStyle.Plate, IconStyle.Outline })
+        foreach (var (index, style) in new[] { (1, IconStyle.Plate), (0, IconStyle.Outline) })
         {
-            vm.IconStyleIndex = (int)style;
+            vm.IconStyleIndex = index;
             foreach (var variant in new[] { Avalonia.Styling.ThemeVariant.Light, Avalonia.Styling.ThemeVariant.Dark })
             {
                 Avalonia.Application.Current!.RequestedThemeVariant = variant;

@@ -85,6 +85,23 @@ public class SettingsStoreTests
         Assert.True(File.Exists(store.FilePath + ".bad"));
     }
 
+    [Theory]
+    [InlineData("Duotone", IconStyle.Outline)] // двухтоновые значки убраны
+    [InlineData("Plate", IconStyle.Plate)]
+    [InlineData("7", IconStyle.Outline)]
+    public async Task Removed_icon_style_is_read_as_default(string saved, IconStyle expected)
+    {
+        using var temp = new TempDirectory();
+        var store = new SettingsStore(temp.Path);
+        var value = int.TryParse(saved, out _) ? saved : $"\"{saved}\"";
+        await File.WriteAllTextAsync(store.FilePath, $$"""{ "ui": { "iconStyle": {{value}} } }""");
+
+        var result = await store.LoadAsync();
+
+        Assert.Null(result.Warning);
+        Assert.Equal(expected, result.Settings.Ui.IconStyle);
+    }
+
     [Fact]
     public async Task Nulls_and_unknown_properties_are_tolerated()
     {
