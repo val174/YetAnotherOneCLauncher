@@ -32,6 +32,9 @@ public class MainWindowTests
         Assert.NotNull(window.Icon); // значок приложения из стиля окон
         Assert.True(window.FindControl<TextBox>("SearchBox")!.IsFocused);
 
+        // Кнопки запуска видны и без выделенной базы — просто недоступны.
+        Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
+        Assert.False(window.FindControl<Button>("LaunchEnterpriseButton")!.IsEffectivelyEnabled);
         Snapshot(window, "01-tree");
         window.Close();
     }
@@ -124,6 +127,7 @@ public class MainWindowTests
 
         Assert.False(fixture.ViewModel.ShowDetails);
         Assert.False(fixture.Settings.Settings.Ui.ShowDetails); // запоминается
+        Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible); // кнопки запуска — всегда
         Snapshot(window, "09-details-off");
 
         toggle.IsChecked = true;
@@ -209,13 +213,17 @@ public class MainWindowTests
         Assert.Equal(LeftEdge(splitter), LeftEdge(search), tolerance: 1.5); // поле растёт вместе с панелью
         Snapshot(window, "11-details-wide");
 
-        // Без панели список — во всю ширину окна, поле поиска — прежней ширины у правого края.
+        // Свойства скрыты — кнопки запуска остаются на месте, ширина колонки и поиска прежние.
         var searchWidth = search.Bounds.Width;
+        var treeRight = RightEdge(tree);
         fixture.ViewModel.ShowDetails = false;
         Render();
-        Assert.Equal(window.Bounds.Width - 8, RightEdge(tree), tolerance: 1.5);
+        Assert.False(window.FindControl<Panel>("PropertiesPanel")!.IsEffectivelyVisible);
+        Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
+        Assert.Equal(treeRight, RightEdge(tree), tolerance: 1.5);
         Assert.Equal(window.Bounds.Width - 8, RightEdge(search), tolerance: 1.5);
         Assert.Equal(searchWidth, search.Bounds.Width, tolerance: 0.5);
+        Snapshot(window, "09b-properties-hidden");
         window.Close();
     }
 

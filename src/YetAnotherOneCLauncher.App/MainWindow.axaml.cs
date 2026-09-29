@@ -107,11 +107,11 @@ public partial class MainWindow : Window
             return;
         }
 
-        var width = vm.ShowDetails ? vm.DetailsWidth : 0;
+        // Правая колонка есть всегда: в ней кнопки запуска; свойства под ними скрываются отдельно (ShowDetails).
         BodyGrid.ColumnDefinitions[0].MinWidth = MinListWidth;
-        DetailsColumn.MinWidth = vm.ShowDetails ? MainWindowViewModel.MinDetailsWidth : 0;
-        DetailsColumn.MaxWidth = vm.ShowDetails ? MainWindowViewModel.MaxDetailsWidth : 0;
-        DetailsColumn.Width = new GridLength(width);
+        DetailsColumn.MinWidth = MainWindowViewModel.MinDetailsWidth;
+        DetailsColumn.MaxWidth = MainWindowViewModel.MaxDetailsWidth;
+        DetailsColumn.Width = new GridLength(vm.DetailsWidth);
         FitSearchBox();
     }
 

@@ -6,7 +6,7 @@
         x:DataType="vm:MainWindowViewModel"
         Title="YetAnotherOneCLauncher"
         Width="1040" Height="660"
-        MinWidth="560" MinHeight="360"
+        MinWidth="600" MinHeight="360"
         c:ToolIcon.IconStyle="{Binding IconStyle}">
 
   <Window.Styles>
@@ -320,15 +320,12 @@
     <!-- Список баз, разделитель и панель подробностей. Ширину колонки панели задаёт код (MainWindow.axaml.cs). -->
     <Grid x:Name="BodyGrid" ColumnDefinitions="*,Auto,340">
     <GridSplitter x:Name="DetailsSplitter" Grid.Column="1" Width="5" ResizeDirection="Columns" Background="Transparent"
-                  IsVisible="{Binding ShowDetails}" ToolTip.Tip="Потяните, чтобы изменить ширину панели свойств" />
+                  ToolTip.Tip="Потяните, чтобы изменить ширину правой панели" />
 
-    <!-- Справа: запуск и свойства выбранной базы. -->
-    <Border Grid.Column="2" IsVisible="{Binding ShowDetails}" Padding="12,4,12,8"
+    <!-- Справа: кнопки запуска видны всегда, под ними — свойства выбранной базы (скрываются кнопкой в строке состояния). -->
+    <Border Grid.Column="2" Padding="12,4,12,8"
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
-      <Panel>
-        <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
-                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-        <DockPanel IsVisible="{Binding HasSelection}">
+        <DockPanel>
           <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами». -->
           <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,12,12">
             <Grid ColumnDefinitions="*,Auto">
@@ -357,8 +354,12 @@
               </Button>
             </Grid>
           </StackPanel>
-          <TextBlock DockPanel.Dock="Top" Classes="sectionHeader" Text="Свойства информационной базы" />
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+          <TextBlock x:Name="PropertiesHeader" DockPanel.Dock="Top" Classes="sectionHeader" Text="Свойства информационной базы"
+                     IsVisible="{Binding ShowDetails}" />
+        <Panel x:Name="PropertiesPanel" IsVisible="{Binding ShowDetails}">
+        <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
+                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+        <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
           <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
           <StackPanel Spacing="10" Margin="0,0,12,0">
             <DockPanel>
@@ -426,8 +427,8 @@
             </WrapPanel>
           </StackPanel>
         </ScrollViewer>
+        </Panel>
         </DockPanel>
-      </Panel>
     </Border>
 
     <!-- Основное: дерево или список. Контекстное меню действует на выделенную базу. -->
