@@ -18,6 +18,7 @@
 | Настройки | `IconSettingsBrush` | `#5F5E5A` | `#B4B2A9` |
 | Дерево: папка | `IconFolderBrush` | `#BA7517` | `#EF9F27` |
 | Дерево: «Недавние» (часы) | `IconRecentBrush` | `#378ADD` | `#85B7EB` |
+| Избранное: папка и звезда у базы | `IconFavoriteBrush` | `#E0900F` | `#FAC775` |
 
 Кисти заданы в `LauncherApplication.axaml` (ThemeDictionaries), так что меняются вместе с темой.
 Недоступная кнопка (например, «Удалить» без выбранной базы) показывает значок полупрозрачным.
