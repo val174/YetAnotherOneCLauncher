@@ -32,7 +32,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private const string FolderKeyPrefix = "folder:";
     private const string FavoritesFolderKey = ":favorites";
-    private const string RecentFolderKey = ":recent";
     // Надбавки меньше разрыва между «начало имени» и «начало слова» (20): точность совпадения важнее.
     private const int FavoriteSearchBoost = 12;
     private const int MaxUsageSearchBoost = 5;
@@ -114,6 +113,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         var ui = settings.Settings.Ui;
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
+        IsSortedByName = ui.SortMode != CatalogSortMode.Custom;
         ThemeIndex = (int)ui.Theme;
         AfterLaunchIndex = (int)ui.AfterLaunch;
         IconStyleIndex = Math.Max(0, Array.IndexOf(IconStyles, ui.IconStyle));
@@ -191,17 +191,40 @@ public sealed partial class MainWindowViewModel : ObservableObject
     }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSearch), nameof(ShowTree), nameof(ShowList))]
+    [NotifyPropertyChangedFor(nameof(HasSearch), nameof(ShowTree), nameof(ShowList), nameof(EmptyListText))]
     public partial string SearchText { get; set; } = string.Empty;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowTree), nameof(ShowList))]
     public partial bool IsTreeMode { get; set; }
 
+    /// <summary>
+    /// Показаны только недавние базы (кнопка с часами): плоский список в порядке запусков, поиск — среди них.
+    /// Добавлять, удалять и переставлять записи здесь нельзя; остальное — как в общем списке.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(CanEditList), nameof(EmptyListText))]
+    [NotifyCanExecuteChangedFor(
+        nameof(AddBaseCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
+        nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
+    public partial bool IsRecentMode { get; set; }
+
+    public bool IsAllBasesMode => !IsRecentMode;
+
+    /// <summary>Дерево: по наименованию (по умолчанию) или свой порядок из списка баз.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SortToolTip))]
+    public partial bool IsSortedByName { get; set; }
+
+    public string SortToolTip => IsSortedByName
+        ? "Упорядочено по наименованию. Нажмите — свой порядок из списка баз. "
+          + "Если переставить базу вручную, этот порядок сохранится в списке баз."
+        : "Свой порядок из списка баз. Нажмите — упорядочить по наименованию.";
+
     public bool HasSearch => !string.IsNullOrWhiteSpace(SearchText);
 
-    /// <summary>Дерево показывается только без поиска; результаты поиска — всегда списком.</summary>
-    public bool ShowTree => IsTreeMode && !HasSearch;
+    /// <summary>Дерево показывается только без поиска и не для недавних; результаты поиска — всегда списком.</summary>
+    public bool ShowTree => IsTreeMode && !HasSearch && !IsRecentMode;
 
     public bool ShowList => !ShowTree;
 
@@ -234,7 +257,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public bool HasSelection => SelectedInfoBase is not null;
 
-    /// <summary>Выделенная обычная папка дерева (не «Избранное» и не «Недавние»).</summary>
+    /// <summary>Выделенная обычная папка дерева (не «Избранное»).</summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
@@ -459,10 +482,44 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ClearSearch() => SearchText = string.Empty;
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(IsAllBasesMode))]
     private void ToggleViewMode() => IsTreeMode = !IsTreeMode;
 
-    /// <summary>Развернуть все папки дерева, включая «Избранное» и «Недавние». Состояние запоминается.</summary>
+    /// <summary>Заголовок «Наименование»: по наименованию ↔ свой порядок.</summary>
+    [RelayCommand(CanExecute = nameof(IsAllBasesMode))]
+    private void ToggleSort() => IsSortedByName = !IsSortedByName;
+
+    /// <summary>Показать только недавние базы.</summary>
+    [RelayCommand]
+    private void ShowRecent() => IsRecentMode = true;
+
+    /// <summary>Вернуться к общему списку баз.</summary>
+    [RelayCommand]
+    private void ShowAllBases() => IsRecentMode = false;
+
+    partial void OnIsRecentModeChanged(bool value)
+    {
+        var key = CurrentSelectionKey();
+        RebuildList();
+        Reselect(key);
+        StatusText = value ? "Показаны недавние базы." : string.Empty;
+    }
+
+    partial void OnIsSortedByNameChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.SortMode = value ? CatalogSortMode.Name : CatalogSortMode.Custom;
+        _settings.RequestSave();
+        var key = CurrentSelectionKey();
+        RebuildTree();
+        Reselect(key);
+    }
+
+    /// <summary>Развернуть все папки дерева, включая «Избранное». Состояние запоминается.</summary>
     [RelayCommand]
     private void ExpandAll() => SetExpanded(TreeItems, expanded: true);
 
@@ -630,9 +687,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         target.Refresh();
         _settings.RequestSave();
 
-        var key = CurrentSelectionKey();
-        RebuildTree(); // обновить «Недавние»
-        Reselect(key);
+        if (IsRecentMode)
+        {
+            var key = CurrentSelectionKey();
+            RebuildList(); // запущенная база — наверх недавних
+            Reselect(key);
+        }
 
         switch (_settings.Settings.Ui.AfterLaunch)
         {
@@ -662,13 +722,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
             TreeItems.Add(SpecialFolder("Избранное", FavoritesFolderKey, FolderKind.Favorites, favorites, collapsed));
         }
 
-        var recent = _settings.UserData.Recent(_catalog.InfoBases, RecentCount).Select(b => byInfoBase[b]).ToList();
-        if (recent.Count > 0)
-        {
-            TreeItems.Add(SpecialFolder("Недавние", RecentFolderKey, FolderKind.Recent, recent, collapsed));
-        }
-
-        foreach (var item in _catalog.BuildTree().Items)
+        // Недавние — не папкой в дереве, а отдельным режимом (IsRecentMode).
+        foreach (var item in _catalog.BuildTree(IsSortedByName ? CatalogSortMode.Name : CatalogSortMode.Custom).Items)
         {
             TreeItems.Add(ToNode(item, byInfoBase, collapsed));
         }
@@ -740,27 +795,32 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        var byInfoBase = _bases.ToDictionary(b => b.InfoBase);
+        // Недавние: последние запуски, свежие сверху; поиск — только среди них.
+        var recent = IsRecentMode ? _settings.UserData.Recent(_catalog.InfoBases, RecentCount) : null;
         if (HasSearch)
         {
-            var byInfoBase = _bases.ToDictionary(b => b.InfoBase);
-            foreach (var match in InfoBaseSearch.Search(_catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
+            foreach (var match in InfoBaseSearch.Search(recent ?? _catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
             {
                 var infoBase = byInfoBase[match.InfoBase];
                 ListItems.Add(new BaseListItemViewModel(infoBase, Segments(infoBase.Name, match.NameHighlights)));
             }
-
-            ShowNothingFound = ListItems.Count == 0;
-
-            return;
         }
-
-        foreach (var infoBase in _bases
-                     .OrderByDescending(b => b.IsFavorite)
-                     .ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase))
+        else
         {
-            ListItems.Add(new BaseListItemViewModel(infoBase, [new TextSegment(infoBase.Name, false)]));
+            var ordered = recent?.Select(b => byInfoBase[b])
+                          ?? _bases.OrderByDescending(b => b.IsFavorite).ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase);
+            foreach (var infoBase in ordered)
+            {
+                ListItems.Add(new BaseListItemViewModel(infoBase, [new TextSegment(infoBase.Name, false)]));
+            }
         }
+
+        ShowNothingFound = ListItems.Count == 0 && (HasSearch || IsRecentMode);
     }
+
+    /// <summary>Надпись на пустом списке: ничего не нашлось или ещё нет запусков.</summary>
+    public string EmptyListText => IsRecentMode && !HasSearch ? "Недавних запусков пока нет" : "Ничего не найдено";
 
     private static int SearchBoost(InfoBaseViewModel infoBase) =>
         (infoBase.IsFavorite ? FavoriteSearchBoost : 0) + Math.Min(infoBase.LaunchCount, MaxUsageSearchBoost);
@@ -816,7 +876,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private static BaseNodeViewModel? FindNode(IEnumerable<TreeNodeViewModel> nodes, string identityKey)
     {
-        // Сначала в обычных папках: специальные («Избранное», «Недавние») дублируют базы.
+        // Сначала в обычных папках: «Избранное» дублирует базы.
         BaseNodeViewModel? special = null;
         foreach (var node in nodes)
         {

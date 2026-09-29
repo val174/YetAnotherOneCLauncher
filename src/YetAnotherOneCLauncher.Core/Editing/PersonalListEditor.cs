@@ -158,7 +158,11 @@ public static class PersonalListEditor
     /// Перемещает запись в папку <paramref name="targetFolder"/> перед <paramref name="before"/> (или в конец)
     /// и перенумеровывает порядок записей личного списка в этой папке.
     /// </summary>
-    public static void Move(V8iDocument document, EntryRef target, string targetFolder, EntryRef? before = null)
+    /// <param name="sortByNameFirst">
+    /// Сначала записать порядок по наименованию (<see cref="SortByName"/>): перестановку сделали в дереве,
+    /// показанном по алфавиту, — «перед» относится к нему, а не к прежнему своему порядку.
+    /// </param>
+    public static void Move(V8iDocument document, EntryRef target, string targetFolder, EntryRef? before = null, bool sortByNameFirst = false)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(target);
@@ -184,6 +188,11 @@ public static class PersonalListEditor
                 ReplaceFolderPrefix(document, folderRef.FullPath, newPath);
             }
 
+            if (sortByNameFirst)
+            {
+                SortByName(document);
+            }
+
             if (section is null)
             {
                 return; // папки нет записью — порядок задать не у чего
@@ -192,6 +201,10 @@ public static class PersonalListEditor
         else
         {
             section = FindBase(document, (BaseEntryRef)target);
+            if (sortByNameFirst)
+            {
+                SortByName(document);
+            }
         }
 
         section.Set(V8iKeys.Folder, destination);
@@ -203,14 +216,19 @@ public static class PersonalListEditor
     }
 
     /// <summary>Сдвигает запись на <paramref name="delta"/> позиций среди записей личного списка в той же папке.</summary>
+    /// <param name="sortByNameFirst">Сначала записать порядок по наименованию — см. <see cref="Move"/>.</param>
     /// <returns><c>false</c>, если сдвигать некуда.</returns>
-    public static bool MoveBy(V8iDocument document, EntryRef target, int delta)
+    public static bool MoveBy(V8iDocument document, EntryRef target, int delta, bool sortByNameFirst = false)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(target);
         var section = target is FolderEntryRef f
             ? FindFolderChecked(document, f) ?? throw new ListEditException(ListEditErrorKind.Invalid, "У этой папки нет своей записи в списке — её место определяется базами внутри.")
             : FindBase(document, (BaseEntryRef)target);
+        if (sortByNameFirst)
+        {
+            SortByName(document);
+        }
 
         var siblings = SiblingsInOrder(document, FolderPaths.Normalize(section.Get(V8iKeys.Folder)));
         var index = siblings.IndexOf(section);
@@ -414,6 +432,28 @@ public static class PersonalListEditor
             .OrderBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? double.MaxValue)
             .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
+    }
+
+    /// <summary>
+    /// Записывает в <c>OrderInTree</c> порядок по наименованию — во всех папках сразу: сначала папки, затем базы,
+    /// по алфавиту (как <see cref="Catalog.CatalogTreeBuilder.CompareByName"/>). После этого свой порядок совпадает
+    /// с тем, что было видно при сортировке по наименованию, и дальше его можно менять перестановками.
+    /// </summary>
+    public static void SortByName(V8iDocument document)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        var personal = new ListSource(ListSourceKind.Personal, string.Empty);
+        var groups = document.Sections
+            .Where(s => !string.IsNullOrWhiteSpace(s.Name))
+            .GroupBy(s => FolderPaths.Normalize(s.Get(V8iKeys.Folder)), StringComparer.OrdinalIgnoreCase);
+        foreach (var group in groups)
+        {
+            Renumber(group
+                .OrderBy(s => V8iSections.IsFolder(s) ? 0 : 1)
+                .ThenBy(s => s.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(s => new InfoBaseFolder(s, personal).OrderInTree ?? double.MaxValue)
+                .ToList());
+        }
     }
 
     private static void Renumber(List<V8iSection> ordered)

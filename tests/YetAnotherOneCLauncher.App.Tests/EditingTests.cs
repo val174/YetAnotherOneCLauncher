@@ -182,14 +182,27 @@ public class EditingTests
         await fixture.LoadAsync();
         var vm = fixture.ViewModel;
         var root = () => vm.TreeItems.Select(n => n.Name).ToList();
-        Assert.Equal(new[] { "Копия бухгалтерии", "Рабочие", "Розница (тест)" }, root());
+        Assert.True(vm.IsSortedByName);
+        Assert.Equal(new[] { "Рабочие", "Копия бухгалтерии", "Розница (тест)" }, root());
 
+        // Перестановка при сортировке по наименованию: видимый порядок записывается в список баз,
+        // и дальше показывается свой порядок — с перестановкой.
         vm.SelectedTreeItem = vm.TreeItems.Single(n => n.Name == "Розница (тест)");
         await vm.MoveUpCommand.ExecuteAsync(null);
-        await vm.MoveUpCommand.ExecuteAsync(null);
+        Assert.False(vm.IsSortedByName);
+        Assert.Equal(Core.Catalog.CatalogSortMode.Custom, fixture.Settings.Settings.Ui.SortMode);
+        Assert.Equal(new[] { "Рабочие", "Розница (тест)", "Копия бухгалтерии" }, root());
 
-        Assert.Equal(new[] { "Розница (тест)", "Копия бухгалтерии", "Рабочие" }, root());
+        await vm.MoveUpCommand.ExecuteAsync(null);
+        Assert.Equal(new[] { "Розница (тест)", "Рабочие", "Копия бухгалтерии" }, root());
         Assert.Equal("Розница (тест)", vm.SelectedInfoBase?.Name);
+
+        // Порядок в файле: сохранится и после перезапуска, и в штатном стартере.
+        var saved = fixture.SavedList().Sections.Where(s => s.Get("Folder") == "/").OrderBy(s => double.Parse(s.Get("OrderInTree")!, System.Globalization.CultureInfo.InvariantCulture));
+        Assert.Equal(new[] { "Розница (тест)", "Рабочие", "Копия бухгалтерии" }, saved.Select(s => s.Name));
+
+        // Вложенная папка тоже получила алфавитный порядок — при своём порядке она выглядит как раньше.
+        Assert.Equal(new[] { "Бухгалтерия предприятия", "Зарплата и управление персоналом" }, Folder(vm, "Рабочие").Children.Select(n => n.Name));
     }
 
     [Fact]

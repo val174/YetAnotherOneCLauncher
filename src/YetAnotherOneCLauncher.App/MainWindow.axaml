@@ -63,6 +63,27 @@
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
+    <!-- Заголовок «Наименование» — кнопка без рамки и фона, выглядит как остальные заголовки. -->
+    <Style Selector="Button.columnHeader">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+    </Style>
+    <Style Selector="Button.columnHeader:pointerover /template/ ContentPresenter#PART_ContentPresenter, Button.columnHeader:pressed /template/ ContentPresenter#PART_ContentPresenter, Button.columnHeader:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.columnHeader">
+      <Setter Property="Opacity" Value="0.65" />
+    </Style>
+    <Style Selector="Button.columnHeader:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!-- Кнопка текущего режима («Все базы» / «Недавние») подсвечена. -->
+    <Style Selector="StackPanel#ToolbarButtons Button.active">
+      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+      <Setter Property="BorderThickness" Value="1.5" />
+    </Style>
     <Style Selector="TextBlock.columnHeader">
       <Setter Property="Opacity" Value="0.65" />
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
@@ -94,6 +115,17 @@
                 ToolTip.Tip="Удалить из списка (Del)">
           <c:ToolIcon Brush="{DynamicResource IconDeleteBrush}"
                       Data="M 2,4 L 14,4 M 6,4 L 6,1.8 L 10,1.8 L 10,4 M 3.6,4 L 4.5,14.5 L 11.5,14.5 L 12.4,4 M 6.5,6.8 L 6.5,12 M 9.5,6.8 L 9.5,12" />
+        </Button>
+        <!-- Что показать: все базы или только недавние; кнопка текущего режима подсвечена. -->
+        <Button x:Name="AllBasesButton" Command="{Binding ShowAllBasesCommand}" Classes.active="{Binding IsAllBasesMode}"
+                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Все базы">
+          <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
+                      Data="M 2.5,3.5 A 5.5,2 0 1 0 13.5,3.5 A 5.5,2 0 1 0 2.5,3.5 M 2.5,3.5 L 2.5,12.5 A 5.5,2 0 0 0 13.5,12.5 L 13.5,3.5 M 2.5,8 A 5.5,2 0 0 0 13.5,8" />
+        </Button>
+        <Button x:Name="RecentButton" Command="{Binding ShowRecentCommand}" Classes.active="{Binding IsRecentMode}"
+                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
+          <c:ToolIcon Brush="{DynamicResource IconRecentBrush}"
+                      Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
         </Button>
         <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
         <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}" Padding="8,6" VerticalAlignment="Stretch">
@@ -325,7 +357,21 @@
     <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
          поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
     <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
-      <TextBlock Classes="columnHeader" Text="Наименование" />
+      <!-- В дереве заголовок переключает порядок: по наименованию (стрелка) или свой. -->
+      <Button x:Name="SortByNameButton" Classes="columnHeader" Command="{Binding ToggleSortCommand}"
+              IsHitTestVisible="{Binding ShowTree}" ToolTip.Tip="{Binding SortToolTip}" HorizontalAlignment="Left">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <TextBlock Text="Наименование" FontSize="{StaticResource SmallFontSize}" />
+          <TextBlock Text="▲" FontSize="9" VerticalAlignment="Center">
+            <TextBlock.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.And}">
+                <Binding Path="ShowTree" />
+                <Binding Path="IsSortedByName" />
+              </MultiBinding>
+            </TextBlock.IsVisible>
+          </TextBlock>
+        </StackPanel>
+      </Button>
       <TextBlock Grid.Column="1" Classes="columnHeader cell platform" Text="Платформа" />
       <TextBlock Grid.Column="2" Classes="columnHeader cell mode" Text="Режим запуска" />
       <TextBlock Grid.Column="3" Classes="columnHeader cell date" Text="Последний запуск" ToolTip.Tip="Дата последнего запуска из лаунчера" />
@@ -377,12 +423,10 @@
         <TreeView.DataTemplates>
           <TreeDataTemplate DataType="vm:FolderNodeViewModel" ItemsSource="{Binding Children}">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <!-- Значок папки: обычная — папка, «Недавние» — часы, «Избранное» — звезда. -->
+              <!-- Значок папки: обычная — папка, «Избранное» — звезда. -->
               <Panel Width="18" Height="18" VerticalAlignment="Center">
                 <c:ToolIcon IsVisible="{Binding IsRegularFolder}" Brush="{DynamicResource IconFolderBrush}"
                             Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5" />
-                <c:ToolIcon IsVisible="{Binding IsRecent}" Brush="{DynamicResource IconRecentBrush}"
-                            Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
                 <c:ToolIcon IsVisible="{Binding IsFavorites}" Classes="favStar" Width="18" Height="18" />
               </Panel>
               <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
@@ -436,7 +480,7 @@
         </ListBox.ItemTemplate>
       </ListBox>
 
-      <TextBlock Text="Ничего не найдено" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
+      <TextBlock Text="{Binding EmptyListText}" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"
                  IsVisible="{Binding ShowNothingFound}" IsHitTestVisible="False" />
     </Panel>
     </DockPanel>

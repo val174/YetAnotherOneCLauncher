@@ -13,8 +13,8 @@ public sealed partial class MainWindowViewModel
 {
     private const string ListTitle = "Список баз";
 
-    /// <summary>Правки возможны: личный список известен.</summary>
-    public bool CanEditList => _store is not null;
+    /// <summary>Добавлять записи можно в личный список — и не в режиме «Недавние».</summary>
+    public bool CanEditList => _store is not null && !IsRecentMode;
 
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task AddBaseAsync()
@@ -136,7 +136,7 @@ public sealed partial class MainWindowViewModel
             CurrentSelectionKey);
     }
 
-    [RelayCommand(CanExecute = nameof(HasEditableSelection))]
+    [RelayCommand(CanExecute = nameof(CanReorderOrDelete))]
     private async Task DeleteAsync()
     {
         if (SelectedInfoBase is { } infoBase)
@@ -199,10 +199,10 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    [RelayCommand(CanExecute = nameof(HasEditableSelection))]
+    [RelayCommand(CanExecute = nameof(CanReorderOrDelete))]
     private Task MoveUpAsync() => MoveByAsync(-1);
 
-    [RelayCommand(CanExecute = nameof(HasEditableSelection))]
+    [RelayCommand(CanExecute = nameof(CanReorderOrDelete))]
     private Task MoveDownAsync() => MoveByAsync(+1);
 
     /// <summary>Копия базы из общего списка в личном — чтобы изменить её настройки.</summary>
@@ -323,10 +323,12 @@ public sealed partial class MainWindowViewModel
         var key = source is FolderNodeViewModel movedFolder
             ? FolderSelectionKey(FolderPaths.Combine(place.Folder, movedFolder.Name))
             : ((BaseNodeViewModel)source).Base.InfoBase.IdentityKey;
+        var byName = IsSortedByName;
         var moved = await EditListAsync(
-            document => PersonalListEditor.Move(document, moving, place.Folder, place.Before),
+            document => PersonalListEditor.Move(document, moving, place.Folder, place.Before, sortByNameFirst: byName),
             $"«{source.Name}» перемещена в «{place.Folder}».",
             () => key);
+        KeepCustomOrderAfterMove(moved && byName);
         if (moved && source is FolderNodeViewModel folderSource)
         {
             MoveFolderParameters(folderSource.Path, FolderPaths.Combine(place.Folder, folderSource.Name));
@@ -335,6 +337,9 @@ public sealed partial class MainWindowViewModel
 
     private bool HasEditableSelection() =>
         _store is not null && (SelectedInfoBase is not null || SelectedFolder is { IsEditable: true });
+
+    /// <summary>Удалять и переставлять — не в режиме «Недавние»: там порядок — по времени запуска.</summary>
+    private bool CanReorderOrDelete() => HasEditableSelection() && !IsRecentMode;
 
     private bool HasAnySelection() => SelectedInfoBase is not null || SelectedFolder is not null;
 
@@ -350,10 +355,25 @@ public sealed partial class MainWindowViewModel
 
         var key = CurrentSelectionKey();
         var moved = false;
-        await EditListAsync(
-            document => moved = PersonalListEditor.MoveBy(document, target, delta),
+        var byName = IsSortedByName;
+        var saved = await EditListAsync(
+            document => moved = PersonalListEditor.MoveBy(document, target, delta, sortByNameFirst: byName),
             () => moved ? "Порядок изменён." : "Дальше двигать некуда.",
             () => key);
+        KeepCustomOrderAfterMove(saved && moved && byName);
+    }
+
+    /// <summary>
+    /// Перестановка при сортировке по наименованию: алфавитный порядок уже записан в список баз вместе с ней,
+    /// дальше дерево показывает свой порядок — тот же, но с перестановкой.
+    /// </summary>
+    private void KeepCustomOrderAfterMove(bool movedWhileSortedByName)
+    {
+        if (movedWhileSortedByName)
+        {
+            IsSortedByName = false;
+            StatusText += " Включён свой порядок — он сохранён в списке баз.";
+        }
     }
 
     /// <summary>Выделенная запись личного списка и её секция в загруженном документе.</summary>

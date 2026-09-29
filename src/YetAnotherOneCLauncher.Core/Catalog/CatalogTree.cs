@@ -62,9 +62,22 @@ public sealed class CatalogInfoBaseItem : CatalogTreeItem
 }
 
 /// <summary>Строит дерево по путям <c>Folder</c>; недостающие промежуточные папки создаются автоматически.</summary>
+/// <summary>Порядок записей в дереве.</summary>
+public enum CatalogSortMode
+{
+    /// <summary>По наименованию: в каждой папке сначала вложенные папки, затем базы, по алфавиту.</summary>
+    Name,
+
+    /// <summary>Свой порядок из <c>OrderInTree</c> (его же показывает штатный стартер); записи без порядка — в конце по алфавиту.</summary>
+    Custom,
+}
+
 public static class CatalogTreeBuilder
 {
-    public static CatalogFolderNode Build(IEnumerable<InfoBaseFolder> folders, IEnumerable<InfoBase> infoBases)
+    public static CatalogFolderNode Build(
+        IEnumerable<InfoBaseFolder> folders,
+        IEnumerable<InfoBase> infoBases,
+        CatalogSortMode sortMode = CatalogSortMode.Custom)
     {
         var root = new CatalogFolderNode(string.Empty, FolderPaths.Root);
         var nodes = new Dictionary<string, CatalogFolderNode>(StringComparer.OrdinalIgnoreCase)
@@ -83,7 +96,7 @@ public static class CatalogTreeBuilder
             EnsureNode(nodes, infoBase.FolderPath).Items.Add(new CatalogInfoBaseItem(infoBase));
         }
 
-        Sort(root);
+        Sort(root, sortMode == CatalogSortMode.Name ? CompareByName : CompareItems);
         return root;
     }
 
@@ -113,13 +126,28 @@ public static class CatalogTreeBuilder
         return current;
     }
 
-    private static void Sort(CatalogFolderNode node)
+    private static void Sort(CatalogFolderNode node, Comparison<CatalogTreeItem> comparison)
     {
-        node.Items.Sort(CompareItems);
+        node.Items.Sort(comparison);
         foreach (var child in node.SubFolders)
         {
-            Sort(child);
+            Sort(child, comparison);
         }
+    }
+
+    /// <summary>Сначала папки, затем базы; внутри — по алфавиту. Так же нумерует <see cref="Editing.PersonalListEditor.SortByName"/>.</summary>
+    public static int CompareByName(CatalogTreeItem a, CatalogTreeItem b)
+    {
+        ArgumentNullException.ThrowIfNull(a);
+        ArgumentNullException.ThrowIfNull(b);
+        var byKind = (a is CatalogFolderNode ? 0 : 1).CompareTo(b is CatalogFolderNode ? 0 : 1);
+        if (byKind != 0)
+        {
+            return byKind;
+        }
+
+        var byName = StringComparer.CurrentCultureIgnoreCase.Compare(a.Name, b.Name);
+        return byName != 0 ? byName : CompareItems(a, b); // одинаковые имена — в своём порядке, стабильно
     }
 
     private static int CompareItems(CatalogTreeItem a, CatalogTreeItem b)

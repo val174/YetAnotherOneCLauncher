@@ -49,7 +49,8 @@ public sealed class InfoBaseCatalog
     /// <summary>Личный список (для добавления и изменения записей). <c>null</c>, если его не удалось прочитать.</summary>
     public LoadedList? PersonalList => Lists.FirstOrDefault(l => l.Source.Kind == ListSourceKind.Personal);
 
-    public CatalogFolderNode BuildTree() => CatalogTreeBuilder.Build(Folders, InfoBases);
+    public CatalogFolderNode BuildTree(CatalogSortMode sortMode = CatalogSortMode.Custom) =>
+        CatalogTreeBuilder.Build(Folders, InfoBases, sortMode);
 
     /// <summary>
     /// Объединяет прочитанные списки: базы и папки без дубликатов.

@@ -228,6 +228,66 @@ public class PersonalListEditorTests
         Assert.Equal("/Архивы", document.Sections[0].Get("Folder"));
     }
 
+    private const string FruitList = """
+        [Яблоко]
+        Connect=File="C:\a";
+        Folder=/
+        OrderInTree=16384
+        [Банан]
+        Connect=File="C:\b";
+        Folder=/
+        OrderInTree=32768
+        [Папка]
+        Connect=
+        Folder=/
+        OrderInTree=49152
+        [Вишня]
+        Connect=File="C:\c";
+        Folder=/
+        OrderInTree=65536
+        """;
+
+    [Fact]
+    public void Tree_by_name_puts_folders_first_then_alphabet()
+    {
+        var document = V8iDocument.Parse(FruitList);
+
+        Assert.Equal(new[] { "Яблоко", "Банан", "Папка", "Вишня" }, Order(document, "/"));
+        Assert.Equal(new[] { "Папка", "Банан", "Вишня", "Яблоко" }, Order(document, "/", CatalogSortMode.Name));
+    }
+
+    [Fact]
+    public void SortByName_writes_name_order_everywhere()
+    {
+        var document = Sample();
+        var byName = Order(document, "/", CatalogSortMode.Name);
+        var nestedByName = Order(document, "/Бухгалтерия", CatalogSortMode.Name);
+        Assert.Equal(new[] { "Архив", "Бухгалтерия (рабочая)" }, nestedByName);
+
+        PersonalListEditor.SortByName(document);
+
+        Assert.Equal(byName, Order(document, "/"));
+        // «Архив» — папка без своей записи (есть только в пути базы): порядок ей записать некуда, в своём порядке она в конце.
+        Assert.Equal(new[] { "Бухгалтерия (рабочая)", "Архив" }, Order(document, "/Бухгалтерия"));
+    }
+
+    [Fact]
+    public void Moves_made_in_name_order_write_that_order_first()
+    {
+        var document = V8iDocument.Parse(FruitList);
+        var apple = EntryRef.Of(Base(document, "Яблоко"));
+
+        // В своём порядке «Яблоко» первое — выше некуда; по наименованию оно последнее.
+        Assert.False(PersonalListEditor.MoveBy(document, apple, -1));
+        Assert.True(PersonalListEditor.MoveBy(document, apple, -1, sortByNameFirst: true));
+        Assert.Equal(new[] { "Папка", "Банан", "Яблоко", "Вишня" }, Order(document, "/"));
+
+        document = V8iDocument.Parse(FruitList);
+        PersonalListEditor.Move(
+            document, EntryRef.Of(Base(document, "Вишня")), "/", before: EntryRef.Of(Base(document, "Банан")), sortByNameFirst: true);
+        Assert.Equal(new[] { "Папка", "Вишня", "Банан", "Яблоко" }, Order(document, "/"));
+    }
+
     [Fact]
     public void MoveBy_reorders_within_folder()
     {
@@ -330,10 +390,10 @@ public class PersonalListEditorTests
     private static V8iSection FindByName(V8iDocument document, string name, string? connectPrefix = null) =>
         document.Sections.Single(s => s.Name == name && (connectPrefix is null || s.Get("Connect")?.StartsWith(connectPrefix, StringComparison.Ordinal) == true));
 
-    private static List<string> Order(V8iDocument document, string folder)
+    private static List<string> Order(V8iDocument document, string folder, CatalogSortMode sortMode = CatalogSortMode.Custom)
     {
         var catalog = InfoBaseCatalog.Build([new LoadedList(Personal, document, null)], StarterConfig.Empty, []);
-        var node = catalog.BuildTree();
+        var node = catalog.BuildTree(sortMode);
         foreach (var segment in FolderPaths.Split(folder))
         {
             node = node.SubFolders.Single(f => f.Name == segment);

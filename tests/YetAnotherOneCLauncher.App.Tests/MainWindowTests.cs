@@ -99,6 +99,14 @@ public class MainWindowTests
         Render();
         Assert.True(fixture.ViewModel.ShowTree);
         Snapshot(window, "03-favorites-and-recent");
+
+        fixture.ViewModel.ShowRecentCommand.Execute(null);
+        Render();
+        Assert.True(window.FindControl<ListBox>("CatalogList")!.IsEffectivelyVisible);
+        Assert.False(window.FindControl<Button>("AddButton")!.IsEffectivelyEnabled);
+        Assert.False(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled);
+        Snapshot(window, "17-recent");
+        fixture.ViewModel.ShowAllBasesCommand.Execute(null);
         window.Close();
     }
 
@@ -306,8 +314,8 @@ public class MainWindowTests
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
         Assert.Equal("AddButton", toolbar[0].Name);
         Assert.Equal(
-            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton" },
-            toolbar.Skip(2).Take(3).Select(b => b.Name));
+            new[] { "AllBasesButton", "RecentButton", "ViewModeButton", "ExpandAllButton", "CollapseAllButton" },
+            toolbar.Skip(2).Take(5).Select(b => b.Name));
         Assert.Equal("DeleteButton", toolbar[1].Name);
         Assert.Equal("ThemeButton", toolbar[^2].Name);
 
@@ -343,7 +351,7 @@ public class MainWindowTests
         var vm = fixture.ViewModel;
         window.KeyTextInput("зуп");
         Render();
-        window.KeyPress(Key.D, RawInputModifiers.Control, PhysicalKey.D, "d"); // «Избранное» и «Недавние» в дереве
+        window.KeyPress(Key.D, RawInputModifiers.Control, PhysicalKey.D, "d"); // «Избранное» в дереве
         window.KeyPress(Key.F4, RawInputModifiers.None, PhysicalKey.F4, null);
         await WaitAsync(() => fixture.Processes.Started.Count > 0);
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);

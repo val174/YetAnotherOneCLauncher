@@ -17,7 +17,6 @@ public enum FolderKind
 {
     Regular,
     Favorites,
-    Recent,
 }
 
 public sealed class FolderNodeViewModel : TreeNodeViewModel
@@ -46,12 +45,10 @@ public sealed class FolderNodeViewModel : TreeNodeViewModel
     /// <summary>Папку можно переименовать, удалить, перемещать: она из личного списка.</summary>
     public bool IsEditable { get; init; }
 
-    // Значок папки выбирается в шаблоне дерева: обычная папка и «Недавние» — рисованные, «Избранное» — звезда.
+    // Значок папки выбирается в шаблоне дерева: обычная папка или звезда «Избранного».
     public bool IsRegularFolder => Kind == FolderKind.Regular;
 
     public bool IsFavorites => Kind == FolderKind.Favorites;
-
-    public bool IsRecent => Kind == FolderKind.Recent;
 
     public ObservableCollection<TreeNodeViewModel> Children { get; } = [];
 

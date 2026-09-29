@@ -13,15 +13,87 @@ public class MainWindowViewModelTests
         await fixture.LoadAsync();
         var vm = fixture.ViewModel;
 
-        // Без OrderInTree папки и базы идут вперемешку по имени — как у штатного стартера.
+        // По умолчанию — по наименованию: сначала папки, затем базы.
         Assert.True(vm.ShowTree);
-        Assert.Equal(new[] { "Копия бухгалтерии", "Рабочие", "Розница (тест)" }, vm.TreeItems.Select(n => n.Name));
-        var folder = Assert.IsType<FolderNodeViewModel>(vm.TreeItems[1]);
+        Assert.True(vm.IsSortedByName);
+        Assert.Equal(new[] { "Рабочие", "Копия бухгалтерии", "Розница (тест)" }, vm.TreeItems.Select(n => n.Name));
+        var folder = Assert.IsType<FolderNodeViewModel>(vm.TreeItems[0]);
         Assert.True(folder.IsExpanded);
         Assert.Equal(2, folder.Children.Count);
         Assert.Null(vm.SelectedInfoBase);
         Assert.Contains("Баз: 4", vm.StatusText, StringComparison.Ordinal);
         Assert.Equal(3, vm.PlatformCount);
+    }
+
+    [Fact]
+    public async Task Sort_header_switches_between_name_and_custom_order_and_is_saved()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+
+        vm.ToggleSortCommand.Execute(null);
+
+        // Свой порядок: без OrderInTree папки и базы вперемешку по имени — как у штатного стартера.
+        Assert.False(vm.IsSortedByName);
+        Assert.Equal(new[] { "Копия бухгалтерии", "Рабочие", "Розница (тест)" }, vm.TreeItems.Select(n => n.Name));
+        Assert.Equal(Core.Catalog.CatalogSortMode.Custom, fixture.Settings.Settings.Ui.SortMode);
+
+        vm.ToggleSortCommand.Execute(null);
+        Assert.Equal(new[] { "Рабочие", "Копия бухгалтерии", "Розница (тест)" }, vm.TreeItems.Select(n => n.Name));
+        Assert.Equal(Core.Catalog.CatalogSortMode.Name, fixture.Settings.Settings.Ui.SortMode);
+    }
+
+    [Fact]
+    public async Task Recent_mode_shows_only_recent_bases_and_forbids_adding_and_deleting()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+
+        vm.ShowRecentCommand.Execute(null);
+        Assert.True(vm.IsRecentMode);
+        Assert.True(vm.ShowList);
+        Assert.Empty(vm.ListItems);
+        Assert.True(vm.ShowNothingFound);
+        Assert.Equal("Недавних запусков пока нет", vm.EmptyListText);
+        Assert.False(vm.ToggleViewModeCommand.CanExecute(null));
+
+        vm.ShowAllBasesCommand.Execute(null);
+        await vm.LaunchEnterpriseCommand.ExecuteAsync(fixture.Base("Зарплата и управление персоналом"));
+        await vm.LaunchEnterpriseCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
+        vm.ShowRecentCommand.Execute(null);
+
+        // Свежие сверху; выделена первая, с ней работает всё, кроме добавления, удаления и перестановки.
+        Assert.Equal(new[] { "Бухгалтерия предприятия", "Зарплата и управление персоналом" }, vm.ListItems.Select(i => i.Base.Name));
+        Assert.Equal("Бухгалтерия предприятия", vm.SelectedInfoBase?.Name);
+        Assert.False(vm.CanEditList);
+        Assert.False(vm.AddBaseCommand.CanExecute(null));
+        Assert.False(vm.AddFolderCommand.CanExecute(null));
+        Assert.False(vm.DeleteCommand.CanExecute(null));
+        Assert.False(vm.MoveUpCommand.CanExecute(null));
+        Assert.True(vm.EditCommand.CanExecute(null));
+        Assert.True(vm.ToggleFavoriteCommand.CanExecute(null));
+        Assert.True(vm.LaunchDesignerCommand.CanExecute(null));
+
+        // Запуск из недавних поднимает базу наверх.
+        await vm.LaunchEnterpriseCommand.ExecuteAsync(fixture.Base("Зарплата и управление персоналом"));
+        Assert.Equal("Зарплата и управление персоналом", vm.ListItems[0].Base.Name);
+
+        // Поиск — только среди недавних.
+        vm.SearchText = "розница";
+        Assert.Empty(vm.ListItems);
+        Assert.Equal("Ничего не найдено", vm.EmptyListText);
+        vm.SearchText = "зуп";
+        Assert.Equal("Зарплата и управление персоналом", Assert.Single(vm.ListItems).Base.Name);
+        vm.SearchText = string.Empty;
+
+        vm.ShowAllBasesCommand.Execute(null);
+        Assert.False(vm.IsRecentMode);
+        Assert.True(vm.ShowTree);
+        Assert.True(vm.CanEditList);
+        Assert.True(vm.AddBaseCommand.CanExecute(null));
+        Assert.DoesNotContain(vm.TreeItems, n => n.Name == "Недавние");
     }
 
     [Fact]
@@ -88,9 +160,9 @@ public class MainWindowViewModelTests
         Assert.Contains("Предприятие", fixture.Base("Зарплата и управление персоналом").LastLaunchText, StringComparison.Ordinal);
 
         vm.SearchText = string.Empty;
-        var recent = Assert.IsType<FolderNodeViewModel>(vm.TreeItems[0]);
-        Assert.Equal(FolderKind.Recent, recent.Kind);
-        Assert.Equal("Зарплата и управление персоналом", Assert.Single(recent.Children).Name);
+        Assert.DoesNotContain(vm.TreeItems, n => n.Name == "Недавние"); // недавние — отдельный режим, не папка
+        vm.ShowRecentCommand.Execute(null);
+        Assert.Equal("Зарплата и управление персоналом", Assert.Single(vm.ListItems).Base.Name);
         Assert.Equal(0, fixture.Shell.MinimizeCount);
     }
 

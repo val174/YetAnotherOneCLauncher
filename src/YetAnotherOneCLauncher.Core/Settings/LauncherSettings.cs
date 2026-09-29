@@ -1,3 +1,4 @@
+using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Platforms;
@@ -140,6 +141,9 @@ public sealed class UiSettings
     public IconStyle IconStyle { get; set; } = IconStyle.Outline;
 
     public CatalogViewMode ViewMode { get; set; } = CatalogViewMode.Tree;
+
+    /// <summary>Порядок в дереве: по наименованию или свой (перестановки записываются в список баз).</summary>
+    public CatalogSortMode SortMode { get; set; } = CatalogSortMode.Name;
 
     public AfterLaunchAction AfterLaunch { get; set; } = AfterLaunchAction.Nothing;
 

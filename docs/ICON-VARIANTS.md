@@ -19,7 +19,8 @@
 | Тема: тёмная | `IconDarkThemeBrush` | `#7F77DD` | `#AFA9EC` |
 | Настройки | `IconSettingsBrush` | `#5F5E5A` | `#B4B2A9` |
 | Дерево: папка | `IconFolderBrush` | `#BA7517` | `#EF9F27` |
-| Дерево: «Недавние» (часы) | `IconRecentBrush` | `#378ADD` | `#85B7EB` |
+| Все базы (цилиндр) | `IconAllBasesBrush` | `#D85A30` | `#F0997B` |
+| Недавние (часы) | `IconRecentBrush` | `#378ADD` | `#85B7EB` |
 | Избранное: папка и звезда у базы | `IconFavoriteBrush` | `#E0900F` | `#FAC775` |
 | Подробности: копировать строку подключения | `IconCopyBrush` | `#7F77DD` | `#AFA9EC` |
 | Подробности: открыть каталог базы | `IconFolderBrush` | `#BA7517` | `#EF9F27` |

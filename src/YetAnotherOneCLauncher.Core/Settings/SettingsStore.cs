@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.IO;
 
 namespace YetAnotherOneCLauncher.Core.Settings;
@@ -75,6 +76,11 @@ public sealed class SettingsStore
         if (settings.Ui.IconStyle is not (IconStyle.Outline or IconStyle.Plate))
         {
             settings.Ui.IconStyle = IconStyle.Outline; // двухтоновые значки убраны, неизвестное значение — тоже сюда
+        }
+
+        if (!Enum.IsDefined(settings.Ui.SortMode))
+        {
+            settings.Ui.SortMode = CatalogSortMode.Name;
         }
 
         settings.Launch ??= new LaunchSettings();
