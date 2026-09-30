@@ -323,8 +323,8 @@
             BorderThickness="1,0,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
         <DockPanel>
           <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами».
-               Ширина постоянная, прижаты вправо: при расширении панели кнопки не растут. -->
-          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Right">
+               Ширина постоянная, прижаты к левой границе панели: при расширении панели кнопки не растут. -->
+          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Left">
             <Grid ColumnDefinitions="*,Auto">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
                       ToolTip.Tip="F3, Enter или двойной щелчок">
