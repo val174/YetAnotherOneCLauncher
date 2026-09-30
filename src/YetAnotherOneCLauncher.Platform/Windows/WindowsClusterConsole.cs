@@ -25,21 +25,26 @@ public sealed class WindowsClusterConsole : IClusterConsole
     public bool IsSupported => true;
 
     public bool IsAvailable(PlatformInstallation platform) =>
-        File.Exists(AdminLibraryPath(platform)) && FindSnapIn(platform) is not null;
+        File.Exists(LibraryPath(platform)) && FindSnapIn(platform) is not null;
 
-    public bool IsRegistered(PlatformInstallation platform)
+    /// <summary>
+    /// Зарегистрированный компонент: сначала 64-разрядный раздел реестра, и только если там пусто — 32-разрядный.
+    /// </summary>
+    public ClusterConsoleRegistration? FindRegistered() =>
+        ReadRegistration(RegistryView.Registry64, PlatformArchitecture.X64)
+        ?? ReadRegistration(RegistryView.Registry32, PlatformArchitecture.X86);
+
+    private static ClusterConsoleRegistration? ReadRegistration(RegistryView view, PlatformArchitecture architecture)
     {
-        ArgumentNullException.ThrowIfNull(platform);
-        var view = platform.Architecture == PlatformArchitecture.X86 ? RegistryView.Registry32 : RegistryView.Registry64;
         try
         {
             using var root = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, view);
             using var server = root.OpenSubKey($@"CLSID\{SnapInClassId}\InprocServer32");
-            return server?.GetValue(null) is string registered && SamePath(registered, AdminLibraryPath(platform));
+            return server?.GetValue(null) is string { Length: > 0 } path ? new ClusterConsoleRegistration(path, architecture) : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            return false;
+            return null;
         }
     }
 
@@ -50,7 +55,7 @@ public sealed class WindowsClusterConsole : IClusterConsole
         var regsvr = Path.Combine(
             Environment.GetFolderPath(platform.Architecture == PlatformArchitecture.X86 ? Environment.SpecialFolder.SystemX86 : Environment.SpecialFolder.System),
             "regsvr32.exe");
-        var startInfo = new ProcessStartInfo(regsvr, $"/s \"{AdminLibraryPath(platform)}\"")
+        var startInfo = new ProcessStartInfo(regsvr, $"/s \"{LibraryPath(platform)}\"")
         {
             UseShellExecute = true,
             Verb = "runas", // запрос прав администратора (UAC)
@@ -64,7 +69,7 @@ public sealed class WindowsClusterConsole : IClusterConsole
             if (process.ExitCode != 0)
             {
                 throw new LaunchFailedException(
-                    $"regsvr32 не смог зарегистрировать {AdminLibraryPath(platform)} (код {process.ExitCode}).");
+                    $"regsvr32 не смог зарегистрировать {LibraryPath(platform)} (код {process.ExitCode}).");
             }
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == ErrorCancelled)
@@ -100,7 +105,9 @@ public sealed class WindowsClusterConsole : IClusterConsole
         }
     }
 
-    public static string AdminLibraryPath(PlatformInstallation platform)
+    public string AdminLibraryPath(PlatformInstallation platform) => LibraryPath(platform);
+
+    public static string LibraryPath(PlatformInstallation platform)
     {
         ArgumentNullException.ThrowIfNull(platform);
         return Path.Combine(platform.BinDirectory, AdminLibraryName);
@@ -130,18 +137,5 @@ public sealed class WindowsClusterConsole : IClusterConsole
         var wide = candidates.FirstOrDefault(f => f.Contains("x86-64", StringComparison.OrdinalIgnoreCase));
         var narrow = candidates.FirstOrDefault(f => !f.Contains("x86-64", StringComparison.OrdinalIgnoreCase));
         return platform.Architecture == PlatformArchitecture.X86 ? narrow ?? wide : wide ?? narrow;
-    }
-
-    private static bool SamePath(string registered, string expected)
-    {
-        try
-        {
-            var path = Environment.ExpandEnvironmentVariables(registered.Trim().Trim('"'));
-            return string.Equals(Path.GetFullPath(path), Path.GetFullPath(expected), StringComparison.OrdinalIgnoreCase);
-        }
-        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
-        {
-            return false;
-        }
     }
 }

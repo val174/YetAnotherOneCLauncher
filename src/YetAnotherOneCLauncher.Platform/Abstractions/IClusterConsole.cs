@@ -2,6 +2,25 @@ using YetAnotherOneCLauncher.Core.Platforms;
 
 namespace YetAnotherOneCLauncher.Platform.Abstractions;
 
+/// <summary>Компонент администрирования, зарегистрированный в Windows: путь к <c>radmin.dll</c> и её разрядность.</summary>
+public sealed record ClusterConsoleRegistration(string LibraryPath, PlatformArchitecture Architecture)
+{
+    /// <summary>Тот же ли это файл (пути сравниваются полностью, без учёта регистра, с раскрытием переменных).</summary>
+    public bool Matches(string libraryPath)
+    {
+        ArgumentNullException.ThrowIfNull(libraryPath);
+        try
+        {
+            var registered = Environment.ExpandEnvironmentVariables(LibraryPath.Trim().Trim('"'));
+            return string.Equals(Path.GetFullPath(registered), Path.GetFullPath(libraryPath), StringComparison.OrdinalIgnoreCase);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+}
+
 /// <summary>
 /// Консоль кластера серверов 1С («Администрирование серверов 1С:Предприятия»): оснастка MMC, которая работает
 /// через компонент <c>radmin.dll</c> той версии платформы, что зарегистрирована в Windows. Чтобы открыть консоль
@@ -15,8 +34,14 @@ public interface IClusterConsole
     /// <summary>Есть ли у платформы компонент администрирования и файл оснастки.</summary>
     bool IsAvailable(PlatformInstallation platform);
 
-    /// <summary>Зарегистрирован ли в Windows компонент именно этой платформы.</summary>
-    bool IsRegistered(PlatformInstallation platform);
+    /// <summary>Путь к компоненту администрирования платформы.</summary>
+    string AdminLibraryPath(PlatformInstallation platform);
+
+    /// <summary>
+    /// Зарегистрированный компонент: сначала ищется 64-разрядный; 32-разрядный — только если 64-разрядного нет.
+    /// <c>null</c> — не зарегистрирован никакой.
+    /// </summary>
+    ClusterConsoleRegistration? FindRegistered();
 
     /// <summary>Зарегистрировать компонент платформы: Windows спросит права администратора.</summary>
     /// <exception cref="LaunchFailedException">Не зарегистрирован: пользователь отказал в правах или regsvr32 вернул ошибку.</exception>
@@ -34,7 +59,13 @@ public sealed class NoClusterConsole : IClusterConsole
 
     public bool IsAvailable(PlatformInstallation platform) => false;
 
-    public bool IsRegistered(PlatformInstallation platform) => false;
+    public string AdminLibraryPath(PlatformInstallation platform)
+    {
+        ArgumentNullException.ThrowIfNull(platform);
+        return Path.Combine(platform.BinDirectory, "radmin.dll");
+    }
+
+    public ClusterConsoleRegistration? FindRegistered() => null;
 
     public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default) =>
         throw new LaunchFailedException("Консоль кластера есть только в Windows.");

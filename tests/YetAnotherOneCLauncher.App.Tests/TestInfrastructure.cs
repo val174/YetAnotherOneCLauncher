@@ -216,24 +216,37 @@ internal sealed class FakeAvailabilityProbe : Core.Availability.IAvailabilityPro
         Task.FromResult(!DeadHosts.Contains(host));
 }
 
-/// <summary>Консоль кластера без реестра и MMC: какие версии с консолью, какая зарегистрирована, что открыто.</summary>
+/// <summary>Консоль кластера без реестра и MMC: какие версии с консолью, что зарегистрировано, что открыто.</summary>
 internal sealed class FakeClusterConsole : IClusterConsole
 {
     public bool IsSupported { get; set; } = true;
 
-    /// <summary>Версии с компонентом администрирования.</summary>
+    /// <summary>Версии с компонентом администрирования (любой разрядности).</summary>
     public HashSet<string> Available { get; } = [];
 
-    public string? Registered { get; set; }
+    /// <summary>Зарегистрированный компонент — как его вернул бы реестр.</summary>
+    public ClusterConsoleRegistration? Registration { get; set; }
 
     /// <summary>Отказ в правах администратора при регистрации.</summary>
     public bool DenyRegistration { get; set; }
+
+    public int RegistryLookups { get; private set; }
 
     public List<string> Opened { get; } = [];
 
     public bool IsAvailable(PlatformInstallation platform) => Available.Contains(platform.Version.ToString());
 
-    public bool IsRegistered(PlatformInstallation platform) => Registered == platform.Version.ToString();
+    public string AdminLibraryPath(PlatformInstallation platform) => Path.Combine(platform.BinDirectory, "radmin.dll");
+
+    public ClusterConsoleRegistration? FindRegistered()
+    {
+        RegistryLookups++;
+        return Registration;
+    }
+
+    /// <summary>Считать зарегистрированной эту платформу.</summary>
+    public void RegisterNow(PlatformInstallation platform) =>
+        Registration = new ClusterConsoleRegistration(AdminLibraryPath(platform), platform.Architecture);
 
     public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default)
     {
@@ -242,11 +255,11 @@ internal sealed class FakeClusterConsole : IClusterConsole
             throw new LaunchFailedException("Регистрация отменена.");
         }
 
-        Registered = platform.Version.ToString();
+        RegisterNow(platform);
         return Task.CompletedTask;
     }
 
-    public void Open(PlatformInstallation platform) => Opened.Add(platform.Version.ToString());
+    public void Open(PlatformInstallation platform) => Opened.Add($"{platform.Version} {PlatformInstallation.ArchitectureName(platform.Architecture)}");
 }
 
 /// <summary>Список переходов в памяти.</summary>
