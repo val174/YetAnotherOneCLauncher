@@ -2,8 +2,11 @@ using YetAnotherOneCLauncher.Core.Platforms;
 
 namespace YetAnotherOneCLauncher.Platform.Abstractions;
 
-/// <summary>Компонент администрирования, зарегистрированный в Windows: путь к <c>radmin.dll</c> и её разрядность.</summary>
-public sealed record ClusterConsoleRegistration(string LibraryPath, PlatformArchitecture Architecture)
+/// <summary>
+/// Компонент администрирования, зарегистрированный в Windows: путь к <c>radmin.dll</c>, её разрядность и COM-класс
+/// оснастки (у 64- и 32-разрядной консоли классы разные; <c>null</c> — неизвестен).
+/// </summary>
+public sealed record ClusterConsoleRegistration(string LibraryPath, PlatformArchitecture Architecture, string? SnapInClassId = null)
 {
     /// <summary>Тот же ли это файл (пути сравниваются полностью, без учёта регистра, с раскрытием переменных).</summary>
     public bool Matches(string libraryPath)

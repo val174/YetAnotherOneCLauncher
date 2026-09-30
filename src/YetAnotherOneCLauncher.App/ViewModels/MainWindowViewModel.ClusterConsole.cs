@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
@@ -35,10 +36,22 @@ public sealed partial class MainWindowViewModel
             _clusterConsole,
             _processLauncher,
             NetworkSettings.ParseWebUrl(_settings.Settings.Network.PuskUrl));
+        // Для разбора «не видит консоль»: что нашлось в реестре и что попало в список.
+        var registrations = console.Registrations.Count == 0
+            ? "нет"
+            : string.Join("; ", console.Registrations.Select(r => $"{r.Architecture} {r.LibraryPath} {r.SnapInClassId}"));
+        var options = string.Join(
+            "; ",
+            console.Options.Where(o => !o.IsPusk).Select(o => $"{o.Title} {o.Detail}{(o.IsRegistered ? " (зарегистрирована)" : string.Empty)}"));
+        LogClusterConsoles(_logger, registrations, options);
+
         await _dialogs.ShowClusterConsoleAsync(console);
         if (console.ResultMessage is { } message)
         {
             StatusText = message;
         }
     }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Консоль кластера: в реестре — {Registrations}; в списке — {Options}")]
+    private static partial void LogClusterConsoles(ILogger logger, string registrations, string options);
 }

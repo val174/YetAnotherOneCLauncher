@@ -15,7 +15,7 @@ namespace YetAnotherOneCLauncher.Platform.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsClusterConsole : IClusterConsole
 {
-    /// <summary>COM-класс оснастки из <c>radmin.dll</c> (он же указан в файле .msc).</summary>
+    /// <summary>COM-класс 64-разрядной оснастки из radmin.dll (он же указан в «1CV8 Servers (x86-64).msc»); у 32-разрядной — другой.</summary>
     public const string SnapInClassId = "{A42674D4-2D97-4988-A81D-2C113CC42A95}";
 
     public const string AdminLibraryName = "radmin.dll";
@@ -28,30 +28,44 @@ public sealed class WindowsClusterConsole : IClusterConsole
         File.Exists(LibraryPath(platform)) && FindSnapIn(platform) is not null;
 
     /// <summary>
-    /// Зарегистрированные компоненты: 64-разрядный раздел реестра и 32-разрядный (WOW6432Node) читаются оба —
-    /// в каждом может быть своя консоль от своей платформы.
+    /// Зарегистрированные консоли. У 64- и 32-разрядной оснастки разные COM-классы и разные разделы реестра,
+    /// поэтому класс не угадывается: перебираются оснастки MMC каждой разрядности
+    /// (<c>HKLM\SOFTWARE\Microsoft\MMC\SnapIns</c>, для 32-разрядных — WOW6432Node), и берутся те, чей
+    /// компонент — <c>radmin.dll</c>.
     /// </summary>
     public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() =>
     [
-        .. new[]
-        {
-            ReadRegistration(RegistryView.Registry64, PlatformArchitecture.X64),
-            ReadRegistration(RegistryView.Registry32, PlatformArchitecture.X86),
-        }.OfType<ClusterConsoleRegistration>(),
+        .. ReadRegistrations(RegistryView.Registry64, PlatformArchitecture.X64),
+        .. ReadRegistrations(RegistryView.Registry32, PlatformArchitecture.X86),
     ];
 
-    private static ClusterConsoleRegistration? ReadRegistration(RegistryView view, PlatformArchitecture architecture)
+    private static List<ClusterConsoleRegistration> ReadRegistrations(RegistryView view, PlatformArchitecture architecture)
     {
+        var found = new List<ClusterConsoleRegistration>();
         try
         {
-            using var root = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, view);
-            using var server = root.OpenSubKey($@"CLSID\{SnapInClassId}\InprocServer32");
-            return server?.GetValue(null) is string { Length: > 0 } path ? new ClusterConsoleRegistration(path, architecture) : null;
+            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
+            using var classes = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, view);
+            using var snapIns = machine.OpenSubKey(@"SOFTWARE\Microsoft\MMC\SnapIns");
+
+            // Известный класс 64-разрядной оснастки — и без записи в MMC\SnapIns.
+            var classIds = (snapIns?.GetSubKeyNames() ?? []).Append(SnapInClassId).Distinct(StringComparer.OrdinalIgnoreCase);
+            foreach (var classId in classIds)
+            {
+                using var server = classes.OpenSubKey($@"CLSID\{classId}\InprocServer32");
+                if (server?.GetValue(null) is string { Length: > 0 } path
+                    && string.Equals(Path.GetFileName(path.Trim().Trim('"')), AdminLibraryName, StringComparison.OrdinalIgnoreCase))
+                {
+                    found.Add(new ClusterConsoleRegistration(path, architecture, classId));
+                }
+            }
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Security.SecurityException)
         {
-            return null;
+            // Реестр не прочитался — считаем, что консоль этой разрядности не зарегистрирована.
         }
+
+        return found;
     }
 
     public async Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default)
@@ -93,6 +107,10 @@ public sealed class WindowsClusterConsole : IClusterConsole
         ArgumentNullException.ThrowIfNull(platform);
         var snapIn = FindSnapIn(platform)
                      ?? throw new LaunchFailedException("Не найден файл консоли 1CV8 Servers*.msc в каталоге common платформы.");
+        if (platform.Architecture == PlatformArchitecture.X86 && IsWideSnapIn(snapIn))
+        {
+            snapIn = NarrowCopyOf(snapIn, platform);
+        }
 
         // Через оболочку: mmc.exe может запросить повышение прав. 32-разрядной оснастке нужен 32-разрядный MMC (-32).
         var arguments = platform.Architecture == PlatformArchitecture.X86 ? $"\"{snapIn}\" -32" : $"\"{snapIn}\"";
@@ -112,6 +130,38 @@ public sealed class WindowsClusterConsole : IClusterConsole
     }
 
     public string AdminLibraryPath(PlatformInstallation platform) => LibraryPath(platform);
+
+    /// <summary>
+    /// Файл 32-разрядной оснастки из 64-разрядного: тот же файл, но с COM-классом 32-разрядной оснастки
+    /// (его берём из регистрации). Нужен, когда у 32-разрядной платформы своего «1CV8 Servers.msc» нет.
+    /// </summary>
+    public static string PatchSnapInClass(string mscText, string fromClassId, string toClassId) =>
+        mscText.Replace(fromClassId.Trim('{', '}'), toClassId.Trim('{', '}'), StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsWideSnapIn(string path) => Path.GetFileName(path).Contains("x86-64", StringComparison.OrdinalIgnoreCase);
+
+    private string NarrowCopyOf(string wideSnapIn, PlatformInstallation platform)
+    {
+        var classId = FindRegistered()
+            .FirstOrDefault(r => r.Architecture == PlatformArchitecture.X86 && r.Matches(LibraryPath(platform)))?.SnapInClassId;
+        if (classId is null || string.Equals(classId, SnapInClassId, StringComparison.OrdinalIgnoreCase))
+        {
+            return wideSnapIn; // класс 32-разрядной оснастки неизвестен или тот же — как есть
+        }
+
+        try
+        {
+            var directory = Path.Combine(Path.GetTempPath(), "YetAnotherOneCLauncher");
+            Directory.CreateDirectory(directory);
+            var copy = Path.Combine(directory, "1CV8 Servers (x86).msc");
+            File.WriteAllText(copy, PatchSnapInClass(File.ReadAllText(wideSnapIn), SnapInClassId, classId));
+            return copy;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw new LaunchFailedException("Не удалось подготовить файл 32-разрядной консоли: " + ex.Message, ex);
+        }
+    }
 
     public static string LibraryPath(PlatformInstallation platform)
     {

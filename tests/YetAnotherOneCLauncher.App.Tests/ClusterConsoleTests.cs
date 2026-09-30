@@ -224,6 +224,27 @@ public class ClusterConsoleTests
     }
 
     [Fact]
+    public void Narrow_snap_in_copy_gets_class_of_32_bit_snap_in()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        const string msc = """
+            <Snapin CLSID="{A42674D4-2D97-4988-A81D-2C113CC42A95}" AllExtensionsEnabled="false">
+            <Node ID="2" ImageIdx="0" CLSID="{a42674d4-2d97-4988-a81d-2c113cc42a95}" Preload="false">
+            <Snapin CLSID="{C96401CC-0E17-11D3-885B-00C04F72C717}" AllExtensionsEnabled="true"/>
+            """;
+
+        var patched = WindowsClusterConsole.PatchSnapInClass(msc, WindowsClusterConsole.SnapInClassId, "{11111111-2222-3333-4444-555555555555}");
+
+        Assert.Equal(2, patched.Split("11111111-2222-3333-4444-555555555555").Length - 1); // оба упоминания, в любом регистре
+        Assert.DoesNotContain("A42674D4", patched, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("C96401CC-0E17-11D3-885B-00C04F72C717", patched, StringComparison.Ordinal); // чужие классы не тронуты
+    }
+
+    [Fact]
     public void Snap_in_is_found_in_common_next_to_version_directories()
     {
         if (!OperatingSystem.IsWindows())

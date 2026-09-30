@@ -68,6 +68,7 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
 
         // Регистрации читаются один раз: 64- и 32-разрядная независимы, их может быть две — от разных платформ.
         var registrations = console.FindRegistered();
+        Registrations = registrations;
         bool IsRegistered(PlatformInstallation p) =>
             registrations.Any(r => r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
 
@@ -102,6 +103,9 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
     }
 
     public IReadOnlyList<ClusterConsoleOption> Options { get; }
+
+    /// <summary>Что нашлось в реестре — для лога.</summary>
+    public IReadOnlyList<ClusterConsoleRegistration> Registrations { get; }
 
     /// <summary>Платформа по пути из реестра: <c>…\8.3.25.1633\bin\radmin.dll</c>; <c>null</c> — версию не понять.</summary>
     internal static PlatformInstallation? FromRegistration(ClusterConsoleRegistration registration)
