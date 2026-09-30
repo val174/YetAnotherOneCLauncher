@@ -184,6 +184,7 @@ public class ClusterConsoleTests
         Assert.Single(list.GetVisualDescendants().OfType<Border>(), b => b.Classes.Contains("optionSeparator") && b.IsVisible);
         Assert.True(window.FindControl<TextBlock>("RegistrationHint")!.IsVisible);
         Assert.Null(window.FindControl<Button>("PuskButton")); // отдельной кнопки нет — строка в списке
+        Assert.Single(list.GetVisualDescendants().OfType<Image>(), i => i.Name == "PuskLogo" && i.IsEffectivelyVisible); // логотип «ПУСК» — только у своей строки
         MainWindowTests.Snapshot(window, "10-cluster-console");
         window.Close();
     }

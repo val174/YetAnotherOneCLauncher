@@ -47,8 +47,8 @@
                         ToolTip.Tip="Компонент администрирования этой версии зарегистрирован в Windows">
                   <TextBlock Text="зарегистрирована" />
                 </Border>
-                <c:ToolIcon DockPanel.Dock="Left" Brush="{DynamicResource IconClusterBrush}" Data="{StaticResource WebIconGeometry}"
-                            Width="16" Height="16" Margin="0,0,8,0" IsVisible="{Binding IsPusk}" />
+                <Image x:Name="PuskLogo" DockPanel.Dock="Left" Source="{StaticResource PuskLogoImage}" Width="22" Height="18"
+                       Margin="0,0,8,0" IsVisible="{Binding IsPusk}" />
                 <TextBlock Text="{Binding Title}" FontWeight="SemiBold" VerticalAlignment="Center" />
                 <TextBlock Text="{Binding Detail}" Opacity="0.65" Margin="10,0,8,0" VerticalAlignment="Center"
                            TextTrimming="CharacterEllipsis" />
