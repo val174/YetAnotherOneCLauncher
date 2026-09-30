@@ -2,10 +2,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        xmlns:app="using:YetAnotherOneCLauncher.App"
         x:Class="YetAnotherOneCLauncher.App.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Title}"
-        Width="760" Height="560" MinWidth="620" MinHeight="420"
+        Width="900" Height="600" MinWidth="700" MinHeight="440"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
@@ -79,7 +80,6 @@
             <TextBox x:Name="PuskUrlBox" Text="{Binding PuskUrl}" PlaceholderText="https://…"
                      ToolTip.Tip="Опубликованный сервис «ПУСК»: открывается из окна консоли кластера" />
             <TextBlock Classes="error" Text="Нужен адрес http:// или https://" IsVisible="{Binding IsPuskUrlInvalid}" />
-            <Button Content="Свои шаблоны параметров…" Command="{Binding EditParameterTemplatesCommand}" Margin="0,16,0,0" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>
@@ -137,6 +137,11 @@
             </ItemsControl>
           </ScrollViewer>
         </DockPanel>
+      </TabItem>
+
+      <!-- Шаблоны параметров: встроенные и свои; сохраняются вместе с остальными настройками. -->
+      <TabItem x:Name="TemplatesTab" Header="{Binding TemplatesHeader}">
+        <app:ParameterTemplatesView x:Name="TemplatesView" DataContext="{Binding Templates}" Margin="0,4,4,0" />
       </TabItem>
     </TabControl>
   </DockPanel>

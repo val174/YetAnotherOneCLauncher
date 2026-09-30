@@ -5,6 +5,7 @@ using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
@@ -34,6 +35,9 @@ public sealed record SettingsValues
 
     // Горячие клавиши.
     public HotKeyMap HotKeys { get; init; } = HotKeyMap.Default;
+
+    // Свои шаблоны параметров.
+    public IReadOnlyList<ParameterTemplate> ParameterTemplates { get; init; } = [];
 }
 
 /// <summary>Строка вкладки «Горячие клавиши».</summary>
@@ -72,18 +76,17 @@ public sealed partial class HotKeyRowViewModel : ObservableObject
 }
 
 /// <summary>
-/// Окно «Настройки»: вкладки «Общие», «Внешний вид», «Горячие клавиши». Правки копятся в черновике и применяются
+/// Окно «Настройки»: вкладки «Общие», «Внешний вид», «Горячие клавиши», «Шаблоны параметров». Правки копятся в черновике и применяются
 /// кнопкой «Сохранить»; пока есть несохранённые — в заголовке окна и у вкладки «*».
 /// </summary>
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly SettingsValues _original;
 
-    public SettingsViewModel(SettingsValues original, ICommand? editParameterTemplates = null, ICommand? showAbout = null)
+    public SettingsViewModel(SettingsValues original, ICommand? showAbout = null)
     {
         ArgumentNullException.ThrowIfNull(original);
         _original = original;
-        EditParameterTemplatesCommand = editParameterTemplates;
         ShowAboutCommand = showAbout;
 
         AfterLaunchIndex = original.AfterLaunchIndex;
@@ -102,6 +105,8 @@ public sealed partial class SettingsViewModel : ObservableObject
             HotKeyRows.Add(row);
         }
 
+        Templates = new ParameterTemplatesViewModel(original.ParameterTemplates);
+        Templates.Rows.CollectionChanged += (_, _) => RaiseDirty();
         PropertyChanged += OnOwnPropertyChanged;
     }
 
@@ -110,8 +115,6 @@ public sealed partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
     public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2"];
-
-    public ICommand? EditParameterTemplatesCommand { get; }
 
     public ICommand? ShowAboutCommand { get; }
 
@@ -153,6 +156,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Строка, которая ждёт нажатия; <c>null</c> — ни одна.</summary>
     public HotKeyRowViewModel? CapturingRow => HotKeyRows.FirstOrDefault(r => r.IsCapturing);
 
+    // --- Шаблоны параметров ---
+
+    /// <summary>Вкладка «Шаблоны параметров»: таблица параметров, свои добавляются, изменяются и удаляются.</summary>
+    public ParameterTemplatesViewModel Templates { get; }
+
     // --- Изменения ---
     public bool IsGeneralDirty =>
         AfterLaunchIndex != _original.AfterLaunchIndex
@@ -167,7 +175,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool IsHotKeysDirty => !CurrentHotKeys.SameAs(_original.HotKeys);
 
-    public bool IsDirty => IsGeneralDirty || IsAppearanceDirty || IsHotKeysDirty;
+    public bool IsTemplatesDirty => !Templates.CustomTemplates.SequenceEqual(_original.ParameterTemplates);
+
+    public bool IsDirty => IsGeneralDirty || IsAppearanceDirty || IsHotKeysDirty || IsTemplatesDirty;
 
     public string Title => IsDirty ? "Настройки*" : "Настройки";
 
@@ -176,6 +186,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string AppearanceHeader => IsAppearanceDirty ? "Внешний вид*" : "Внешний вид";
 
     public string HotKeysHeader => IsHotKeysDirty ? "Горячие клавиши*" : "Горячие клавиши";
+
+    public string TemplatesHeader => IsTemplatesDirty ? "Шаблоны параметров*" : "Шаблоны параметров";
 
     public HotKeyMap CurrentHotKeys =>
         HotKeyRows.Aggregate(HotKeyMap.Default, (map, row) => map.With(row.Definition.Command, row.Gesture));
@@ -193,6 +205,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         HotKeys = CurrentHotKeys,
+        ParameterTemplates = Templates.CustomTemplates,
     };
 
     /// <summary>Ждать нового сочетания для строки (остальные перестают ждать).</summary>
@@ -300,7 +313,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private void OnOwnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(IsDirty) or nameof(Title) or nameof(GeneralHeader) or nameof(AppearanceHeader)
-            or nameof(HotKeysHeader) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
+            or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
             or nameof(IsPuskUrlInvalid))
         {
             return;
@@ -314,10 +327,12 @@ public sealed partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(IsGeneralDirty));
         OnPropertyChanged(nameof(IsAppearanceDirty));
         OnPropertyChanged(nameof(IsHotKeysDirty));
+        OnPropertyChanged(nameof(IsTemplatesDirty));
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(GeneralHeader));
         OnPropertyChanged(nameof(AppearanceHeader));
         OnPropertyChanged(nameof(HotKeysHeader));
+        OnPropertyChanged(nameof(TemplatesHeader));
     }
 }

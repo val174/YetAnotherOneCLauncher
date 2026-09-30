@@ -659,13 +659,16 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public void Parameter_templates_window_adds_edits_and_deletes_from_keyboard()
+    public void Parameter_templates_tab_adds_edits_and_deletes_from_keyboard()
     {
         Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
-        var form = new ViewModels.ParameterTemplatesViewModel([ParameterLibrary.Custom("N Тест", "Тестовый вход")]);
-        var window = new ParameterTemplatesWindow(form);
-        window.Show();
+        var settings = new ViewModels.SettingsViewModel(new ViewModels.SettingsValues { ParameterTemplates = [ParameterLibrary.Custom("N Тест", "Тестовый вход")] });
+        var form = settings.Templates;
+        var settingsWindow = new SettingsWindow(settings);
+        settingsWindow.Show();
+        settingsWindow.FindControl<TabControl>("Tabs")!.SelectedIndex = 3; // «Шаблоны параметров»
         Render();
+        var window = settingsWindow.GetVisualDescendants().OfType<ParameterTemplatesView>().Single(); // имена элементов — внутри вкладки
 
         var rows = window.FindControl<ListBox>("RowsList")!;
         Assert.Equal(form.Rows.Count, rows.ItemCount);
@@ -679,30 +682,30 @@ public class MainWindowTests
         parameter.Focus();
         form.NewParameter = "L en";
         form.NewDescription = "Английский интерфейс";
-        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        settingsWindow.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
         Render();
         Assert.Equal(2, form.CustomTemplates.Count);
         Assert.True(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled); // выделен добавленный
 
         // F2 в таблице — изменить: поля заполняются, Esc отменяет только изменение, окно остаётся открытым.
         rows.ContainerFromItem(form.SelectedRow!)!.Focus(); // как после щелчка по строке
-        window.KeyPressQwerty(PhysicalKey.F2, RawInputModifiers.None);
+        settingsWindow.KeyPressQwerty(PhysicalKey.F2, RawInputModifiers.None);
         Render();
         Assert.True(form.IsEditing);
         Assert.True(parameter.IsFocused);
         Assert.Equal("Применить", window.FindControl<TextBlock>("ApplyText")!.Text);
         Assert.True(window.FindControl<Button>("CancelEditButton")!.IsVisible);
-        Snapshot(window, "09-parameter-templates");
-        window.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
+        Snapshot(settingsWindow, "09-parameter-templates");
+        settingsWindow.KeyPressQwerty(PhysicalKey.Escape, RawInputModifiers.None);
         Render();
         Assert.False(form.IsEditing);
-        Assert.True(window.IsVisible);
+        Assert.True(settingsWindow.IsVisible); // Esc отменил только изменение, окно настроек открыто
 
         rows.ContainerFromItem(form.SelectedRow!)!.Focus();
-        window.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
+        settingsWindow.KeyPressQwerty(PhysicalKey.Delete, RawInputModifiers.None);
         Render();
         Assert.Single(form.CustomTemplates);
-        window.Close();
+        settingsWindow.Close();
     }
 
     [AvaloniaFact]

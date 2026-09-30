@@ -347,24 +347,25 @@ public class LaunchParametersTests
     public async Task Own_templates_are_saved_only_on_save()
     {
         using var fixture = new ViewModelFixture();
-        fixture.Dialogs.ParameterTemplatesEditor = form =>
+        fixture.Dialogs.SettingsEditor = settings =>
         {
-            form.NewParameter = "/N Тест";
-            form.NewDescription = "Тестовый вход";
-            form.ApplyCommand.Execute(null);
-            return false; // «Отмена»
+            settings.Templates.NewParameter = "/N Тест";
+            settings.Templates.NewDescription = "Тестовый вход";
+            settings.Templates.ApplyCommand.Execute(null);
+            Assert.Equal(("Шаблоны параметров*", "Настройки*"), (settings.TemplatesHeader, settings.Title));
+            return false; // «Отменить»
         };
-        await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
+        await fixture.ViewModel.OpenSettingsCommand.ExecuteAsync(null);
         Assert.Empty(fixture.Settings.Settings.ParameterTemplates);
 
-        fixture.Dialogs.ParameterTemplatesEditor = form =>
+        fixture.Dialogs.SettingsEditor = settings =>
         {
-            form.NewParameter = "/N Тест";
-            form.NewDescription = "Тестовый вход";
-            form.ApplyCommand.Execute(null);
-            return true;
+            settings.Templates.NewParameter = "/N Тест";
+            settings.Templates.NewDescription = "Тестовый вход";
+            settings.Templates.ApplyCommand.Execute(null);
+            return true; // «Сохранить»
         };
-        await fixture.ViewModel.EditParameterTemplatesCommand.ExecuteAsync(null);
+        await fixture.ViewModel.OpenSettingsCommand.ExecuteAsync(null);
 
         var saved = Assert.Single(fixture.Settings.Settings.ParameterTemplates);
         Assert.Equal(("Тестовый вход", "N Тест", "Тестовый вход"), (saved.Name, saved.Text, saved.Description));

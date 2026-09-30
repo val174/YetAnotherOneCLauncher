@@ -24,13 +24,14 @@ public sealed partial class MainWindowViewModel
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         HotKeys = HotKeys,
+        ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
     };
 
     /// <summary>Окно настроек; изменения применяются, только если нажато «Сохранить».</summary>
     [RelayCommand]
     private async Task OpenSettingsAsync()
     {
-        var settings = new SettingsViewModel(CurrentSettings, EditParameterTemplatesCommand, ShowAboutCommand);
+        var settings = new SettingsViewModel(CurrentSettings, ShowAboutCommand);
         if (await _dialogs.EditSettingsAsync(settings))
         {
             ApplySettings(settings.Result);
@@ -58,6 +59,12 @@ public sealed partial class MainWindowViewModel
         {
             HotKeys = values.HotKeys;
             _settings.Settings.Ui.HotKeys = values.HotKeys.ToOverrides();
+            _settings.RequestSave();
+        }
+
+        if (!values.ParameterTemplates.SequenceEqual(_settings.Settings.ParameterTemplates))
+        {
+            _settings.Settings.ParameterTemplates = [.. values.ParameterTemplates];
             _settings.RequestSave();
         }
     }

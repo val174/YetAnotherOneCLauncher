@@ -316,21 +316,6 @@ public sealed partial class MainWindowViewModel
             : $"Параметры папки «{folder.Name}» сохранены.";
     }
 
-    /// <summary>Свои шаблоны параметров: таблица известных параметров, добавление и удаление своих.</summary>
-    [RelayCommand]
-    private async Task EditParameterTemplatesAsync()
-    {
-        var templates = new ParameterTemplatesViewModel(_settings.Settings.ParameterTemplates);
-        if (!await _dialogs.EditParameterTemplatesAsync(templates))
-        {
-            return;
-        }
-
-        _settings.Settings.ParameterTemplates = templates.CustomTemplates;
-        _settings.RequestSave();
-        StatusText = $"Своих шаблонов параметров: {_settings.Settings.ParameterTemplates.Count}.";
-    }
-
     /// <summary>Параметры папок от корня до <paramref name="folderPath"/> включительно.</summary>
     private List<string> FolderParameterChain(string folderPath)
     {
