@@ -49,6 +49,7 @@ internal static class AppServices
             services.AddSingleton(_ => PlatformServices.CreateClusterConsole());
             services.AddSingleton<LaunchRequestChannel>();
             services.AddSingleton<ILaunchRequestChannel>(sp => sp.GetRequiredService<LaunchRequestChannel>());
+            services.AddSingleton<StartupCatalog>();
         }
 
         // Без путей ОС (неподдерживаемая система) настройки живут только в памяти.

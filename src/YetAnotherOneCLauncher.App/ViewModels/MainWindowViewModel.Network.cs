@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.Extensions.Logging;
+using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.Core.Availability;
 using YetAnotherOneCLauncher.Core.Catalog;
 using YetAnotherOneCLauncher.Core.Platforms;
@@ -41,36 +42,68 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    /// <summary>Загрузка каталога: промежуточные каталоги показываются сразу, итоговый — с платформами.</summary>
+    /// <summary>
+    /// Загрузка каталога и поиск платформ — в фоне и параллельно (<see cref="CatalogLoad"/>). Промежуточные каталоги
+    /// показываются сразу; платформы применяются, как только найдены, — запускать базы можно, не дожидаясь
+    /// общих списков, которые могут читаться по сети до таймаута. Первая загрузка берёт ту, что начата при старте.
+    /// </summary>
     private async Task LoadCatalogAsync(IPlatformPaths paths, IPlatformLocator locator)
     {
         var generation = ++_loadGeneration;
         var finished = false;
         var writtenBefore = _store?.LastWrittenFingerprint;
+        var load = _startupCatalog?.Take() ?? CatalogLoad.Start(_loader, paths, locator);
 
-        // Промежуточные каталоги приходят из фоновых потоков; Progress передаёт их в поток интерфейса.
-        // Без контекста интерфейса (обычные тесты) показывается только итог.
-        IProgress<InfoBaseCatalog>? progress = SynchronizationContext.Current is null
-            ? null
-            : new Progress<InfoBaseCatalog>(partial =>
-            {
-                if (!finished && generation == _loadGeneration)
-                {
-                    ShowCatalog(partial, CurrentSelectionKey());
-                    var pending = partial.Lists.Count(l => l.IsPending);
-                    StatusText = pending > 0 ? $"Баз: {partial.InfoBases.Count}; читаются общие списки: {pending}…" : StatusText;
-                }
-            });
-
-        var catalog = await _loader.LoadAsync(paths.ToCatalogSources(), progress);
-        var platforms = await locator.LocateAsync(catalog.StarterConfig.InstalledLocations);
-        if (generation != _loadGeneration)
+        // Промежуточные каталоги приходят из фоновых потоков — в поток интерфейса. Без контекста интерфейса
+        // (обычные тесты) показывается только итог.
+        var ui = SynchronizationContext.Current;
+        void ShowPartial(InfoBaseCatalog partial)
         {
-            return; // пока читали, началась новая загрузка
+            if (finished || generation != _loadGeneration)
+            {
+                return;
+            }
+
+            ShowCatalog(partial, CurrentSelectionKey());
+            LogFirstCatalogShown();
+            var pending = partial.Lists.Count(l => l.IsPending);
+            StatusText = pending > 0 ? $"Баз: {partial.InfoBases.Count}; читаются общие списки: {pending}…" : StatusText;
         }
 
-        finished = true;
-        Apply(catalog, platforms);
+        void OnUpdated(InfoBaseCatalog partial) => ui?.Post(_ => ShowPartial(partial), null);
+        if (ui is not null)
+        {
+            load.Updated += OnUpdated;
+            if (load.Latest is { } latest)
+            {
+                ShowPartial(latest); // начатая при старте загрузка могла уже что-то прочитать
+            }
+        }
+
+        try
+        {
+            // Платформы — как только найдены, не дожидаясь итогового каталога.
+            var platformsFirst = await Task.WhenAny(load.Platforms, load.Catalog);
+            if (platformsFirst == load.Platforms && !load.Catalog.IsCompleted && generation == _loadGeneration)
+            {
+                ApplyPlatforms(await load.Platforms, load.Latest?.StarterConfig.DefaultVersion);
+                UpdatePlatformColumn(_bases);
+            }
+
+            var catalog = await load.Catalog;
+            var platforms = await load.Platforms;
+            if (generation != _loadGeneration)
+            {
+                return; // пока читали, началась новая загрузка
+            }
+
+            finished = true;
+            Apply(catalog, platforms);
+        }
+        finally
+        {
+            load.Updated -= OnUpdated;
+        }
 
         // Если за время загрузки личный список правили в лаунчере, в итоговом каталоге его прежняя версия.
         if (_store is not null && _store.LastWrittenFingerprint != writtenBefore)
@@ -78,6 +111,29 @@ public sealed partial class MainWindowViewModel
             await ReloadPersonalListAsync();
         }
     }
+
+    /// <summary>Замер для лога: окно открыто (вызывает окно).</summary>
+    internal void OnWindowOpened() => LogWindowOpened(_logger, (long)StartupClock.Elapsed.TotalMilliseconds);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Окно открыто через {ElapsedMs} мс после запуска")]
+    private static partial void LogWindowOpened(ILogger logger, long elapsedMs);
+
+    private bool _firstCatalogLogged;
+
+    /// <summary>Замер для лога: когда после запуска процесса показан первый список баз.</summary>
+    private void LogFirstCatalogShown()
+    {
+        if (_firstCatalogLogged)
+        {
+            return;
+        }
+
+        _firstCatalogLogged = true;
+        LogCatalogShown(_logger, (long)StartupClock.Elapsed.TotalMilliseconds);
+    }
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Список баз показан через {ElapsedMs} мс после запуска")]
+    private static partial void LogCatalogShown(ILogger logger, long elapsedMs);
 
     /// <summary>Проверить доступность всех баз в фоне (если включено).</summary>
     private void StartAvailabilityCheck()

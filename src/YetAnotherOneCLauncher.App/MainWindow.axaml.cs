@@ -72,6 +72,7 @@ public partial class MainWindow : Window
 
         Opened += async (_, _) =>
         {
+            viewModel.OnWindowOpened();
             EnsureOnScreen();
             SearchBox.Focus();
             await viewModel.InitializeAsync();

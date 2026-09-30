@@ -58,6 +58,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly IJumpList? _jumpList;
     private readonly ILaunchRequestChannel? _launchChannel;
     private readonly IClusterConsole _clusterConsole;
+    private readonly StartupCatalog? _startupCatalog;
     private readonly SynchronizationContext? _uiContext;
 
     private readonly List<InfoBaseViewModel> _bases = [];
@@ -89,7 +90,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IJumpList? jumpList = null,
         ILaunchRequestChannel? launchChannel = null,
         StartupOptions? startup = null,
-        IClusterConsole? clusterConsole = null)
+        IClusterConsole? clusterConsole = null,
+        StartupCatalog? startupCatalog = null)
     {
         _files = files;
         _store = store;
@@ -100,6 +102,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _jumpList = jumpList;
         _launchChannel = launchChannel;
         _clusterConsole = clusterConsole ?? new NoClusterConsole();
+        _startupCatalog = startupCatalog;
         _pendingLaunchKey = startup?.LaunchIdentityKey;
         _uiContext = SynchronizationContext.Current;
         _loader = loader;
@@ -388,9 +391,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Показать загруженный каталог и платформы. Отдельно от загрузки — для тестов.</summary>
     internal void Apply(InfoBaseCatalog catalog, PlatformScanResult platforms)
     {
+        ApplyPlatforms(platforms, catalog.StarterConfig.DefaultVersion);
+        ShowCatalog(catalog, CurrentSelectionKey());
+        StartCacheScan();
+        StartAvailabilityCheck();
+        _ = OnCatalogLoadedAsync();
+
+        StatusText =
+            $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
+            $"платформ: {_installations.Count}";
+    }
+
+    /// <summary>Установленные платформы: с ними можно запускать базы и показывать колонку «Платформа».</summary>
+    private void ApplyPlatforms(PlatformScanResult platforms, string? starterDefaultVersion)
+    {
         _installations = platforms.Installations;
         _platformWarnings = platforms.Warnings;
-        _starterDefaultVersion = catalog.StarterConfig.DefaultVersion;
+        _starterDefaultVersion = starterDefaultVersion;
 
         PlatformCount = _installations.Count;
         PlatformsText = _installations.Count == 0
@@ -400,15 +417,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             PlatformsText += $"{Environment.NewLine}Версия по умолчанию (1cestart.cfg): {_starterDefaultVersion}";
         }
-
-        ShowCatalog(catalog, CurrentSelectionKey());
-        StartCacheScan();
-        StartAvailabilityCheck();
-        _ = OnCatalogLoadedAsync();
-
-        StatusText =
-            $"Баз: {catalog.InfoBases.Count}, списков прочитано: {catalog.Lists.Count(l => l.IsAvailable)} из {catalog.Lists.Count}, " +
-            $"платформ: {_installations.Count}";
     }
 
     /// <summary>Показать каталог (после загрузки или правки) и выделить запись по ключу.</summary>

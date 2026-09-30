@@ -58,6 +58,9 @@ internal static partial class Program
             return 0;
         }
 
+        // Списки баз и платформы начинают читаться в фоне уже сейчас — пока запускается интерфейс.
+        services.GetService<StartupCatalog>()?.Begin();
+
         try
         {
             return BuildAvaloniaApp(services).StartWithClassicDesktopLifetime(args);
