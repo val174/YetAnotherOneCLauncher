@@ -38,10 +38,10 @@ public interface IClusterConsole
     string AdminLibraryPath(PlatformInstallation platform);
 
     /// <summary>
-    /// Зарегистрированный компонент: сначала ищется 64-разрядный; 32-разрядный — только если 64-разрядного нет.
-    /// <c>null</c> — не зарегистрирован никакой.
+    /// Зарегистрированные компоненты: 64- и 32-разрядный регистрируются в Windows независимо (разные разделы
+    /// реестра), поэтому их может быть два — от разных платформ. Пусто — не зарегистрирован никакой.
     /// </summary>
-    ClusterConsoleRegistration? FindRegistered();
+    IReadOnlyList<ClusterConsoleRegistration> FindRegistered();
 
     /// <summary>Зарегистрировать компонент платформы: Windows спросит права администратора.</summary>
     /// <exception cref="LaunchFailedException">Не зарегистрирован: пользователь отказал в правах или regsvr32 вернул ошибку.</exception>
@@ -65,7 +65,7 @@ public sealed class NoClusterConsole : IClusterConsole
         return Path.Combine(platform.BinDirectory, "radmin.dll");
     }
 
-    public ClusterConsoleRegistration? FindRegistered() => null;
+    public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() => [];
 
     public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default) =>
         throw new LaunchFailedException("Консоль кластера есть только в Windows.");

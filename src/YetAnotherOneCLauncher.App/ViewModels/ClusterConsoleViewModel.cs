@@ -66,13 +66,21 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         _console = console;
         _processes = processes;
 
-        // Регистрация ищется один раз: 64-разрядная, а если её нет — 32-разрядная.
-        var registration = console.FindRegistered();
+        // Регистрации читаются один раз: 64- и 32-разрядная независимы, их может быть две — от разных платформ.
+        var registrations = console.FindRegistered();
         bool IsRegistered(PlatformInstallation p) =>
-            registration is { } r && r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p));
+            registrations.Any(r => r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
+
+        // Зарегистрированная консоль платформы, которой нет среди найденных (стоит в нестандартном каталоге), —
+        // тоже в списке: версия и каталог — из пути к radmin.dll в реестре.
+        var known = installations.ToList();
+        known.AddRange(registrations
+            .Where(r => !known.Any(p => p.Architecture == r.Architecture && r.Matches(console.AdminLibraryPath(p))))
+            .Select(FromRegistration)
+            .OfType<PlatformInstallation>());
 
         // Внутри групп: новые версии сверху, при равных — 64-разрядная первой.
-        var versions = installations
+        var versions = known
             .Where(console.IsAvailable)
             .OrderByDescending(p => p.Version)
             .ThenByDescending(p => p.Architecture == PlatformArchitecture.X64)
@@ -94,6 +102,25 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
     }
 
     public IReadOnlyList<ClusterConsoleOption> Options { get; }
+
+    /// <summary>Платформа по пути из реестра: <c>…\8.3.25.1633\bin\radmin.dll</c>; <c>null</c> — версию не понять.</summary>
+    internal static PlatformInstallation? FromRegistration(ClusterConsoleRegistration registration)
+    {
+        ArgumentNullException.ThrowIfNull(registration);
+        try
+        {
+            var library = Environment.ExpandEnvironmentVariables(registration.LibraryPath.Trim().Trim('"'));
+            var bin = Path.GetDirectoryName(library);
+            var versionName = bin is null ? null : Path.GetFileName(Path.GetDirectoryName(bin));
+            return versionName is not null && PlatformVersion.TryParse(versionName, out var version)
+                ? new PlatformInstallation(version, registration.Architecture, bin!, null, null)
+                : null;
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
+    }
 
     public bool HasOptions => Options.Count > 0;
 

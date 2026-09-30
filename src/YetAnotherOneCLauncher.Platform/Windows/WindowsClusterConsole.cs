@@ -28,11 +28,17 @@ public sealed class WindowsClusterConsole : IClusterConsole
         File.Exists(LibraryPath(platform)) && FindSnapIn(platform) is not null;
 
     /// <summary>
-    /// Зарегистрированный компонент: сначала 64-разрядный раздел реестра, и только если там пусто — 32-разрядный.
+    /// Зарегистрированные компоненты: 64-разрядный раздел реестра и 32-разрядный (WOW6432Node) читаются оба —
+    /// в каждом может быть своя консоль от своей платформы.
     /// </summary>
-    public ClusterConsoleRegistration? FindRegistered() =>
-        ReadRegistration(RegistryView.Registry64, PlatformArchitecture.X64)
-        ?? ReadRegistration(RegistryView.Registry32, PlatformArchitecture.X86);
+    public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() =>
+    [
+        .. new[]
+        {
+            ReadRegistration(RegistryView.Registry64, PlatformArchitecture.X64),
+            ReadRegistration(RegistryView.Registry32, PlatformArchitecture.X86),
+        }.OfType<ClusterConsoleRegistration>(),
+    ];
 
     private static ClusterConsoleRegistration? ReadRegistration(RegistryView view, PlatformArchitecture architecture)
     {
@@ -122,20 +128,27 @@ public sealed class WindowsClusterConsole : IClusterConsole
         ArgumentNullException.ThrowIfNull(platform);
         var versionDirectory = Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(platform.BinDirectory));
         var root = versionDirectory is null ? null : Path.GetDirectoryName(versionDirectory);
-        if (root is null)
-        {
-            return null;
-        }
 
-        var common = Path.Combine(root, "common");
-        if (!Directory.Exists(common))
-        {
-            return null;
-        }
-
-        var candidates = Directory.GetFiles(common, "1CV8 Servers*.msc");
+        // Сначала — common своей установки; если там файла нет (32-разрядная платформа ставится без него,
+        // когда консоль уже есть у 64-разрядной), — общие каталоги 1cv8 в Program Files. Файл оснастки ссылается
+        // только на COM-класс, а какую radmin.dll он загрузит, решают регистрация и разрядность MMC.
+        string?[] directories =
+        [
+            root is null ? null : Path.Combine(root, "common"),
+            CommonDirectory(Environment.SpecialFolder.ProgramFilesX86),
+            CommonDirectory(Environment.SpecialFolder.ProgramFiles),
+        ];
+        var candidates = directories
+            .OfType<string>()
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Where(Directory.Exists)
+            .SelectMany(d => Directory.GetFiles(d, "1CV8 Servers*.msc"))
+            .ToList();
         var wide = candidates.FirstOrDefault(f => f.Contains("x86-64", StringComparison.OrdinalIgnoreCase));
         var narrow = candidates.FirstOrDefault(f => !f.Contains("x86-64", StringComparison.OrdinalIgnoreCase));
         return platform.Architecture == PlatformArchitecture.X86 ? narrow ?? wide : wide ?? narrow;
+
+        static string? CommonDirectory(Environment.SpecialFolder folder) =>
+            Environment.GetFolderPath(folder) is { Length: > 0 } programFiles ? Path.Combine(programFiles, "1cv8", "common") : null;
     }
 }

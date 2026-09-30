@@ -223,8 +223,8 @@ internal sealed class FakeClusterConsole : IClusterConsole
     /// <summary>Версии с компонентом администрирования (любой разрядности).</summary>
     public HashSet<string> Available { get; } = [];
 
-    /// <summary>Зарегистрированный компонент — как его вернул бы реестр.</summary>
-    public ClusterConsoleRegistration? Registration { get; set; }
+    /// <summary>Зарегистрированные компоненты — как их вернул бы реестр: 64- и 32-разрядный раздел независимы.</summary>
+    public Dictionary<PlatformArchitecture, ClusterConsoleRegistration> Registrations { get; } = [];
 
     /// <summary>Отказ в правах администратора при регистрации.</summary>
     public bool DenyRegistration { get; set; }
@@ -237,15 +237,15 @@ internal sealed class FakeClusterConsole : IClusterConsole
 
     public string AdminLibraryPath(PlatformInstallation platform) => Path.Combine(platform.BinDirectory, "radmin.dll");
 
-    public ClusterConsoleRegistration? FindRegistered()
+    public IReadOnlyList<ClusterConsoleRegistration> FindRegistered()
     {
         RegistryLookups++;
-        return Registration;
+        return [.. Registrations.OrderBy(r => r.Key != PlatformArchitecture.X64).Select(r => r.Value)];
     }
 
-    /// <summary>Считать зарегистрированной эту платформу.</summary>
+    /// <summary>Считать зарегистрированной эту платформу (регистрация той же разрядности заменяется).</summary>
     public void RegisterNow(PlatformInstallation platform) =>
-        Registration = new ClusterConsoleRegistration(AdminLibraryPath(platform), platform.Architecture);
+        Registrations[platform.Architecture] = new ClusterConsoleRegistration(AdminLibraryPath(platform), platform.Architecture);
 
     public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default)
     {

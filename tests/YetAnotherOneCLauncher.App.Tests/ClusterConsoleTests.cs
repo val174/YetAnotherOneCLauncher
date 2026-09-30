@@ -34,6 +34,39 @@ public class ClusterConsoleTests
     }
 
     [Fact]
+    public void Both_registered_consoles_are_seen_when_x64_and_x86_come_from_different_platforms()
+    {
+        // Как на ПК с двумя консолями: 64-разрядная от 8.3.24, 32-разрядная от 8.3.27.
+        var console = Console(registered: Old64);
+        console.RegisterNow(New32);
+
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+
+        Assert.Equal(
+            ["8.3.27.2130 32-разрядная", "8.3.24.1667 64-разрядная"],
+            form.Options.Where(o => o.IsRegistered).Select(o => $"{o.Title} {o.Detail}"));
+        Assert.Equal([true, true, false, false], form.Options.Select(o => o.IsRegistered)); // обе — сверху
+        Assert.True(form.Options[2].HasSeparatorAbove);
+        Assert.Equal(1, console.RegistryLookups);
+    }
+
+    [Fact]
+    public void Registered_console_of_platform_outside_standard_folders_is_listed()
+    {
+        var console = Console(registered: null);
+        console.Available.Add("8.3.23.1865");
+        console.Registrations[PlatformArchitecture.X86] =
+            new ClusterConsoleRegistration(@"D:\1C\8.3.23.1865\bin\radmin.dll", PlatformArchitecture.X86);
+
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+
+        var registered = Assert.Single(form.Options, o => o.IsRegistered);
+        Assert.Equal(("8.3.23.1865", "32-разрядная"), (registered.Title, registered.Detail));
+        Assert.Equal(Path.Combine(@"D:\1C\8.3.23.1865", "bin"), registered.Platform!.BinDirectory);
+        Assert.Null(ClusterConsoleViewModel.FromRegistration(new ClusterConsoleRegistration(@"C:\tools\radmin.dll", PlatformArchitecture.X64)));
+    }
+
+    [Fact]
     public void Without_registration_there_is_no_separator()
     {
         var form = new ClusterConsoleViewModel(All, Console(registered: null), new FakeProcessLauncher(), puskUrl: null);
@@ -113,7 +146,8 @@ public class ClusterConsoleTests
 
         console.DenyRegistration = false;
         await form.LaunchCommand.ExecuteAsync(null);
-        Assert.Equal(new ClusterConsoleRegistration(console.AdminLibraryPath(New32), PlatformArchitecture.X86), console.Registration);
+        Assert.Equal(new ClusterConsoleRegistration(console.AdminLibraryPath(New32), PlatformArchitecture.X86), console.Registrations[PlatformArchitecture.X86]);
+        Assert.Equal(new ClusterConsoleRegistration(console.AdminLibraryPath(Old64), PlatformArchitecture.X64), console.Registrations[PlatformArchitecture.X64]); // 64-разрядная не тронута
         Assert.Equal(["8.3.27.2130 x86"], console.Opened);
         Assert.Equal(1, closed);
         Assert.False(form.HasError);
