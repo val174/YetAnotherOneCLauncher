@@ -5,6 +5,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
+using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -15,7 +16,7 @@ namespace YetAnotherOneCLauncher.App;
 /// положение окна, фокус и сочетания клавиш.
 /// </summary>
 /// <remarks>
-/// Клавиши: Ctrl+F — поиск; Esc, Ctrl+Q — очистить поиск; ↓ из поиска — к списку; Enter, F3 — 1С: Предприятие;
+/// Клавиши по умолчанию (переопределяются в «Настройки» → «Горячие клавиши», см. <see cref="HotKeyMap"/>): Ctrl+F — поиск; Esc, Ctrl+Q — очистить поиск; ↓ из поиска — к списку; Enter, F3 — 1С: Предприятие;
 /// F4 — Конфигуратор; F6 — запуск с параметрами; Ctrl+D — избранное; F5 — обновить; Ctrl+N / Ins — новая база; Ctrl+Shift+N — папка;
 /// F2 — изменить; Del — удалить; Alt+↑/↓ — порядок. Набор текста в списке уходит в поиск.
 /// </remarks>
@@ -145,61 +146,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        switch (e.Key)
+        // Esc — не переопределяется: очищает поиск.
+        if (e.Key == Key.Escape && e.KeyModifiers == KeyModifiers.None && vm.HasSearch)
         {
-            case Key.F when e.KeyModifiers == KeyModifiers.Control:
-                FocusSearch(selectAll: true);
-                e.Handled = true;
-                break;
+            ClearSearch(vm);
+            e.Handled = true;
+            return;
+        }
 
-            // Физическая клавиша — чтобы Ctrl+Q работал и в русской раскладке (Ctrl+Й).
-            case var _ when e.KeyModifiers == KeyModifiers.Control && (e.Key == Key.Q || e.PhysicalKey == PhysicalKey.Q):
-                vm.SearchText = string.Empty;
-                FocusSearch(selectAll: false);
-                e.Handled = true;
-                break;
-
-            case Key.Escape when vm.HasSearch:
-                vm.SearchText = string.Empty;
-                FocusSearch(selectAll: false);
-                e.Handled = true;
-                break;
-
-            // Запуск: F3 — 1С: Предприятие, F4 — Конфигуратор, F6 — с параметрами. Работают и из поиска, и из списка.
-            case Key.F3 when e.KeyModifiers == KeyModifiers.None:
-                Execute(vm.LaunchEnterpriseCommand);
-                e.Handled = true;
-                break;
-
-            case Key.F4 when e.KeyModifiers == KeyModifiers.None:
-                Execute(vm.LaunchDesignerCommand);
-                e.Handled = true;
-                break;
-
-            case Key.F6 when e.KeyModifiers == KeyModifiers.None:
-                Execute(vm.LaunchWithParametersCommand);
-                e.Handled = true;
-                break;
-
-            case Key.F5:
-                vm.ReloadCommand.Execute(null);
-                e.Handled = true;
-                break;
-
-            case Key.D when e.KeyModifiers == KeyModifiers.Control:
-                Execute(vm.ToggleFavoriteCommand);
-                e.Handled = true;
-                break;
-
-            case Key.N when e.KeyModifiers == KeyModifiers.Control:
-                Execute(vm.AddBaseCommand);
-                e.Handled = true;
-                break;
-
-            case Key.N when e.KeyModifiers == (KeyModifiers.Control | KeyModifiers.Shift):
-                Execute(vm.AddFolderCommand);
-                e.Handled = true;
-                break;
+        // Остальное — по сочетаниям из настроек (окно «Настройки» → «Горячие клавиши»).
+        if (vm.HotKeys.Match(e.Key, e.KeyModifiers, e.PhysicalKey, HotKeyScope.Window) is { } command)
+        {
+            RunHotKey(vm, command);
+            e.Handled = true;
         }
     }
 
@@ -211,21 +170,55 @@ public partial class MainWindow : Window
             return;
         }
 
-        ICommand? command = (e.Key, e.KeyModifiers) switch
+        // Ins — не переопределяется: новая база.
+        if (e.Key == Key.Insert && e.KeyModifiers == KeyModifiers.None)
         {
-            (Key.F2, KeyModifiers.None) => vm.EditCommand,
-            (Key.Delete, KeyModifiers.None) => vm.DeleteCommand,
-            (Key.Insert, KeyModifiers.None) => vm.AddBaseCommand,
-            (Key.Up, KeyModifiers.Alt) => vm.MoveUpCommand,
-            (Key.Down, KeyModifiers.Alt) => vm.MoveDownCommand,
-            _ => null,
-        };
+            Execute(vm.AddBaseCommand);
+            e.Handled = true;
+            return;
+        }
 
-        if (command is not null)
+        if (vm.HotKeys.Match(e.Key, e.KeyModifiers, e.PhysicalKey, HotKeyScope.List) is { } command)
         {
-            Execute(command);
+            RunHotKey(vm, command);
             e.Handled = true;
         }
+    }
+
+    private void RunHotKey(MainWindowViewModel vm, HotKeyCommand command)
+    {
+        switch (command)
+        {
+            case HotKeyCommand.FocusSearch:
+                FocusSearch(selectAll: true);
+                break;
+            case HotKeyCommand.ClearSearch:
+                ClearSearch(vm);
+                break;
+            default:
+                Execute(command switch
+                {
+                    HotKeyCommand.LaunchEnterprise => vm.LaunchEnterpriseCommand,
+                    HotKeyCommand.LaunchDesigner => vm.LaunchDesignerCommand,
+                    HotKeyCommand.LaunchWithParameters => vm.LaunchWithParametersCommand,
+                    HotKeyCommand.Reload => vm.ReloadCommand,
+                    HotKeyCommand.ToggleFavorite => vm.ToggleFavoriteCommand,
+                    HotKeyCommand.AddBase => vm.AddBaseCommand,
+                    HotKeyCommand.AddFolder => vm.AddFolderCommand,
+                    HotKeyCommand.Edit => vm.EditCommand,
+                    HotKeyCommand.Delete => vm.DeleteCommand,
+                    HotKeyCommand.MoveUp => vm.MoveUpCommand,
+                    HotKeyCommand.MoveDown => vm.MoveDownCommand,
+                    _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
+                });
+                break;
+        }
+    }
+
+    private void ClearSearch(MainWindowViewModel vm)
+    {
+        vm.SearchText = string.Empty;
+        FocusSearch(selectAll: false);
     }
 
     /// <summary>Запоминает, в дереве или в списке фокус; при удалении элемента <c>GotFocus</c> не приходит — значение сохраняется.</summary>

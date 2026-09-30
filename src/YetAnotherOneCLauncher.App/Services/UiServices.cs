@@ -41,6 +41,9 @@ public interface IDialogService
 
     /// <summary>Окно консоли кластера: выбор версии платформы, переход в «ПУСК».</summary>
     Task ShowClusterConsoleAsync(ClusterConsoleViewModel console);
+
+    /// <summary>Окно «Настройки»; <c>true</c> — сохранить.</summary>
+    Task<bool> EditSettingsAsync(SettingsViewModel settings);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -127,6 +130,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task ShowClusterConsoleAsync(ClusterConsoleViewModel console) =>
         Owner is { } owner ? new ClusterConsoleWindow(console).ShowDialog(owner) : Task.CompletedTask;
+
+    public Task<bool> EditSettingsAsync(SettingsViewModel settings) =>
+        Owner is { } owner ? new SettingsWindow(settings).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {

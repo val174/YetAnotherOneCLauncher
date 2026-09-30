@@ -160,6 +160,12 @@ public sealed class UiSettings
 
     public bool ShowDetails { get; set; } = true;
 
+    /// <summary>
+    /// Переопределённые горячие клавиши: имя команды → сочетание в формате Avalonia («Ctrl+Shift+N», «F3»);
+    /// пустая строка — сочетание снято. Команды, которых здесь нет, работают по умолчанию.
+    /// </summary>
+    public Dictionary<string, string> HotKeys { get; set; } = [];
+
     /// <summary>Ширина панели подробностей: меняется разделителем.</summary>
     public double DetailsWidth { get; set; } = UiSettings.DefaultDetailsWidth;
 

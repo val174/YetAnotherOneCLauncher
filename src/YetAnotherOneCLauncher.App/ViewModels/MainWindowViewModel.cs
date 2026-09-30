@@ -129,6 +129,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
+        HotKeys = HotKeyMap.FromSettings(ui.HotKeys);
         _suppressSettingsSync = false;
     }
 
@@ -138,12 +139,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
-    public IReadOnlyList<string> AfterLaunchNames { get; } = ["Ничего не делать", "Свернуть окно", "Закрыть лаунчер"];
-
     /// <summary>Стили значков в порядке списка «Стиль значков».</summary>
     private static readonly IconStyle[] IconStyles = [IconStyle.Outline, IconStyle.Plate];
-
-    public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2"];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconStyle))]

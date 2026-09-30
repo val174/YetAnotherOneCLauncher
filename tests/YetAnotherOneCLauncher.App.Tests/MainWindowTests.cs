@@ -429,7 +429,7 @@ public class MainWindowTests
         Render();
 
         Assert.Equal(IconStyle.Outline, vm.IconStyle);
-        Assert.Equal(new[] { "Стиль 1", "Стиль 2" }, vm.IconStyleNames);
+        Assert.Equal(new[] { "Стиль 1", "Стиль 2" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
         var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
         foreach (var (index, style) in new[] { (1, IconStyle.Plate), (0, IconStyle.Outline) })
         {

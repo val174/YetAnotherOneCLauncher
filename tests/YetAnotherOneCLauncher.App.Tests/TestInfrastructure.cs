@@ -96,6 +96,11 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task ShowClusterConsoleAsync(ClusterConsoleViewModel console) => ClusterConsole(console);
 
+    /// <summary>Что сделать в окне настроек; возвращает «Сохранить».</summary>
+    public Func<SettingsViewModel, bool> SettingsEditor { get; set; } = _ => false;
+
+    public Task<bool> EditSettingsAsync(SettingsViewModel settings) => Task.FromResult(SettingsEditor(settings));
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)
