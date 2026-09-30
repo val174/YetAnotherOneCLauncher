@@ -8,7 +8,7 @@ using YetAnotherOneCLauncher.Platform.Windows;
 
 namespace YetAnotherOneCLauncher.App.Tests;
 
-/// <summary>Консоль кластера серверов: список версий, регистрация компонента, «Открыть ПУСК».</summary>
+/// <summary>Консоль кластера серверов: список версий, регистрация компонента, «Панель управления сервисами и компонентами».</summary>
 public class ClusterConsoleTests
 {
     private static readonly PlatformInstallation New64 = Platform("8.3.27.2130", PlatformArchitecture.X64);
@@ -62,7 +62,7 @@ public class ClusterConsoleTests
 
         var pusk = form.Options[0];
         Assert.True(pusk.IsPusk);
-        Assert.Equal(("Открыть ПУСК", "https://pusk.example/app"), (pusk.Title, pusk.Detail));
+        Assert.Equal(("Панель управления сервисами и компонентами", string.Empty), (pusk.Title, pusk.Detail)); // адрес не показывается
         Assert.True(form.Options[1].IsRegistered); // затем — зарегистрированная
         Assert.Same(form.Options[1], form.SelectedOption); // выбрана по умолчанию версия, а не «ПУСК»
 

@@ -15,7 +15,7 @@ public sealed class ClusterConsoleOption
         PuskUrl = puskUrl;
     }
 
-    /// <summary>Версия платформы; <c>null</c> — строка «Открыть ПУСК».</summary>
+    /// <summary>Версия платформы; <c>null</c> — строка «Панель управления сервисами и компонентами».</summary>
     public PlatformInstallation? Platform { get; }
 
     public Uri? PuskUrl { get; }
@@ -28,10 +28,10 @@ public sealed class ClusterConsoleOption
     /// <summary>Первая из версий, доступных к регистрации, после зарегистрированных: над ней — разделитель.</summary>
     public bool HasSeparatorAbove { get; private init; }
 
-    public string Title => Platform?.Version.ToString() ?? "Открыть ПУСК";
+    public string Title => Platform?.Version.ToString() ?? "Панель управления сервисами и компонентами";
 
     public string Detail => Platform is null
-        ? PuskUrl?.ToString() ?? string.Empty
+        ? string.Empty // адрес не показывается: он есть в настройках
         : Platform.Architecture switch
         {
             PlatformArchitecture.X86 => "32-разрядная",
@@ -46,7 +46,7 @@ public sealed class ClusterConsoleOption
 }
 
 /// <summary>
-/// Окно «Консоль кластера серверов». Список: «Открыть ПУСК» (если адрес задан в настройках), зарегистрированная
+/// Окно «Консоль кластера серверов». Список: «Панель управления сервисами и компонентами» (если адрес задан в настройках), зарегистрированная
 /// версия, разделитель, версии, доступные к регистрации. Для незарегистрированной версии её компонент
 /// администрирования сначала регистрируется, затем открывается консоль.
 /// </summary>

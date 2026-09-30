@@ -4,7 +4,7 @@ using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.App;
 
-/// <summary>Консоль кластера серверов: выбор версии платформы или «Открыть ПУСК». Двойной щелчок или Enter — выполнить.</summary>
+/// <summary>Консоль кластера серверов: выбор версии платформы или «Панель управления сервисами и компонентами». Двойной щелчок или Enter — выполнить.</summary>
 public partial class ClusterConsoleWindow : Window
 {
     // Нужен дизайнеру XAML.
