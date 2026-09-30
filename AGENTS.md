@@ -49,6 +49,8 @@ dotnet run --project src/YetAnotherOneCLauncher.App
 
 ```powershell
 dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=win-x64    # artifacts/publish/win-x64/YetAnotherOneCLauncher.exe
+dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=win-x64-compact  # artifacts/publish/win-x64-compact/YetAnotherOneCLauncher.exe — компактный, ~63 МБ
+powershell -File scripts/publish-win.ps1                             # оба варианта для Windows
 dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=linux-x64  # artifacts/publish/linux-x64/YetAnotherOneCLauncher
 ```
 
