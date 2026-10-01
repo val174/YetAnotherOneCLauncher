@@ -277,6 +277,32 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>Выгрузить выделенную базу или папку со всем содержимым в файл .v8i.</summary>
+    /// <summary>Файл — один из общих списков (не личный) текущего каталога.</summary>
+    internal bool IsSharedListFile(string path)
+    {
+        if (_catalog is null)
+        {
+            return false;
+        }
+
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        string? Full(string p)
+        {
+            try
+            {
+                return Path.GetFullPath(Environment.ExpandEnvironmentVariables(p.Trim().Trim('"')));
+            }
+            catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+            {
+                return null;
+            }
+        }
+
+        var target = Full(path);
+        return target is not null && _catalog.Lists.Any(l =>
+            l.Source.Kind == ListSourceKind.Common && string.Equals(Full(l.Source.Location), target, comparison));
+    }
+
     [RelayCommand(CanExecute = nameof(HasAnySelection))]
     private async Task ExportAsync()
     {
@@ -289,6 +315,13 @@ public sealed partial class MainWindowViewModel
         var path = await _files.SaveListFileAsync("Сохранить ссылку в файл", name + ".v8i");
         if (path is null)
         {
+            return;
+        }
+
+        // Общие списки лаунчер не меняет — в том числе выгрузкой поверх такого файла.
+        if (IsSharedListFile(path))
+        {
+            await _dialogs.ShowMessageAsync(ListTitle, $"{path} — общий список баз из 1cestart.cfg. Лаунчер общие списки не изменяет: выберите другой файл.");
             return;
         }
 

@@ -328,6 +328,69 @@ public class EditingTests
     }
 
     [Fact]
+    public async Task Common_list_file_is_never_changed()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadWithCommonListAsync("""
+            [Общая папка]
+            Connect=
+            ID=cccc0000-0000-0000-0000-00000000000f
+            Folder=/
+            [Общая база]
+            Connect=Srvr="shared";Ref="common";
+            ID=cccc0000-0000-0000-0000-000000000001
+            Folder=/Общая папка
+            [Вторая общая]
+            Connect=File="\\shared\bases\second";
+            ID=cccc0000-0000-0000-0000-000000000002
+            Folder=/Общая папка
+            """);
+        var commonPath = Path.Combine(fixture.Directory, "common.v8i");
+        var before = File.ReadAllBytes(commonPath);
+        var writtenAt = File.GetLastWriteTimeUtc(commonPath);
+        var vm = fixture.ViewModel;
+        fixture.Dialogs.ConfirmAnswer = true;
+        fixture.Dialogs.TextEditor = text => text + Environment.NewLine + "Changed=1";
+
+        // Всё, чем можно попытаться изменить базу или папку общего списка.
+        var common = vm.InfoBases.Single(b => b.Name == "Общая база");
+        void SelectCommon()
+        {
+            vm.SearchText = string.Empty;
+            vm.SelectedTreeItem = vm.TreeItems.OfType<FolderNodeViewModel>().Single(f => f.Name == "Общая папка")
+                .Children.OfType<BaseNodeViewModel>().Single(n => n.Name == "Общая база");
+        }
+
+        SelectCommon();
+        await vm.DeleteCommand.ExecuteAsync(null);
+        SelectCommon();
+        await vm.EditAsTextCommand.ExecuteAsync(null);
+        SelectCommon();
+        vm.ToggleFavoriteCommand.Execute(null);
+        SelectCommon();
+        await vm.MoveUpCommand.ExecuteAsync(null);
+        SelectCommon();
+        await vm.MoveDownCommand.ExecuteAsync(null);
+        SelectCommon();
+        var second = vm.TreeItems.OfType<FolderNodeViewModel>().Single(f => f.Name == "Общая папка")
+            .Children.OfType<BaseNodeViewModel>().Single(n => n.Name == "Вторая общая");
+        await vm.MoveNodeAsync(vm.SelectedTreeItem!, second); // перетаскивание внутри общей папки
+        SelectCommon();
+        await vm.EditCommand.ExecuteAsync(null); // предлагает копию — соглашаемся: копия — в личный список
+
+        // Выгрузка поверх общего списка отклоняется.
+        SelectCommon();
+        fixture.Files.SaveAnswer = commonPath.ToUpperInvariant();
+        await vm.ExportCommand.ExecuteAsync(null);
+        Assert.Contains("общий список", fixture.Dialogs.Messages[^1], StringComparison.Ordinal);
+
+        Assert.Equal(before, File.ReadAllBytes(commonPath));
+        Assert.Equal(writtenAt, File.GetLastWriteTimeUtc(commonPath));
+        Assert.Contains(fixture.SavedList().Sections, s => s.Name == "Общая база (копия)"); // правки ушли в личный список
+        Assert.True(common.InfoBase.IsReadOnly);
+    }
+
+    [Fact]
     public async Task Import_and_export()
     {
         using var fixture = new ViewModelFixture();
