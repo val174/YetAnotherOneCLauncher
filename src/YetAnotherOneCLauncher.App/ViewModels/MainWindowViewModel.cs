@@ -22,6 +22,14 @@ public sealed record PlatformChoice(string Label, string? Version)
     public override string ToString() => Label;
 }
 
+/// <summary>Колонки списка баз с изменяемой шириной (наименование занимает остальное место).</summary>
+public enum ListColumn
+{
+    Platform,
+    Mode,
+    LastLaunch,
+}
+
 /// <summary>Какие базы показаны в главном окне.</summary>
 public enum BaseListFilter
 {
@@ -193,6 +201,58 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 OnPropertyChanged();
             }
         }
+    }
+
+    public const double MinColumnWidth = 50;
+    public const double MaxColumnWidth = 400;
+
+    /// <summary>Ширина колонок списка баз по умолчанию.</summary>
+    public static double DefaultColumnWidth(ListColumn column) => column switch
+    {
+        ListColumn.Platform => 120,
+        ListColumn.Mode => 100,
+        _ => 130,
+    };
+
+    public double PlatformColumnWidth => ColumnWidth(ListColumn.Platform);
+
+    public double ModeColumnWidth => ColumnWidth(ListColumn.Mode);
+
+    public double LastLaunchColumnWidth => ColumnWidth(ListColumn.LastLaunch);
+
+    /// <summary>Ширина колонки: заданная пользователем (в допустимых пределах) или по умолчанию.</summary>
+    public double ColumnWidth(ListColumn column) =>
+        _settings.Settings.Ui.ColumnWidths.TryGetValue(column.ToString(), out var width) && double.IsFinite(width)
+            ? Math.Clamp(width, MinColumnWidth, MaxColumnWidth)
+            : DefaultColumnWidth(column);
+
+    /// <summary>Задать ширину колонки (перетаскивание границы в заголовке); <c>null</c> — вернуть по умолчанию.</summary>
+    public void SetColumnWidth(ListColumn column, double? width)
+    {
+        var widths = _settings.Settings.Ui.ColumnWidths;
+        var key = column.ToString();
+        if (width is { } value && Math.Round(Math.Clamp(value, MinColumnWidth, MaxColumnWidth)) is var rounded
+            && rounded != DefaultColumnWidth(column))
+        {
+            if (widths.TryGetValue(key, out var old) && old == rounded)
+            {
+                return;
+            }
+
+            widths[key] = rounded;
+        }
+        else if (!widths.Remove(key))
+        {
+            return;
+        }
+
+        _settings.RequestSave();
+        OnPropertyChanged(column switch
+        {
+            ListColumn.Platform => nameof(PlatformColumnWidth),
+            ListColumn.Mode => nameof(ModeColumnWidth),
+            _ => nameof(LastLaunchColumnWidth),
+        });
     }
 
     /// <summary>Положение окна: читает и пишет представление.</summary>

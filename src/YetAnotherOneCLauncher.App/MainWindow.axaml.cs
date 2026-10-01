@@ -33,6 +33,9 @@ public partial class MainWindow : Window
     private const double MinSearchWidth = 200;
 
     private PointerPressedEventArgs? _dragStart;
+
+    // Перетаскивание границы колонки: какая колонка, где нажали и какой была ширина.
+    private (ListColumn Column, double StartX, double StartWidth)? _columnResize;
     private bool _focusRestorePending;
     private Control? _focusedList;
 
@@ -92,6 +95,15 @@ public partial class MainWindow : Window
                 ApplyDetailsLayout();
             }
         };
+        // Ширина колонок списка: тянуть границу в заголовке, двойной щелчок — ширина по умолчанию.
+        foreach (var grip in new[] { PlatformColumnGrip, ModeColumnGrip, LastLaunchColumnGrip })
+        {
+            grip.PointerPressed += OnColumnGripPressed;
+            grip.PointerMoved += OnColumnGripMoved;
+            grip.PointerReleased += (_, _) => _columnResize = null;
+            grip.PointerCaptureLost += (_, _) => _columnResize = null;
+        }
+
         HeaderPanel.SizeChanged += (_, _) => FitSearchBox();
         ToolbarPanel.SizeChanged += (_, _) => FitSearchBox();
         DetailsSplitter.DragDelta += (_, _) => FitSearchBox(DetailsColumn.ActualWidth);
@@ -100,6 +112,38 @@ public partial class MainWindow : Window
             viewModel.DetailsWidth = DetailsColumn.ActualWidth;
             ApplyDetailsLayout(); // ширина могла упереться в пределы
         };
+    }
+
+    private void OnColumnGripPressed(object? sender, PointerPressedEventArgs e)
+    {
+        if (sender is not Border { Tag: ListColumn column } grip || DataContext is not MainWindowViewModel vm
+            || !e.GetCurrentPoint(grip).Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        if (e.ClickCount == 2)
+        {
+            _columnResize = null;
+            vm.SetColumnWidth(column, null);
+            return;
+        }
+
+        _columnResize = (column, e.GetPosition(this).X, vm.ColumnWidth(column));
+        e.Pointer.Capture(grip);
+    }
+
+    /// <summary>Колонки прижаты к правому краю: граница слева от колонки — влево шире, вправо уже.</summary>
+    private void OnColumnGripMoved(object? sender, PointerEventArgs e)
+    {
+        if (_columnResize is not { } resize || DataContext is not MainWindowViewModel vm)
+        {
+            return;
+        }
+
+        vm.SetColumnWidth(resize.Column, resize.StartWidth - (e.GetPosition(this).X - resize.StartX));
+        e.Handled = true;
     }
 
     private ColumnDefinition DetailsColumn => BodyGrid.ColumnDefinitions[2];

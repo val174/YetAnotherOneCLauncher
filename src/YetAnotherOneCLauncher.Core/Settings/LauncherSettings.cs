@@ -175,6 +175,12 @@ public sealed class UiSettings
     /// <summary>Ширина панели подробностей: меняется разделителем.</summary>
     public double DetailsWidth { get; set; } = UiSettings.DefaultDetailsWidth;
 
+    /// <summary>
+    /// Ширина колонок списка баз, заданная пользователем: имя колонки («Platform», «Mode», «LastLaunch») → ширина.
+    /// Колонки, которых здесь нет, — ширины по умолчанию.
+    /// </summary>
+    public Dictionary<string, double> ColumnWidths { get; set; } = [];
+
     public const double DefaultDetailsWidth = 340;
 }
 

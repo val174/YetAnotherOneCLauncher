@@ -9,6 +9,7 @@ using Avalonia.Media.Imaging;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.Controls;
+using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -291,6 +292,52 @@ public class MainWindowTests
         fixture.ViewModel.SelectedListItem = fixture.ViewModel.ListItems.Single(i => i.Base.Name == "Бухгалтерия предприятия");
         Render();
         Assert.False(open.IsEffectivelyVisible);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task List_columns_are_resized_by_dragging_header_border()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var header = window.FindControl<Grid>("ColumnHeaders")!.Children.OfType<TextBlock>().Single(t => t.Classes.Contains("platform"));
+        TextBlock RowCell() => window.FindControl<TreeView>("CatalogTree")!.GetVisualDescendants().OfType<TextBlock>()
+            .First(t => t.Classes.Contains("platform") && t.IsEffectivelyVisible);
+        Assert.Equal(120, header.Bounds.Width, tolerance: 0.5);
+        Assert.Equal(120, RowCell().Bounds.Width, tolerance: 0.5);
+
+        // Граница слева от «Платформы»: на 60 пикселей влево — колонка шире, и в заголовке, и в строках.
+        var grip = window.FindControl<Border>("PlatformColumnGrip")!;
+        var start = grip.TranslatePoint(new Point(grip.Bounds.Width / 2, grip.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(start, MouseButton.Left);
+        window.MouseMove(start + new Point(-30, 0));
+        window.MouseMove(start + new Point(-60, 0));
+        window.MouseUp(start + new Point(-60, 0), MouseButton.Left);
+        Render();
+
+        Assert.Equal(180, header.Bounds.Width, tolerance: 0.5);
+        Assert.Equal(180, RowCell().Bounds.Width, tolerance: 0.5);
+        Assert.Equal(180, fixture.Settings.Settings.Ui.ColumnWidths["Platform"]); // запоминается
+        Assert.Equal(100, fixture.ViewModel.ModeColumnWidth); // соседние не меняются
+        Snapshot(window, "20-column-widths");
+
+        // Не уже и не шире пределов; ширина по умолчанию в настройках не хранится.
+        fixture.ViewModel.SetColumnWidth(ListColumn.Mode, 5);
+        Assert.Equal(MainWindowViewModel.MinColumnWidth, fixture.ViewModel.ModeColumnWidth);
+        fixture.ViewModel.SetColumnWidth(ListColumn.Mode, 5000);
+        Assert.Equal(MainWindowViewModel.MaxColumnWidth, fixture.ViewModel.ModeColumnWidth);
+        fixture.ViewModel.SetColumnWidth(ListColumn.Mode, null);
+        Assert.False(fixture.Settings.Settings.Ui.ColumnWidths.ContainsKey("Mode"));
+
+        // Двойной щелчок по границе — ширина по умолчанию.
+        var point = grip.TranslatePoint(new Point(grip.Bounds.Width / 2, grip.Bounds.Height / 2), window)!.Value;
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        window.MouseDown(point, MouseButton.Left);
+        window.MouseUp(point, MouseButton.Left);
+        Render();
+        Assert.Equal(120, header.Bounds.Width, tolerance: 0.5);
+        Assert.Empty(fixture.Settings.Settings.Ui.ColumnWidths);
         window.Close();
     }
 

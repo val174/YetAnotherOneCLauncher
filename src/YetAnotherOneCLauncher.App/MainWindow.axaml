@@ -93,13 +93,30 @@
       <Setter Property="Margin" Value="8,0,0,0" />
     </Style>
     <Style Selector="TextBlock.platform">
-      <Setter Property="Width" Value="120" />
+      <Setter Property="Width" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).PlatformColumnWidth}" />
     </Style>
     <Style Selector="TextBlock.mode">
-      <Setter Property="Width" Value="100" />
+      <Setter Property="Width" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ModeColumnWidth}" />
     </Style>
     <Style Selector="TextBlock.date">
-      <Setter Property="Width" Value="130" />
+      <Setter Property="Width" Value="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LastLaunchColumnWidth}" />
+    </Style>
+    <!-- Граница колонки в заголовке: тянуть — ширина колонки справа от неё, двойной щелчок — ширина по умолчанию. -->
+    <Style Selector="Border.columnGrip">
+      <Setter Property="Width" Value="9" />
+      <Setter Property="Margin" Value="-4,0,0,0" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Cursor" Value="SizeWestEast" />
+    </Style>
+    <Style Selector="Border.columnGrip > Border">
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Margin" Value="0,3" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseLowBrush}" />
+      <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Grid#ColumnHeaders:pointerover Border.columnGrip > Border">
+      <Setter Property="Opacity" Value="1" />
     </Style>
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
@@ -532,6 +549,9 @@
       <TextBlock Grid.Column="1" Classes="columnHeader cell platform" Text="Платформа" />
       <TextBlock Grid.Column="2" Classes="columnHeader cell mode" Text="Режим запуска" />
       <TextBlock Grid.Column="3" Classes="columnHeader cell date" Text="Последний запуск" ToolTip.Tip="Дата последнего запуска из лаунчера" />
+      <Border x:Name="PlatformColumnGrip" Grid.Column="1" Classes="columnGrip" Tag="{x:Static vm:ListColumn.Platform}"><Border /></Border>
+      <Border x:Name="ModeColumnGrip" Grid.Column="2" Classes="columnGrip" Tag="{x:Static vm:ListColumn.Mode}"><Border /></Border>
+      <Border x:Name="LastLaunchColumnGrip" Grid.Column="3" Classes="columnGrip" Tag="{x:Static vm:ListColumn.LastLaunch}"><Border /></Border>
     </Grid>
 
     <Panel>
