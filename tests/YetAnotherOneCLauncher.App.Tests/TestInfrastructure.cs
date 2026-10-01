@@ -194,9 +194,10 @@ internal sealed class FakeCacheUsage : ICacheUsageProbe
 {
     public HashSet<string> InUse { get; } = new(StringComparer.OrdinalIgnoreCase);
 
-    public List<string> Processes { get; } = [];
+    /// <summary>Процессы 1С текущего пользователя с командными строками.</summary>
+    public List<PlatformProcess> Processes { get; } = [];
 
-    public IReadOnlyList<string> RunningPlatformProcesses() => Processes;
+    public IReadOnlyList<PlatformProcess> CurrentUserPlatformProcesses() => Processes;
 
     public bool IsDirectoryInUse(string path) => InUse.Contains(path);
 }

@@ -9,7 +9,7 @@ namespace YetAnotherOneCLauncher.Platform.Linux;
 [SupportedOSPlatform("linux")]
 public sealed class LinuxCacheUsageProbe : ICacheUsageProbe
 {
-    public IReadOnlyList<string> RunningPlatformProcesses() => PlatformProcesses.List();
+    public IReadOnlyList<PlatformProcess> CurrentUserPlatformProcesses() => PlatformProcesses.CurrentUser();
 
     public bool IsDirectoryInUse(string path)
     {

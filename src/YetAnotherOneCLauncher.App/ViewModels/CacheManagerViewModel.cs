@@ -41,7 +41,14 @@ public sealed partial class CacheRowViewModel : ObservableObject
     partial void OnIsSelectedChanged(bool value) => _selectionChanged();
 }
 
-/// <summary>Окно «Кэш баз»: размеры по базам, кэш без хозяина, массовая очистка.</summary>
+/// <summary>Порядок строк окна «Кэш баз».</summary>
+public enum CacheSortColumn
+{
+    Size,
+    Name,
+}
+
+/// <summary>Окно «Кэш баз»: размеры по базам, кэш без хозяина, массовая очистка, сортировка по имени и размеру.</summary>
 public sealed partial class CacheManagerViewModel : ObservableObject
 {
     private readonly Func<IReadOnlyList<CacheDirectory>, Task<CacheReport?>> _clean;
@@ -69,6 +76,54 @@ public sealed partial class CacheManagerViewModel : ObservableObject
     public ObservableCollection<CacheRowViewModel> Rows { get; } = [];
 
     public bool HasRoaming { get; }
+
+    /// <summary>Порядок строк: по размеру (кэш и настройки вместе) или по имени базы.</summary>
+    public CacheSortColumn SortColumn { get; private set; } = CacheSortColumn.Size;
+
+    /// <summary>По убыванию: по умолчанию для размера (сначала самые большие), по возрастанию — для имени.</summary>
+    public bool SortDescending { get; private set; } = true;
+
+    public string NameSortGlyph => SortColumn == CacheSortColumn.Name ? (SortDescending ? "▼" : "▲") : string.Empty;
+
+    public string SizeSortGlyph => SortColumn == CacheSortColumn.Size ? (SortDescending ? "▼" : "▲") : string.Empty;
+
+    /// <summary>Сортировать по имени базы; повторно — в обратном порядке.</summary>
+    [RelayCommand]
+    private void SortByName() => SortBy(CacheSortColumn.Name, defaultDescending: false);
+
+    /// <summary>Сортировать по размеру; повторно — в обратном порядке.</summary>
+    [RelayCommand]
+    private void SortBySize() => SortBy(CacheSortColumn.Size, defaultDescending: true);
+
+    private void SortBy(CacheSortColumn column, bool defaultDescending)
+    {
+        SortDescending = SortColumn == column ? !SortDescending : defaultDescending;
+        SortColumn = column;
+        OnPropertyChanged(nameof(SortColumn));
+        OnPropertyChanged(nameof(SortDescending));
+        OnPropertyChanged(nameof(NameSortGlyph));
+        OnPropertyChanged(nameof(SizeSortGlyph));
+        ApplySort();
+    }
+
+    /// <summary>Переставить строки в текущем порядке; отметки «выбрано» остаются у своих строк.</summary>
+    private void ApplySort()
+    {
+        IEnumerable<CacheRowViewModel> ordered = SortColumn == CacheSortColumn.Name
+            ? Rows.OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase).ThenBy(r => r.Owner.Id, StringComparer.OrdinalIgnoreCase)
+            : Rows.OrderBy(r => r.Owner.TotalBytes).ThenBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase);
+        var list = ordered.ToList();
+        if (SortDescending)
+        {
+            list.Reverse();
+        }
+
+        Rows.Clear();
+        foreach (var row in list)
+        {
+            Rows.Add(row);
+        }
+    }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedText))]
@@ -165,6 +220,8 @@ public sealed partial class CacheManagerViewModel : ObservableObject
         {
             Rows.Add(new CacheRowViewModel(owner, OnSelectionChanged));
         }
+
+        ApplySort();
 
         var orphans = report.Owners.Count(o => o.IsOrphan);
         TotalText = $"Всего {ByteSize.Format(report.TotalBytes)} в {report.Owners.Count} каталогах баз; " +

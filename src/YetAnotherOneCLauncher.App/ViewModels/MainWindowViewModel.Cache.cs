@@ -162,7 +162,26 @@ public sealed partial class MainWindowViewModel
         await _dialogs.ShowCacheManagerAsync(manager);
     }
 
-    /// <summary>Подтверждение, очистка, пересчёт и итог. <c>null</c> — пользователь отказался.</summary>
+    /// <summary>Базы из списков, чей кэш среди удаляемого, открытые в 1С текущим пользователем.</summary>
+    private List<(string Id, Core.Model.InfoBase InfoBase, IReadOnlyList<PlatformProcess> Processes)> BasesInUse(IReadOnlyList<CacheDirectory> directories)
+    {
+        var processes = _cacheUsage!.CurrentUserPlatformProcesses();
+        if (processes.Count == 0)
+        {
+            return [];
+        }
+
+        var ids = directories.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return [.. _cacheReport.Owners
+            .Where(o => o.InfoBase is not null && ids.Contains(o.Id))
+            .Select(o => (o.Id, InfoBase: o.InfoBase!, Processes: (IReadOnlyList<PlatformProcess>)[.. processes.Where(p => PlatformCommandLine.Targets(p.CommandLine, o.InfoBase!))]))
+            .Where(b => b.Processes.Count > 0)];
+    }
+
+    /// <summary>
+    /// Проверка, подтверждение, очистка, пересчёт и итог. <c>null</c> — удалять нечего или пользователь отказался.
+    /// Кэш баз, открытых в 1С текущим пользователем (в командной строке процесса — адрес базы), не удаляется.
+    /// </summary>
     /// <param name="directories">Что удалить.</param>
     /// <param name="what">Что это — для вопроса.</param>
     /// <param name="confirm"><c>false</c> — согласие уже получено (флажок при удалении базы из списка).</param>
@@ -173,21 +192,32 @@ public sealed partial class MainWindowViewModel
             return null;
         }
 
+        var busy = BasesInUse(directories);
+        if (busy.Count > 0)
+        {
+            var list = string.Join(Environment.NewLine, busy.Select(b => $"«{b.InfoBase.Name}» — {string.Join(", ", b.Processes)}"));
+            directories = [.. directories.Where(d => !busy.Any(b => string.Equals(b.Id, d.Id, StringComparison.OrdinalIgnoreCase)))];
+            await _dialogs.ShowMessageAsync(
+                CacheTitle,
+                directories.Count == 0
+                    ? $"Очистка кэша невозможна: база используется.{Environment.NewLine}{Environment.NewLine}{list}"
+                    : $"Кэш этих баз не будет удалён: они используются.{Environment.NewLine}{Environment.NewLine}{list}");
+            if (directories.Count == 0)
+            {
+                return null;
+            }
+        }
+
         var question = new StringBuilder()
-            .Append("Удалить насовсем (без корзины) ")
-            .Append(what).Append(" — ").Append(ByteSize.Format(directories.Sum(d => d.SizeBytes))).Append('?');
+            .AppendLine("Удалить кэш?")
+            .AppendLine()
+            .Append(char.ToUpper(what[0], System.Globalization.CultureInfo.CurrentCulture)).Append(what[1..])
+            .Append(" — ").Append(ByteSize.Format(directories.Sum(d => d.SizeBytes)))
+            .Append(", удаляется насовсем (без корзины).");
         if (directories.Any(d => d.Location == CacheLocation.Roaming))
         {
             question.AppendLine().AppendLine()
                 .Append("Будут удалены и локальные настройки пользователя (Roaming): размеры окон, последние значения и т. п.");
-        }
-
-        var running = _cacheUsage.RunningPlatformProcesses();
-        if (running.Count > 0)
-        {
-            question.AppendLine().AppendLine()
-                .Append("Запущена платформа 1С: ").Append(string.Join(", ", running))
-                .Append(". Кэш открытых баз будет пропущен.");
         }
 
         if (confirm && !await _dialogs.ConfirmAsync(CacheTitle, question.ToString(), "Удалить"))

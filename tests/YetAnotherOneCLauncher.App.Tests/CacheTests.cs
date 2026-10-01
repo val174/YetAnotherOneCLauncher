@@ -25,20 +25,40 @@ public class CacheTests
     {
         using var fixture = await LoadAsync();
         fixture.Dialogs.ConfirmAnswer = true;
-        fixture.CacheUsage.Processes.Add("1cv8c (PID 42)");
+        // Открыта другая база — очистке кэша этой не мешает.
+        fixture.CacheUsage.Processes.Add(new Platform.Abstractions.PlatformProcess(42, "1cv8c", @"""C:\1cv8\bin\1cv8c.exe"" ENTERPRISE /S ""srv-1c\zup"""));
         var target = fixture.Base("Бухгалтерия предприятия");
 
         await fixture.ViewModel.ClearCacheCommand.ExecuteAsync(target);
 
         var question = Assert.Single(fixture.Dialogs.Questions);
-        Assert.Contains("кэш «Бухгалтерия предприятия» — 2 КБ", question, StringComparison.Ordinal);
-        Assert.Contains("1cv8c (PID 42)", question, StringComparison.Ordinal);
+        Assert.StartsWith("Удалить кэш?", question, StringComparison.Ordinal);
+        Assert.Contains("Кэш «Бухгалтерия предприятия» — 2 КБ", question, StringComparison.Ordinal);
+        Assert.Contains("без корзины", question, StringComparison.Ordinal);
         Assert.DoesNotContain("Roaming", question, StringComparison.Ordinal);
-        Assert.Contains("Удалить насовсем (без корзины)", question, StringComparison.Ordinal);
+        Assert.Empty(fixture.Dialogs.Messages);
         Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
         Assert.True(Directory.Exists(Path.Combine(fixture.RoamingCacheRoot, BuhId))); // настройки не тронуты
         Assert.Equal("нет (и настройки 100 Б)", fixture.Base("Бухгалтерия предприятия").CacheText);
         Assert.StartsWith("Освобождено 2 КБ", fixture.ViewModel.StatusText, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Cache_of_base_open_in_1c_is_not_cleared()
+    {
+        using var fixture = await LoadAsync();
+        fixture.Dialogs.ConfirmAnswer = true;
+        // Процесс текущего пользователя работает с этой базой (адрес — в командной строке).
+        fixture.CacheUsage.Processes.Add(new Platform.Abstractions.PlatformProcess(77, "1cv8", @"""C:\1cv8\bin\1cv8.exe"" DESIGNER /S""SRV-1C\Buh_Prod"" /N""Админ"""));
+
+        await fixture.ViewModel.ClearCacheAndLaunchCommand.ExecuteAsync(fixture.Base("Бухгалтерия предприятия"));
+
+        var message = Assert.Single(fixture.Dialogs.Messages);
+        Assert.StartsWith("Очистка кэша невозможна: база используется.", message, StringComparison.Ordinal);
+        Assert.Contains("«Бухгалтерия предприятия» — 1cv8 (PID 77)", message, StringComparison.Ordinal);
+        Assert.Empty(fixture.Dialogs.Questions); // спрашивать нечего
+        Assert.True(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
+        Assert.Empty(fixture.Processes.Started); // база уже открыта — не запускаем
     }
 
     [Fact]
@@ -120,6 +140,43 @@ public class CacheTests
         Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, OrphanId)));
         Assert.Equal("Бухгалтерия предприятия", Assert.Single(shown.Rows).Name);
         Assert.True(fixture.Settings.Settings.Cache.IncludeRoaming); // выбор в окне запоминается
+    }
+
+    [Fact]
+    public async Task Cache_manager_sorts_by_size_and_name_and_skips_bases_in_use()
+    {
+        using var fixture = await LoadAsync();
+        fixture.Dialogs.ConfirmAnswer = true;
+        fixture.CacheUsage.Processes.Add(new Platform.Abstractions.PlatformProcess(5, "1cv8c", @"1cv8c.exe ENTERPRISE /IBConnectionString ""Srvr=""""srv-1c"""";Ref=""""buh_prod"""";"""));
+        fixture.Dialogs.CacheManager = async manager =>
+        {
+            // По умолчанию — по размеру, сначала самые большие: кэш удалённой базы (5 КБ), затем бухгалтерия (2 КБ).
+            Assert.Equal(["Нет в списках баз", "Бухгалтерия предприятия"], manager.Rows.Select(r => r.Name));
+            Assert.Equal("▼", manager.SizeSortGlyph);
+
+            manager.SortByNameCommand.Execute(null);
+            Assert.Equal(["Бухгалтерия предприятия", "Нет в списках баз"], manager.Rows.Select(r => r.Name));
+            Assert.Equal(("▲", string.Empty), (manager.NameSortGlyph, manager.SizeSortGlyph));
+            manager.Rows[0].IsSelected = true;
+            manager.SortByNameCommand.Execute(null); // повторно — в обратном порядке, выбор остаётся у строки
+            Assert.Equal(["Нет в списках баз", "Бухгалтерия предприятия"], manager.Rows.Select(r => r.Name));
+            Assert.True(manager.Rows[1].IsSelected);
+
+            manager.SortBySizeCommand.Execute(null);
+            manager.SortBySizeCommand.Execute(null); // по возрастанию
+            Assert.Equal(["Бухгалтерия предприятия", "Нет в списках баз"], manager.Rows.Select(r => r.Name));
+
+            // Выбраны обе; бухгалтерия открыта в 1С — её кэш пропускается, кэш удалённой базы удаляется.
+            manager.SelectAllCommand.Execute(null);
+            await manager.CleanCommand.ExecuteAsync(null);
+        };
+
+        await fixture.ViewModel.OpenCacheManagerCommand.ExecuteAsync(null);
+
+        Assert.StartsWith("Кэш этих баз не будет удалён: они используются.", fixture.Dialogs.Messages[0], StringComparison.Ordinal);
+        Assert.StartsWith("Удалить кэш?", Assert.Single(fixture.Dialogs.Questions), StringComparison.Ordinal);
+        Assert.True(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, BuhId)));
+        Assert.False(Directory.Exists(Path.Combine(fixture.LocalCacheRoot, OrphanId)));
     }
 
     [Fact]

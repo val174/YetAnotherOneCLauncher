@@ -25,6 +25,18 @@
       <Setter Property="HorizontalAlignment" Value="Right" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
+    <!-- Заголовок колонки — кнопка сортировки: выглядит как текст, стрелка — направление. -->
+    <Style Selector="Button.sortHeader">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+    </Style>
+    <Style Selector="Button.sortHeader:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
   </Window.Styles>
 
   <DockPanel Margin="16">
@@ -75,8 +87,20 @@
     </StackPanel>
 
     <Grid ColumnDefinitions="32,*,110,110,90" DockPanel.Dock="Top" Margin="12,0,12,4">
-      <TextBlock Grid.Column="1" Classes="secondary" Text="База" />
-      <TextBlock Grid.Column="2" Classes="secondary size" Text="Кэш" />
+      <Button x:Name="SortByNameButton" Grid.Column="1" Classes="sortHeader" Command="{Binding SortByNameCommand}"
+              HorizontalAlignment="Left" ToolTip.Tip="Сортировать по имени базы; повторно — в обратном порядке">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <TextBlock Text="База" />
+          <TextBlock Text="{Binding NameSortGlyph}" FontSize="9" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <Button x:Name="SortBySizeButton" Grid.Column="2" Classes="sortHeader" Command="{Binding SortBySizeCommand}"
+              HorizontalAlignment="Right" ToolTip.Tip="Сортировать по размеру (кэш и настройки); повторно — в обратном порядке">
+        <StackPanel Orientation="Horizontal" Spacing="4">
+          <TextBlock Text="{Binding SizeSortGlyph}" FontSize="9" VerticalAlignment="Center" />
+          <TextBlock Text="Кэш" />
+        </StackPanel>
+      </Button>
       <TextBlock Grid.Column="3" Classes="secondary size" Text="Настройки" IsVisible="{Binding HasRoaming}" />
       <TextBlock Grid.Column="4" Classes="secondary size" Text="Изменён" />
     </Grid>

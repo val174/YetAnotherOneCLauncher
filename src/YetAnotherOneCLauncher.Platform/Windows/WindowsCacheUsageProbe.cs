@@ -10,7 +10,7 @@ namespace YetAnotherOneCLauncher.Platform.Windows;
 [SupportedOSPlatform("windows")]
 public sealed class WindowsCacheUsageProbe : ICacheUsageProbe
 {
-    public IReadOnlyList<string> RunningPlatformProcesses() => PlatformProcesses.List();
+    public IReadOnlyList<PlatformProcess> CurrentUserPlatformProcesses() => PlatformProcesses.CurrentUser();
 
     public bool IsDirectoryInUse(string path)
     {
