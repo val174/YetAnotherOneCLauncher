@@ -462,6 +462,12 @@ public class MainWindowTests
         {
             Assert.IsType<ToolIcon>(items[header].Icon);
         }
+
+        // Каталоги кэша — одним подменю.
+        Assert.Equal(
+            new[] { "Программный кэш", "Пользовательский кэш" },
+            items["Открыть каталог кэша"].Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        Assert.DoesNotContain(items.Keys, h => h.StartsWith("Открыть каталог программного", StringComparison.Ordinal));
         window.Close();
     }
 

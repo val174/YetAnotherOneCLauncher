@@ -585,11 +585,11 @@
           <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource CacheIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Открыть каталог программного кэша" Command="{Binding OpenLocalCacheCommand}">
+          <!-- Каталоги кэша — подменю; недоступно, если у базы кэша нет. -->
+          <MenuItem x:Name="OpenCacheMenu" Header="Открыть каталог кэша" IsEnabled="{Binding SelectedInfoBase.HasCache, FallbackValue=False}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
-          </MenuItem>
-          <MenuItem Header="Открыть каталог пользовательского кэша" Command="{Binding OpenRoamingCacheCommand}">
-            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+            <MenuItem Header="Программный кэш" Command="{Binding OpenLocalCacheCommand}" />
+            <MenuItem Header="Пользовательский кэш" Command="{Binding OpenRoamingCacheCommand}" />
           </MenuItem>
           <MenuItem Header="Сохранить ссылку в файл…" Command="{Binding ExportCommand}" />
         </ContextMenu>
