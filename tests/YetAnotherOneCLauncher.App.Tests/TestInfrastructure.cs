@@ -237,6 +237,11 @@ internal sealed class FakeClusterConsole : IClusterConsole
 
     public string AdminLibraryPath(PlatformInstallation platform) => Path.Combine(platform.BinDirectory, "radmin.dll");
 
+    /// <summary>Установки только с сервером и администрированием (без клиента 1С).</summary>
+    public List<PlatformInstallation> AdminInstallations { get; } = [];
+
+    public IReadOnlyList<PlatformInstallation> FindAdminInstallations() => AdminInstallations;
+
     public IReadOnlyList<ClusterConsoleRegistration> FindRegistered()
     {
         RegistryLookups++;

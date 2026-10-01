@@ -42,6 +42,12 @@ public interface IClusterConsole
     /// <summary>Есть ли у платформы компонент администрирования и файл оснастки.</summary>
     bool IsAvailable(PlatformInstallation platform);
 
+    /// <summary>
+    /// Установки с компонентом администрирования (<c>bin\radmin.dll</c>) в стандартных каталогах 1cv8 — в том числе
+    /// без клиента 1С (только сервер и администрирование): поиск платформ для запуска баз такие не находит.
+    /// </summary>
+    IReadOnlyList<PlatformInstallation> FindAdminInstallations();
+
     /// <summary>Путь к компоненту администрирования платформы.</summary>
     string AdminLibraryPath(PlatformInstallation platform);
 
@@ -74,6 +80,8 @@ public sealed class NoClusterConsole : IClusterConsole
     }
 
     public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() => [];
+
+    public IReadOnlyList<PlatformInstallation> FindAdminInstallations() => [];
 
     public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default) =>
         throw new LaunchFailedException("Консоль кластера есть только в Windows.");

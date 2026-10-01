@@ -224,6 +224,22 @@ public class ClusterConsoleTests
     }
 
     [Fact]
+    public void Platform_with_only_server_components_is_offered_for_console()
+    {
+        // 32-разрядная 8.3.27.1936 без клиента 1С: поиск платформ её не находит, а radmin.dll у неё есть.
+        var console = Console(registered: Old64);
+        var serverOnly = Platform("8.3.27.1936", PlatformArchitecture.X86) with { ThickClientPath = null };
+        console.Available.Add("8.3.27.1936");
+        console.AdminInstallations.AddRange([serverOnly, Old64]); // Old64 уже есть среди платформ — не дублируется
+
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+
+        Assert.Single(form.Options, o => o.Platform == Old64);
+        var option = Assert.Single(form.Options, o => o.Title == "8.3.27.1936");
+        Assert.Equal(("32-разрядная", false), (option.Detail, option.IsRegistered));
+    }
+
+    [Fact]
     public void Stale_registration_of_older_platform_is_not_taken_for_registered()
     {
         // Как на ПК: 32-разрядная консоль зарегистрирована от 8.3.27.1936, в реестре осталась и прежняя — от 8.3.22.
@@ -319,6 +335,8 @@ public class ClusterConsoleTests
         public bool IsAvailable(PlatformInstallation platform) => inner.IsAvailable(platform);
 
         public string AdminLibraryPath(PlatformInstallation platform) => inner.AdminLibraryPath(platform);
+
+        public IReadOnlyList<PlatformInstallation> FindAdminInstallations() => inner.FindAdminInstallations();
 
         public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() => [.. inner.FindRegistered(), stale];
 

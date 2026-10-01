@@ -191,6 +191,41 @@ public sealed class WindowsClusterConsole : IClusterConsole
 
     public string AdminLibraryPath(PlatformInstallation platform) => LibraryPath(platform);
 
+    public IReadOnlyList<PlatformInstallation> FindAdminInstallations()
+    {
+        var found = new List<PlatformInstallation>();
+        foreach (var folder in new[] { Environment.SpecialFolder.ProgramFiles, Environment.SpecialFolder.ProgramFilesX86 })
+        {
+            var programFiles = Environment.GetFolderPath(folder);
+            var root = programFiles.Length == 0 ? null : Path.Combine(programFiles, "1cv8");
+            if (root is null || !Directory.Exists(root))
+            {
+                continue;
+            }
+
+            foreach (var versionDirectory in Directory.GetDirectories(root))
+            {
+                var bin = Path.Combine(versionDirectory, "bin");
+                var library = Path.Combine(bin, AdminLibraryName);
+                if (!PlatformVersion.TryParse(Path.GetFileName(versionDirectory), out var version) || !File.Exists(library))
+                {
+                    continue;
+                }
+
+                // Разрядность — по заголовку самой radmin.dll; не прочиталась — по каталогу Program Files.
+                var architecture = ExecutableHeader.ReadArchitecture(library);
+                if (architecture == PlatformArchitecture.Unknown)
+                {
+                    architecture = folder == Environment.SpecialFolder.ProgramFilesX86 ? PlatformArchitecture.X86 : PlatformArchitecture.X64;
+                }
+
+                found.Add(new PlatformInstallation(version, architecture, bin, null, null));
+            }
+        }
+
+        return found;
+    }
+
     /// <summary>
     /// Файл 32-разрядной оснастки из 64-разрядного: тот же файл, но с COM-классом 32-разрядной оснастки
     /// (его берём из регистрации). Нужен, когда у 32-разрядной платформы своего «1CV8 Servers.msc» нет.

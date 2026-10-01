@@ -74,9 +74,18 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         bool IsRegistered(PlatformInstallation p) =>
             registrations.Any(r => r.IsActive && r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
 
+        // Платформы для запуска баз — только с клиентом 1С; консоли хватает radmin.dll, поэтому добавляются и
+        // установки только с сервером и администрированием.
+        var known = installations.ToList();
+        known.AddRange(console.FindAdminInstallations()
+            .Where(a => !known.Any(p => p.Architecture == a.Architecture
+                && string.Equals(
+                    Path.TrimEndingDirectorySeparator(p.BinDirectory),
+                    Path.TrimEndingDirectorySeparator(a.BinDirectory),
+                    StringComparison.OrdinalIgnoreCase))));
+
         // Зарегистрированная консоль платформы, которой нет среди найденных (стоит в нестандартном каталоге), —
         // тоже в списке: версия и каталог — из пути к radmin.dll в реестре.
-        var known = installations.ToList();
         known.AddRange(registrations
             .Where(r => r.IsActive && !known.Any(p => p.Architecture == r.Architecture && r.Matches(console.AdminLibraryPath(p))))
             .Select(FromRegistration)
