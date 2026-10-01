@@ -1,72 +1,192 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:p="using:YetAnotherOneCLauncher.Core.Platforms"
         x:Class="YetAnotherOneCLauncher.App.InfoBaseEditorWindow"
         x:DataType="vm:InfoBaseEditorViewModel"
         Title="{Binding Title}"
-        Width="560" SizeToContent="Height"
+        Width="620" SizeToContent="Height" MaxHeight="820"
         CanResize="False" ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
-  <StackPanel Margin="16" Spacing="10">
-    <TextBlock Text="Название" />
-    <TextBox x:Name="NameBox" Text="{Binding Name}" />
+  <Window.Styles>
+    <Style Selector="TextBlock.hint">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- Подписи полей новой серверной базы — слева, как в штатном стартере. -->
+    <Style Selector="Grid#CreateServerGrid > TextBlock">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+    <Style Selector="Grid#CreateServerGrid > TextBox, Grid#CreateServerGrid > ComboBox">
+      <Setter Property="Margin" Value="0,3" />
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+  </Window.Styles>
 
-    <TextBlock Text="Расположение" Margin="0,4,0,0" />
-    <ComboBox ItemsSource="{Binding KindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch" />
-
-    <StackPanel Spacing="6" IsVisible="{Binding IsFile}">
-      <TextBlock Text="Каталог информационной базы" />
+  <DockPanel Margin="16">
+    <!-- Кнопки и ошибки — внизу, всегда видны; форма над ними прокручивается, если не помещается. -->
+    <StackPanel DockPanel.Dock="Bottom" Spacing="10" Margin="0,10,0,0">
+      <Border IsVisible="{Binding HasErrors}" Padding="8" CornerRadius="4" Background="#33E81123">
+        <SelectableTextBlock x:Name="ErrorsText" Text="{Binding Errors}" TextWrapping="Wrap" />
+      </Border>
+      <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsBusy}">
+        <ProgressBar IsIndeterminate="True" Width="120" VerticalAlignment="Center" />
+        <TextBlock Text="Создание информационной базы…" VerticalAlignment="Center" />
+      </StackPanel>
       <DockPanel>
-        <Button DockPanel.Dock="Right" Content="Обзор…" Command="{Binding BrowseFolderCommand}" Margin="6,0,0,0" />
-        <TextBox Text="{Binding FilePath}" PlaceholderText="C:\Bases\Buh или \\server\share\buh" />
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button x:Name="BackButton" Content="&lt; Назад" MinWidth="100" Command="{Binding BackCommand}"
+                  IsVisible="{Binding CanGoBack}" IsEnabled="{Binding IsIdle}" />
+          <Button x:Name="SaveButton" Classes="accent" Content="{Binding AcceptText}" IsDefault="True" MinWidth="100"
+                  IsEnabled="{Binding IsIdle}" />
+          <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" IsEnabled="{Binding IsIdle}" />
+        </StackPanel>
       </DockPanel>
     </StackPanel>
 
-    <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsServer}">
-      <TextBlock Text="Кластер серверов 1С" Margin="0,0,0,6" />
-      <TextBox Grid.Row="1" Text="{Binding Server}" PlaceholderText="srv1c или srv1c:1541" />
-      <TextBlock Grid.Column="2" Text="Имя базы в кластере" Margin="0,0,0,6" />
-      <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding InfobaseName}" />
-    </Grid>
+    <Panel>
+      <!-- Страница 1: что сделать — как в штатном стартере. -->
+      <StackPanel x:Name="ModePage" Spacing="12" IsVisible="{Binding ShowModePage}">
+        <TextBlock Text="Выберите вариант добавления информационной базы:" />
+        <RadioButton x:Name="ExistingModeButton" GroupName="AddMode" IsChecked="{Binding IsExistingMode}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Добавление в список существующей информационной базы" />
+            <TextBlock Classes="hint" Text="База уже есть в каталоге, на сервере 1С:Предприятия или на веб-сервере." />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="TemplateModeButton" GroupName="AddMode" IsChecked="{Binding IsTemplateMode}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Создание новой информационной базы из шаблона" />
+            <TextBlock Classes="hint" Text="Конфигурация (.cf) или выгрузка (.dt) из каталога шаблонов 1С или из выбранного файла." />
+          </StackPanel>
+        </RadioButton>
+        <RadioButton x:Name="EmptyModeButton" GroupName="AddMode" IsChecked="{Binding IsEmptyMode}">
+          <StackPanel Spacing="2">
+            <TextBlock Text="Создание информационной базы без конфигурации" />
+            <TextBlock Classes="hint" Text="Для разработки новой конфигурации или загрузки выгруженной ранее информационной базы." />
+          </StackPanel>
+        </RadioButton>
+      </StackPanel>
 
-    <StackPanel Spacing="6" IsVisible="{Binding IsWeb}">
-      <TextBlock Text="Адрес базы на веб-сервере" />
-      <TextBox Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
-    </StackPanel>
+      <!-- Страница 2: форма базы. -->
+      <ScrollViewer x:Name="FormScroll" IsVisible="{Binding ShowForm}" HorizontalScrollBarVisibility="Disabled">
+        <StackPanel x:Name="FormPage" Spacing="10" Margin="0,0,14,0" IsEnabled="{Binding IsIdle}">
+          <TextBlock Text="Название" />
+          <TextBox x:Name="NameBox" Text="{Binding Name}" />
 
-    <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
-      <TextBlock Text="Папка в списке" Margin="0,0,0,6" />
-      <AutoCompleteBox Grid.Row="1" Text="{Binding Folder}" ItemsSource="{Binding Folders}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0" />
-      <TextBlock Grid.Column="2" Text="Клиент" Margin="0,0,0,6" />
-      <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
+          <!-- Шаблон: найденные в каталогах шаблонов 1С и выбранный файл. -->
+          <StackPanel Spacing="6" IsVisible="{Binding IsTemplateMode}">
+            <DockPanel>
+              <Button x:Name="BrowseTemplateButton" DockPanel.Dock="Right" Content="Выбрать файл…" Command="{Binding BrowseTemplateCommand}" />
+              <TextBlock Text="Шаблон" VerticalAlignment="Center" />
+            </DockPanel>
+            <ListBox x:Name="TemplatesList" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
+                     MaxHeight="190" IsVisible="{Binding HasTemplates}">
+              <ListBox.ItemTemplate>
+                <DataTemplate DataType="p:ConfigurationTemplate">
+                  <StackPanel Spacing="2">
+                    <TextBlock Text="{Binding Catalog}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
+                    <TextBlock Classes="hint" Text="{Binding Details}" />
+                  </StackPanel>
+                </DataTemplate>
+              </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Classes="hint" IsVisible="{Binding !HasTemplates}"
+                       Text="В каталогах шаблонов 1С шаблоны не найдены — выберите файл конфигурации (.cf) или выгрузки (.dt)." />
+          </StackPanel>
 
-      <TextBlock Grid.Row="2" Text="Версия платформы" Margin="0,10,0,6" />
-      <!-- Список найденных версий; вписать маску (8.3.24) или версию вручную тоже можно. -->
-      <ComboBox x:Name="VersionBox" Grid.Row="3" IsEditable="True" Text="{Binding Version}" ItemsSource="{Binding PlatformVersions}"
-                HorizontalAlignment="Stretch" PlaceholderText="пусто — самая новая" />
-      <TextBlock Grid.Row="2" Grid.Column="2" Text="Разрядность" Margin="0,10,0,6" />
-      <ComboBox x:Name="ArchitectureBox" Grid.Row="3" Grid.Column="2" ItemsSource="{Binding ArchitectureNames}" SelectedIndex="{Binding ArchitectureIndex}"
-                HorizontalAlignment="Stretch"
-                ToolTip.Tip="Какую платформу 1С запускать: 32- или 64-разрядную. «Предпочтительно» — если такой нет, подойдёт другая. Сохраняется в списке баз (ключ AppArch), как у штатного стартера." />
-      <CheckBox Grid.Row="4" IsChecked="{Binding WindowsAuthentication}" Content="Аутентификация Windows" Margin="0,8,0,0" />
-    </Grid>
+          <TextBlock Text="Расположение" Margin="0,4,0,0" />
+          <ComboBox x:Name="KindBox" ItemsSource="{Binding KindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
+                    IsVisible="{Binding ShowExistingFields}" />
+          <ComboBox x:Name="CreationKindBox" ItemsSource="{Binding CreationKindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
+                    IsVisible="{Binding IsCreateMode}" />
 
-    <TextBlock Text="Дополнительные параметры запуска" Margin="0,4,0,0" />
-    <DockPanel>
-      <Button DockPanel.Dock="Right" Content="…" Command="{Binding EditLaunchParametersCommand}" Margin="6,0,0,0"
-              VerticalAlignment="Stretch" VerticalContentAlignment="Center"
-              IsVisible="{Binding CanEditLaunchParameters}"
-              ToolTip.Tip="Параметры запуска: шаблоны параметров, пользователь и пароль" />
-      <TextBox Text="{Binding AdditionalParameters}" PlaceholderText="например, /DisableStartupMessages" />
-    </DockPanel>
+          <StackPanel Spacing="6" IsVisible="{Binding IsFile}">
+            <TextBlock Text="Каталог информационной базы" />
+            <DockPanel>
+              <Button DockPanel.Dock="Right" Content="Обзор…" Command="{Binding BrowseFolderCommand}" Margin="6,0,0,0" />
+              <TextBox x:Name="FilePathBox" Text="{Binding FilePath}" PlaceholderText="C:\Bases\Buh или \\server\share\buh" />
+            </DockPanel>
+          </StackPanel>
 
-    <Border IsVisible="{Binding HasErrors}" Padding="8" CornerRadius="4" Background="#33E81123">
-      <TextBlock Text="{Binding Errors}" TextWrapping="Wrap" />
-    </Border>
+          <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto" IsVisible="{Binding ShowExistingServerFields}">
+            <TextBlock Text="Кластер серверов 1С" Margin="0,0,0,6" />
+            <TextBox Grid.Row="1" Text="{Binding Server}" PlaceholderText="srv1c или srv1c:1541" />
+            <TextBlock Grid.Column="2" Text="Имя базы в кластере" Margin="0,0,0,6" />
+            <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding InfobaseName}" />
+          </Grid>
 
-    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,6,0,0">
-      <Button x:Name="SaveButton" Classes="accent" Content="Сохранить" IsDefault="True" MinWidth="100" />
-      <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
-    </StackPanel>
-  </StackPanel>
+          <!-- Новая база на сервере 1С:Предприятия — те же параметры, что в штатном стартере. -->
+          <Grid x:Name="CreateServerGrid" ColumnDefinitions="270,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+                IsVisible="{Binding ShowCreateServerFields}">
+            <TextBlock Text="Кластер серверов 1С:Предприятия:" />
+            <TextBox x:Name="ClusterBox" Grid.Column="1" Text="{Binding Server}" PlaceholderText="srv1c или srv1c:1541" />
+            <TextBlock Grid.Row="1" Text="Имя информационной базы в кластере:" TextWrapping="Wrap" />
+            <TextBox x:Name="ClusterInfobaseBox" Grid.Row="1" Grid.Column="1" Text="{Binding InfobaseName}" />
+            <TextBlock Grid.Row="2" Text="Защищенное соединение:" />
+            <ComboBox Grid.Row="2" Grid.Column="1" ItemsSource="{Binding SecureConnectionNames}" SelectedIndex="{Binding SecureConnectionIndex}" />
+            <TextBlock Grid.Row="3" Text="Тип СУБД:" />
+            <ComboBox x:Name="DbmsBox" Grid.Row="3" Grid.Column="1" ItemsSource="{Binding DbmsNames}" SelectedIndex="{Binding DbmsIndex}" />
+            <TextBlock Grid.Row="4" Text="Сервер баз данных:" />
+            <TextBox Grid.Row="4" Grid.Column="1" Text="{Binding DatabaseServer}" />
+            <TextBlock Grid.Row="5" Text="Имя базы данных:" />
+            <TextBox x:Name="DatabaseNameBox" Grid.Row="5" Grid.Column="1" Text="{Binding DatabaseName}" />
+            <TextBlock Grid.Row="6" Text="Пользователь базы данных:" />
+            <TextBox Grid.Row="6" Grid.Column="1" Text="{Binding DatabaseUser}" />
+            <TextBlock Grid.Row="7" Text="Пароль пользователя:" />
+            <TextBox Grid.Row="7" Grid.Column="1" Text="{Binding DatabasePassword}" PasswordChar="●" />
+            <TextBlock Grid.Row="8" Text="Смещение дат:" />
+            <ComboBox Grid.Row="8" Grid.Column="1" ItemsSource="{Binding DateOffsetNames}" SelectedIndex="{Binding DateOffsetIndex}"
+                      IsEnabled="{Binding IsDateOffsetEnabled}" ToolTip.Tip="Только для MS SQL Server" />
+            <CheckBox Grid.Row="9" Grid.ColumnSpan="2" IsChecked="{Binding CreateDatabase}" Content="Создать базу данных в случае ее отсутствия" />
+            <CheckBox Grid.Row="10" Grid.ColumnSpan="2" IsChecked="{Binding BlockScheduledJobs}" Content="Установить блокировку регламентных заданий" />
+            <CheckBox Grid.Row="11" Grid.ColumnSpan="2" IsChecked="{Binding DisableLocalSpeechToText}" Content="Запретить локальное распознавание речи" />
+          </Grid>
+
+          <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto" IsVisible="{Binding IsCreateMode}">
+            <TextBlock Text="Язык (Страна)" Margin="0,0,0,6" />
+            <ComboBox x:Name="LocaleBox" Grid.Row="1" ItemsSource="{Binding Locales}" SelectedItem="{Binding Locale}" HorizontalAlignment="Stretch" />
+            <TextBlock Grid.Column="2" Text="Создать на платформе" Margin="0,0,0,6" />
+            <ComboBox x:Name="CreationPlatformBox" Grid.Row="1" Grid.Column="2" ItemsSource="{Binding CreationPlatforms}"
+                      SelectedItem="{Binding SelectedCreationPlatform}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Чем создавать базу (1cv8). Для базы на сервере — версия, как у сервера 1С:Предприятия." />
+          </Grid>
+
+          <StackPanel Spacing="6" IsVisible="{Binding IsWeb}">
+            <TextBlock Text="Адрес базы на веб-сервере" />
+            <TextBox Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
+          </StackPanel>
+
+          <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
+            <TextBlock Text="Папка в списке" Margin="0,0,0,6" />
+            <AutoCompleteBox Grid.Row="1" Text="{Binding Folder}" ItemsSource="{Binding Folders}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0" />
+            <TextBlock Grid.Column="2" Text="Клиент" Margin="0,0,0,6" />
+            <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
+
+            <TextBlock Grid.Row="2" Text="Версия платформы" Margin="0,10,0,6" />
+            <!-- Список найденных версий; вписать маску (8.3.24) или версию вручную тоже можно. -->
+            <ComboBox x:Name="VersionBox" Grid.Row="3" IsEditable="True" Text="{Binding Version}" ItemsSource="{Binding PlatformVersions}"
+                      HorizontalAlignment="Stretch" PlaceholderText="пусто — самая новая" />
+            <TextBlock Grid.Row="2" Grid.Column="2" Text="Разрядность" Margin="0,10,0,6" />
+            <ComboBox x:Name="ArchitectureBox" Grid.Row="3" Grid.Column="2" ItemsSource="{Binding ArchitectureNames}" SelectedIndex="{Binding ArchitectureIndex}"
+                      HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Какую платформу 1С запускать: 32- или 64-разрядную. «Предпочтительно» — если такой нет, подойдёт другая. Сохраняется в списке баз (ключ AppArch), как у штатного стартера." />
+            <CheckBox Grid.Row="4" IsChecked="{Binding WindowsAuthentication}" Content="Аутентификация Windows" Margin="0,8,0,0" />
+          </Grid>
+
+          <TextBlock Text="Дополнительные параметры запуска" Margin="0,4,0,0" />
+          <DockPanel>
+            <Button DockPanel.Dock="Right" Content="…" Command="{Binding EditLaunchParametersCommand}" Margin="6,0,0,0"
+                    VerticalAlignment="Stretch" VerticalContentAlignment="Center"
+                    IsVisible="{Binding CanEditLaunchParameters}"
+                    ToolTip.Tip="Параметры запуска: шаблоны параметров, пользователь и пароль" />
+            <TextBox Text="{Binding AdditionalParameters}" PlaceholderText="например, /DisableStartupMessages" />
+          </DockPanel>
+        </StackPanel>
+      </ScrollViewer>
+    </Panel>
+  </DockPanel>
 </Window>

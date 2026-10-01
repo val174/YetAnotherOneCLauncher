@@ -16,6 +16,32 @@ public sealed class ProcessLauncher : IProcessLauncher
     {
         ArgumentNullException.ThrowIfNull(command);
 
+        return StartDetached(StartInfo(command), $"Не удалось запустить {command.ExecutablePath}");
+    }
+
+    public async Task<int> RunAsync(LaunchCommand command, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        Process process;
+        try
+        {
+            process = Process.Start(StartInfo(command))
+                      ?? throw new LaunchFailedException($"Не удалось запустить {command.ExecutablePath}: процесс не создан.");
+        }
+        catch (Win32Exception ex)
+        {
+            throw new LaunchFailedException($"Не удалось запустить {command.ExecutablePath}: {ex.Message}", ex);
+        }
+
+        using (process)
+        {
+            await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
+            return process.ExitCode;
+        }
+    }
+
+    private static ProcessStartInfo StartInfo(LaunchCommand command)
+    {
         var startInfo = new ProcessStartInfo(command.ExecutablePath)
         {
             UseShellExecute = false,
@@ -34,7 +60,7 @@ public sealed class ProcessLauncher : IProcessLauncher
             }
         }
 
-        return StartDetached(startInfo, $"Не удалось запустить {command.ExecutablePath}");
+        return startInfo;
     }
 
     public void OpenUrl(Uri url)

@@ -980,7 +980,7 @@ public class MainWindowTests
         Assert.True(condition(), "Условие не выполнилось за отведённое время.");
     }
 
-    private static void Render()
+    internal static void Render()
     {
         Dispatcher.UIThread.RunJobs();
         AvaloniaHeadlessPlatform.ForceRenderTimerTick();

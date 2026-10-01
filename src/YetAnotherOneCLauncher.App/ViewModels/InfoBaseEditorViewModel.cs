@@ -41,7 +41,11 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
 
     public bool IsNew { get; }
 
-    public string Title => IsNew ? "Новая информационная база" : "Изменение информационной базы";
+    public string Title => ShowModePage
+        ? "Добавление информационной базы"
+        : IsCreateMode
+            ? AddMode == InfoBaseAddMode.FromTemplate ? "Создание информационной базы из шаблона" : "Создание информационной базы без конфигурации"
+            : IsNew ? "Новая информационная база" : "Изменение информационной базы";
 
     public IReadOnlyList<string> KindNames { get; } = ["На этом компьютере или в локальной сети", "На сервере 1С:Предприятия", "На веб-сервере"];
 

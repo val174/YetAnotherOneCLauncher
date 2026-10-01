@@ -12,6 +12,7 @@ public sealed class StarterConfig
     public const string InstalledLocationKey = "InstalledLocation";
     public const string DefaultVersionKey = "DefaultVersion";
     public const string InternetServiceKey = "InternetService";
+    public const string TemplatesLocationKey = "ConfigurationTemplatesLocation";
 
     public StarterConfig(IEnumerable<KeyValuePair<string, string>> entries, string? sourcePath = null)
     {
@@ -32,6 +33,9 @@ public sealed class StarterConfig
 
     /// <summary>Каталоги, где установлены платформы 1С.</summary>
     public IReadOnlyList<string> InstalledLocations => GetAll(InstalledLocationKey);
+
+    /// <summary>Дополнительные каталоги шаблонов конфигураций (кроме каталога по умолчанию).</summary>
+    public IReadOnlyList<string> TemplateLocations => GetAll(TemplatesLocationKey);
 
     /// <summary>Адреса веб-сервисов списков баз.</summary>
     public IReadOnlyList<string> InternetServices => GetAll(InternetServiceKey);

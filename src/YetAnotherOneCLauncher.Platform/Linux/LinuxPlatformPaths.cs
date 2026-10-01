@@ -29,6 +29,7 @@ public sealed class LinuxPlatformPaths : IPlatformPaths
         DefaultPlatformInstallRoots = ["/opt/1cv8", "/opt/1C/v8.3"];
         // В Linux кэш и локальные настройки базы лежат в одном каталоге.
         InfoBaseCacheRoots = [new CacheRoot(Path.Combine(home, ".1cv8", "1C", "1cv8"), CacheLocation.Local)];
+        DefaultTemplatesDirectory = Path.Combine(home, ".1cv8", "1C", "1cv8", "tmplts");
 
         var configHome = Environment.GetEnvironmentVariable("XDG_CONFIG_HOME");
         if (string.IsNullOrWhiteSpace(configHome))
@@ -48,6 +49,8 @@ public sealed class LinuxPlatformPaths : IPlatformPaths
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Linux;
 
     public IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
+
+    public string DefaultTemplatesDirectory { get; }
 
     public string AppDataDirectory { get; }
 }

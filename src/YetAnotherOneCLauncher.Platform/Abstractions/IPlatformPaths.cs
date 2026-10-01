@@ -19,6 +19,9 @@ public interface IPlatformPaths
     /// <summary>Имена исполняемых файлов платформы на этой ОС.</summary>
     PlatformExecutableNames PlatformExecutableNames { get; }
 
+    /// <summary>Каталог шаблонов конфигураций по умолчанию (как у штатного стартера).</summary>
+    string DefaultTemplatesDirectory { get; }
+
     /// <summary>Корневые каталоги кэша баз (внутри — подкаталоги с именами по ID базы).</summary>
     IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
 

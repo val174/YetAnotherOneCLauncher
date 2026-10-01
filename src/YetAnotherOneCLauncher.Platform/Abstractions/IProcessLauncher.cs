@@ -10,6 +10,11 @@ public interface IProcessLauncher
     /// <exception cref="LaunchFailedException">Процесс не удалось запустить.</exception>
     int Start(LaunchCommand command);
 
+    /// <summary>Запускает платформу и ждёт завершения (например, <c>CREATEINFOBASE</c>).</summary>
+    /// <returns>Код завершения процесса.</returns>
+    /// <exception cref="LaunchFailedException">Процесс не удалось запустить.</exception>
+    Task<int> RunAsync(LaunchCommand command, CancellationToken cancellationToken = default);
+
     /// <summary>Открывает адрес в браузере по умолчанию.</summary>
     /// <exception cref="LaunchFailedException">Браузер не удалось запустить.</exception>
     void OpenUrl(Uri url);

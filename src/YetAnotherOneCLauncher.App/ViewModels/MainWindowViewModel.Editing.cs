@@ -19,7 +19,9 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task AddBaseAsync()
     {
-        var editor = CreateBaseEditor(new InfoBaseDraft { FolderPath = TargetFolderPath() }, isNew: true, existing: null);
+        // Новая база: добавить существующую, создать из шаблона или без конфигурации — выбор в форме.
+        var editor = CreateBaseEditor(
+            new InfoBaseDraft { FolderPath = TargetFolderPath() }, isNew: true, existing: null, templates: await FindTemplatesAsync());
         if (!await _dialogs.EditInfoBaseAsync(editor) || editor.Result is not { } draft)
         {
             return;
@@ -28,7 +30,7 @@ public sealed partial class MainWindowViewModel
         string? key = null;
         if (await EditListAsync(
                 document => key = SelectionKeyOf(PersonalListEditor.AddBase(document, draft)),
-                $"База «{draft.Name}» добавлена.",
+                editor.IsCreateMode ? $"База «{draft.Name}» создана и добавлена в список." : $"База «{draft.Name}» добавлена.",
                 () => key))
         {
             await ApplyPendingLaunchSettingsAsync(editor, key);

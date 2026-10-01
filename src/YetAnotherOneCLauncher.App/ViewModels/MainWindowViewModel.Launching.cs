@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using YetAnotherOneCLauncher.Core.Editing;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
+using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -199,11 +200,16 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>Форма базы: кнопка «…» у дополнительных параметров открывает окно «Параметры запуска».</summary>
-    private InfoBaseEditorViewModel CreateBaseEditor(InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing) =>
+    /// <param name="templates">Для новой базы — найденные шаблоны; тогда в форме можно и создать базу.</param>
+    private InfoBaseEditorViewModel CreateBaseEditor(
+        InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing, IReadOnlyList<ConfigurationTemplate>? templates = null) =>
         new(draft, AllFolderPaths(), isNew, _files)
         {
             PlatformVersions = PlatformVersionChoices(),
             LaunchParametersEditor = editor => EditListEntryParametersAsync(editor, existing),
+            Creator = isNew && templates is not null ? CreateInfoBaseAsync : null,
+            CreationPlatforms = isNew ? CreationPlatforms() : [],
+            FoundTemplates = templates ?? [],
         };
 
     /// <summary>Ветки установленных платформ («8.3», «8.5») и сами версии — от новых к старым.</summary>

@@ -44,6 +44,7 @@ public sealed class WindowsPlatformPaths : IPlatformPaths
             new CacheRoot(Path.Combine(roaming, "1C", "1cv8"), CacheLocation.Roaming),
         ];
 
+        DefaultTemplatesDirectory = Path.Combine(roaming, "1C", "1cv8", "tmplts");
         AppDataDirectory = Path.Combine(roaming, PlatformServices.AppFolderName);
     }
 
@@ -56,6 +57,8 @@ public sealed class WindowsPlatformPaths : IPlatformPaths
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
     public IReadOnlyList<CacheRoot> InfoBaseCacheRoots { get; }
+
+    public string DefaultTemplatesDirectory { get; }
 
     public string AppDataDirectory { get; }
 }

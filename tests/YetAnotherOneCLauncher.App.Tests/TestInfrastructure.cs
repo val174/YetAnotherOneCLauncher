@@ -84,7 +84,8 @@ internal sealed class FakeDialogs : IDialogService
     public Task<string?> EditTextAsync(string title, string hint, string text) => Task.FromResult(TextEditor(text));
 
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
-        Task.FromResult(InfoBaseEditor(editor) && editor.TryAccept());
+        // Новая база создаётся в самой форме (TryCreateAsync): тогда результат уже есть, повторная проверка не нужна.
+        Task.FromResult(InfoBaseEditor(editor) && (editor.IsCreateMode ? editor.Result is not null : editor.TryAccept()));
 
     /// <summary>Что «пользователь» сделает в форме параметров запуска: режим разового запуска или <c>null</c> для сохранения; <c>false</c> в ответе — отмена.</summary>
     public Func<LaunchParametersViewModel, (bool Accept, LaunchMode? Mode)> LaunchParameters { get; set; } = _ => (false, null);
@@ -182,6 +183,8 @@ internal sealed class FakePaths : IPlatformPaths
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
     public IReadOnlyList<Core.Cache.CacheRoot> InfoBaseCacheRoots { get; set; } = [];
+
+    public string DefaultTemplatesDirectory { get; set; } = string.Empty;
 
     public string AppDataDirectory => Path.GetDirectoryName(PersonalInfoBaseListPath)!;
 }
@@ -312,6 +315,17 @@ internal sealed class FakeProcessLauncher : IProcessLauncher
         return 4242;
     }
 
+    /// <summary>Запуски с ожиданием (CREATEINFOBASE); <see cref="Runner"/> — что «сделает платформа» и код завершения.</summary>
+    public List<LaunchCommand> Ran { get; } = [];
+
+    public Func<LaunchCommand, int> Runner { get; set; } = _ => 0;
+
+    public Task<int> RunAsync(LaunchCommand command, CancellationToken cancellationToken = default)
+    {
+        Ran.Add(command);
+        return Task.FromResult(Runner(command));
+    }
+
     public void OpenUrl(Uri url) => OpenedUrls.Add(url);
 
     public void OpenFolder(string path) => OpenedFolders.Add(path);
@@ -374,6 +388,7 @@ internal sealed class ViewModelFixture : IDisposable
             new FakePaths(ListPath)
             {
                 DefaultPlatformInstallRoots = [InstallRoot, InstallRootX86],
+                DefaultTemplatesDirectory = TemplatesRoot,
                 InfoBaseCacheRoots =
                 [
                     new Core.Cache.CacheRoot(LocalCacheRoot, Core.Cache.CacheLocation.Local),
@@ -411,6 +426,12 @@ internal sealed class ViewModelFixture : IDisposable
     public string InstallRoot => Path.Combine(_directory, "Program Files", "1cv8");
 
     public string InstallRootX86 => Path.Combine(_directory, "Program Files (x86)", "1cv8");
+
+    /// <summary>Каталог шаблонов конфигураций 1С (как %APPDATA%\1C\1cv8\tmplts); пустой.</summary>
+    public string TemplatesRoot => Path.Combine(_directory, "tmplts");
+
+    /// <summary>Временный каталог теста — для новых баз и т. п.</summary>
+    public string TempDirectory => _directory;
 
     public string LocalCacheRoot => Path.Combine(_directory, "local");
 
