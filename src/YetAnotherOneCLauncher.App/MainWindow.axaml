@@ -104,6 +104,46 @@
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
+    <!-- Кнопки запуска в строке базы: место под них есть всегда (колонки не прыгают), а видны они у строки
+         под указателем и у выделенной. Выделенная строка дерева — та, чей TreeViewItem выделен сам (не папка выше). -->
+    <Style Selector="Panel.rowLaunchCell">
+      <Setter Property="Width" Value="60" />
+      <Setter Property="Margin" Value="8,0,0,0" />
+    </Style>
+    <Style Selector="StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Grid.baseRow:pointerover StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="ListBoxItem:selected StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="TreeViewItem:selected > Grid.baseRow StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Button.rowLaunch">
+      <Setter Property="Padding" Value="5,3" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Button.rowLaunch c|ToolIcon">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="StrokeThickness" Value="1.8" />
+    </Style>
+    <Style Selector="Button.rowLaunch.enterprise c|ToolIcon">
+      <Setter Property="Brush" Value="{DynamicResource IconViewBrush}" />
+    </Style>
+    <Style Selector="Button.rowLaunch.designer c|ToolIcon">
+      <Setter Property="Brush" Value="{DynamicResource IconCopyBrush}" />
+    </Style>
+    <!-- На фоне выделения цветной значок теряется — в выделенной строке он цвета её текста. -->
+    <Style Selector="ListBoxItem:selected Button.rowLaunch c|ToolIcon, TreeViewItem:selected > Grid.baseRow Button.rowLaunch c|ToolIcon">
+      <Setter Property="Brush" Value="{x:Null}" />
+    </Style>
     <!-- Заголовок «Наименование» — кнопка без рамки и фона, выглядит как остальные заголовки. -->
     <Style Selector="Button.columnHeader">
       <Setter Property="Background" Value="Transparent" />
@@ -324,7 +364,8 @@
         <DockPanel>
           <!-- Запуск — над свойствами: кнопки одна под другой, у каждой справа прикреплена «Запустить с параметрами».
                Ширина постоянная, прижаты к левой границе панели: при расширении панели кнопки не растут. -->
-          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Left">
+          <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Left"
+                      IsVisible="{Binding ShowSideLaunchButtons}">
             <Grid ColumnDefinitions="*,Auto">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
                       ToolTip.Tip="F3, Enter или двойной щелчок">
@@ -443,7 +484,7 @@
     <DockPanel Grid.Column="0" Margin="8,4,8,8">
     <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
          поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
-    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
+    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
       <!-- В дереве заголовок переключает порядок: по наименованию (стрелка) или свой. -->
       <Button x:Name="SortByNameButton" Classes="columnHeader" Command="{Binding ToggleSortCommand}"
               IsHitTestVisible="{Binding ShowTree}" ToolTip.Tip="{Binding SortToolTip}" HorizontalAlignment="Left">
@@ -462,6 +503,8 @@
       <TextBlock Grid.Column="1" Classes="columnHeader cell platform" Text="Платформа" />
       <TextBlock Grid.Column="2" Classes="columnHeader cell mode" Text="Режим запуска" />
       <TextBlock Grid.Column="3" Classes="columnHeader cell date" Text="Последний запуск" ToolTip.Tip="Дата последнего запуска из лаунчера" />
+      <!-- Место под кнопки запуска в строках. -->
+      <Panel Grid.Column="4" Classes="rowLaunchCell" IsVisible="{Binding ShowRowLaunchButtons}" />
     </Grid>
 
     <Panel>
@@ -547,7 +590,7 @@
             </StackPanel>
           </TreeDataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Background="Transparent">
               <!-- DockPanel, а не StackPanel: имя получает оставшуюся ширину и обрезается, не наезжая на колонки. -->
               <DockPanel>
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
@@ -563,6 +606,19 @@
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
               <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <Panel Grid.Column="4" Classes="rowLaunchCell"
+                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
+                <StackPanel Classes="rowLaunch" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
+                  <Button Classes="rowLaunch enterprise" ToolTip.Tip="1С: Предприятие"
+                          Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchEnterpriseCommand}" CommandParameter="{Binding Base}">
+                    <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
+                  </Button>
+                  <Button Classes="rowLaunch designer" ToolTip.Tip="Конфигуратор"
+                          Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchDesignerCommand}" CommandParameter="{Binding Base}">
+                    <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                  </Button>
+                </StackPanel>
+              </Panel>
             </Grid>
           </DataTemplate>
         </TreeView.DataTemplates>
@@ -576,7 +632,7 @@
                Background="Transparent">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
-            <Grid ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto,Auto" Background="Transparent">
               <!-- Одна строка: имя и папка; путь к базе — в подсказке к имени (поиск по нему работает). -->
               <DockPanel VerticalAlignment="Center">
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
@@ -589,6 +645,19 @@
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
               <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <Panel Grid.Column="4" Classes="rowLaunchCell"
+                     IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
+                <StackPanel Classes="rowLaunch" Orientation="Horizontal" Spacing="2" HorizontalAlignment="Right">
+                  <Button Classes="rowLaunch enterprise" ToolTip.Tip="1С: Предприятие"
+                          Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchEnterpriseCommand}" CommandParameter="{Binding Base}">
+                    <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
+                  </Button>
+                  <Button Classes="rowLaunch designer" ToolTip.Tip="Конфигуратор"
+                          Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchDesignerCommand}" CommandParameter="{Binding Base}">
+                    <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                  </Button>
+                </StackPanel>
+              </Panel>
             </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>

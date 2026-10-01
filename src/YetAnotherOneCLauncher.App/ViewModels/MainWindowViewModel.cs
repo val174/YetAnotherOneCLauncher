@@ -126,6 +126,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         MinimizeToTray = ui.MinimizeToTray;
         IconStyleIndex = Math.Max(0, Array.IndexOf(IconStyles, ui.IconStyle));
         ShowDetails = ui.ShowDetails;
+        ShowRowLaunchButtons = ui.ShowRowLaunchButtons;
+        ShowSideLaunchButtons = ui.ShowSideLaunchButtons;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
@@ -326,7 +328,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial int AfterLaunchIndex { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRightPanel))]
     public partial bool ShowDetails { get; set; }
+
+    /// <summary>Кнопки запуска в строках списка баз.</summary>
+    [ObservableProperty]
+    public partial bool ShowRowLaunchButtons { get; set; }
+
+    /// <summary>Кнопки запуска справа от списка, над свойствами базы.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowRightPanel))]
+    public partial bool ShowSideLaunchButtons { get; set; }
+
+    /// <summary>Правой панели есть что показать: кнопки запуска или свойства. Нет — колонка убирается.</summary>
+    public bool ShowRightPanel => ShowDetails || ShowSideLaunchButtons;
 
     /// <summary>Запретить повторный запуск: действует со следующего запуска лаунчера.</summary>
     [ObservableProperty]
@@ -666,6 +681,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.Settings.Ui.ShowDetails = value;
+        _settings.RequestSave();
+    }
+
+    partial void OnShowRowLaunchButtonsChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.ShowRowLaunchButtons = value;
+        _settings.RequestSave();
+    }
+
+    partial void OnShowSideLaunchButtonsChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.ShowSideLaunchButtons = value;
         _settings.RequestSave();
     }
 

@@ -33,6 +33,10 @@ public sealed record SettingsValues
 
     public bool ShowDetails { get; init; }
 
+    public bool ShowRowLaunchButtons { get; init; } = true;
+
+    public bool ShowSideLaunchButtons { get; init; } = true;
+
     // Горячие клавиши.
     public HotKeyMap HotKeys { get; init; } = HotKeyMap.Default;
 
@@ -98,6 +102,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ThemeIndex = original.ThemeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
+        ShowRowLaunchButtons = original.ShowRowLaunchButtons;
+        ShowSideLaunchButtons = original.ShowSideLaunchButtons;
         foreach (var definition in HotKeyMap.Definitions)
         {
             var row = new HotKeyRowViewModel(definition, original.HotKeys[definition.Command]);
@@ -150,6 +156,12 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool ShowDetails { get; set; }
 
+    [ObservableProperty]
+    public partial bool ShowRowLaunchButtons { get; set; }
+
+    [ObservableProperty]
+    public partial bool ShowSideLaunchButtons { get; set; }
+
     // --- Горячие клавиши ---
     public ObservableCollection<HotKeyRowViewModel> HotKeyRows { get; } = [];
 
@@ -171,7 +183,11 @@ public sealed partial class SettingsViewModel : ObservableObject
         || !string.Equals(PuskUrl.Trim(), _original.PuskUrl.Trim(), StringComparison.Ordinal);
 
     public bool IsAppearanceDirty =>
-        ThemeIndex != _original.ThemeIndex || IconStyleIndex != _original.IconStyleIndex || ShowDetails != _original.ShowDetails;
+        ThemeIndex != _original.ThemeIndex
+        || IconStyleIndex != _original.IconStyleIndex
+        || ShowDetails != _original.ShowDetails
+        || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
+        || ShowSideLaunchButtons != _original.ShowSideLaunchButtons;
 
     public bool IsHotKeysDirty => !CurrentHotKeys.SameAs(_original.HotKeys);
 
@@ -204,6 +220,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
+        ShowRowLaunchButtons = ShowRowLaunchButtons,
+        ShowSideLaunchButtons = ShowSideLaunchButtons,
         HotKeys = CurrentHotKeys,
         ParameterTemplates = Templates.CustomTemplates,
     };

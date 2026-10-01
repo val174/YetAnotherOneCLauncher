@@ -86,7 +86,8 @@ public partial class MainWindow : Window
         ApplyDetailsLayout();
         viewModel.PropertyChanged += (_, e) =>
         {
-            if (e.PropertyName is nameof(MainWindowViewModel.ShowDetails) or nameof(MainWindowViewModel.DetailsWidth))
+            if (e.PropertyName is nameof(MainWindowViewModel.ShowDetails) or nameof(MainWindowViewModel.DetailsWidth)
+                or nameof(MainWindowViewModel.ShowSideLaunchButtons))
             {
                 ApplyDetailsLayout();
             }
@@ -110,11 +111,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Правая колонка есть всегда: в ней кнопки запуска; свойства под ними скрываются отдельно (ShowDetails).
+        // Правая колонка — кнопки запуска и свойства базы; если оба выключены, колонка с разделителем убирается
+        // и список занимает всю ширину.
         BodyGrid.ColumnDefinitions[0].MinWidth = MinListWidth;
-        DetailsColumn.MinWidth = MainWindowViewModel.MinDetailsWidth;
-        DetailsColumn.MaxWidth = MainWindowViewModel.MaxDetailsWidth;
-        DetailsColumn.Width = new GridLength(vm.DetailsWidth);
+        var show = vm.ShowRightPanel;
+        DetailsBorder.IsVisible = show;
+        DetailsSplitter.IsVisible = show;
+        DetailsColumn.MinWidth = show ? MainWindowViewModel.MinDetailsWidth : 0;
+        DetailsColumn.MaxWidth = show ? MainWindowViewModel.MaxDetailsWidth : 0;
+        DetailsColumn.Width = new GridLength(show ? vm.DetailsWidth : 0);
         FitSearchBox();
     }
 

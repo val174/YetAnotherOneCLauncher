@@ -141,6 +141,65 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Row_launch_buttons_show_on_selected_row_and_launch_its_base()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        var node = fixture.ViewModel.TreeItems.OfType<ViewModels.FolderNodeViewModel>().Single(f => f.Name == "Рабочие").Children
+            .OfType<ViewModels.BaseNodeViewModel>().Single(n => n.Name == "Бухгалтерия предприятия");
+        fixture.ViewModel.SelectedTreeItem = node;
+        Render();
+
+        StackPanel[] RowButtons() => [.. tree.GetVisualDescendants().OfType<StackPanel>().Where(p => p.Classes.Contains("rowLaunch"))];
+        var visible = Assert.Single(RowButtons(), p => p.IsVisible); // только у выделенной строки
+        Assert.Same(node, visible.DataContext);
+        Snapshot(window, "18-row-launch");
+
+        // Кнопка «Конфигуратор» в строке запускает именно эту базу.
+        var designer = visible.GetVisualDescendants().OfType<Button>().Last();
+        designer.Command!.Execute(designer.CommandParameter);
+        await WaitAsync(() => fixture.Processes.Started.Count == 1);
+        Assert.Equal("DESIGNER", fixture.Processes.Started[0].Arguments[0]);
+        Assert.Contains("buh_prod", string.Join(' ', fixture.Processes.Started[0].Arguments), StringComparison.Ordinal);
+
+        // Настройка выключает кнопки и место под них (и в заголовке колонок).
+        fixture.ViewModel.ShowRowLaunchButtons = false;
+        Render();
+        Assert.All(tree.GetVisualDescendants().OfType<Panel>().Where(p => p.Classes.Contains("rowLaunchCell")), p => Assert.False(p.IsEffectivelyVisible));
+        Assert.False(window.FindControl<Grid>("ColumnHeaders")!.Children.OfType<Panel>().Single(p => p.Classes.Contains("rowLaunchCell")).IsVisible);
+        Assert.False(fixture.Settings.Settings.Ui.ShowRowLaunchButtons);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Side_launch_buttons_can_be_hidden_and_empty_right_panel_collapses()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+
+        vm.ShowSideLaunchButtons = false;
+        Render();
+        Assert.False(window.FindControl<StackPanel>("LaunchButtons")!.IsVisible);
+        Assert.True(window.FindControl<Border>("DetailsBorder")!.IsVisible); // свойства базы остались
+        Assert.False(fixture.Settings.Settings.Ui.ShowSideLaunchButtons);
+
+        vm.ShowDetails = false; // справа больше нечего показывать — колонка убирается, список во всю ширину
+        Render();
+        Assert.False(window.FindControl<Border>("DetailsBorder")!.IsVisible);
+        Assert.False(window.FindControl<GridSplitter>("DetailsSplitter")!.IsVisible);
+        Assert.Equal(0, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth);
+        Snapshot(window, "19-no-right-panel");
+
+        vm.ShowSideLaunchButtons = true;
+        Render();
+        Assert.True(window.FindControl<Border>("DetailsBorder")!.IsVisible);
+        Assert.Equal(vm.DetailsWidth, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth, tolerance: 1);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Status_bar_button_toggles_details_panel()
     {
         using var fixture = new ViewModelFixture();

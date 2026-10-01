@@ -23,6 +23,8 @@ public sealed partial class MainWindowViewModel
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
+        ShowRowLaunchButtons = ShowRowLaunchButtons,
+        ShowSideLaunchButtons = ShowSideLaunchButtons,
         HotKeys = HotKeys,
         ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
     };
@@ -54,6 +56,8 @@ public sealed partial class MainWindowViewModel
         ThemeIndex = values.ThemeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;
+        ShowRowLaunchButtons = values.ShowRowLaunchButtons;
+        ShowSideLaunchButtons = values.ShowSideLaunchButtons;
 
         if (!values.HotKeys.SameAs(HotKeys))
         {

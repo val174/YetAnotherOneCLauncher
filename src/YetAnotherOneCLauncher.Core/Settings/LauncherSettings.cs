@@ -160,6 +160,12 @@ public sealed class UiSettings
 
     public bool ShowDetails { get; set; } = true;
 
+    /// <summary>Кнопки «1С: Предприятие» и «Конфигуратор» в строках списка баз (у строки под мышью и выделенной).</summary>
+    public bool ShowRowLaunchButtons { get; set; } = true;
+
+    /// <summary>Кнопки запуска 1С справа от списка баз, над свойствами базы.</summary>
+    public bool ShowSideLaunchButtons { get; set; } = true;
+
     /// <summary>
     /// Переопределённые горячие клавиши: имя команды → сочетание в формате Avalonia («Ctrl+Shift+N», «F3»);
     /// пустая строка — сочетание снято. Команды, которых здесь нет, работают по умолчанию.
