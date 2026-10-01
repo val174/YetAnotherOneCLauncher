@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
@@ -18,19 +20,50 @@ public class ClusterConsoleTests
     private static readonly PlatformInstallation[] All = [Old32, New32, Old64, New64];
 
     [Fact]
-    public void Registered_versions_first_then_separator_then_versions_to_register()
+    public void Registered_versions_first_then_collapsed_group_of_versions_to_register()
     {
         var console = Console(registered: Old32); // 32-разрядная тоже распознаётся как зарегистрированная
 
         var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
 
-        Assert.Equal(
-            ["8.3.22.2239 32-разрядная", "8.3.27.2130 64-разрядная", "8.3.27.2130 32-разрядная", "8.3.24.1667 64-разрядная"],
-            form.Options.Select(o => $"{o.Title} {o.Detail}"));
-        Assert.Equal([true, false, false, false], form.Options.Select(o => o.IsRegistered));
-        Assert.Equal([false, true, false, false], form.Options.Select(o => o.HasSeparatorAbove)); // разделитель — перед доступными к регистрации
+        // Группа «Доступные к регистрации» по умолчанию свёрнута: видно зарегистрированную и заголовок с числом версий.
+        Assert.Equal(["8.3.22.2239 32-разрядная", "Доступные к регистрации 3"], form.Options.Select(o => $"{o.Title} {o.Detail}"));
+        var group = form.Options[1];
+        Assert.True(group.IsGroupHeader);
+        Assert.False(group.IsExpanded);
+        Assert.True(group.HasSeparatorAbove); // разделитель — перед группой
         Assert.Same(form.Options[0], form.SelectedOption); // по умолчанию — зарегистрированная
         Assert.Equal(1, console.RegistryLookups); // регистрация ищется один раз
+
+        form.ToggleGroupCommand.Execute(null);
+        Assert.Equal(
+            ["8.3.22.2239", "Доступные к регистрации", "8.3.27.2130", "8.3.27.2130", "8.3.24.1667"],
+            form.Options.Select(o => o.Title));
+        Assert.All(form.Options.Skip(2), o => Assert.True(o.IsInGroup));
+        Assert.Equal("▾", group.ExpandGlyph);
+
+        form.SelectedOption = form.Options[3];
+        form.ToggleGroupCommand.Execute(null); // свернули — выделенная версия скрылась, выделение на заголовке
+        Assert.Equal(2, form.Options.Count);
+        Assert.Same(group, form.SelectedOption);
+        Assert.Equal(("Развернуть", false), (form.ActionText, form.NeedsRegistration));
+    }
+
+    [Fact]
+    public async Task Enter_on_group_header_expands_it_instead_of_launching()
+    {
+        var console = Console(registered: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var group = Assert.Single(form.Options); // ничего не зарегистрировано — только свёрнутая группа
+        Assert.Same(group, form.SelectedOption);
+        Assert.False(group.HasSeparatorAbove); // выше ничего нет — разделитель не нужен
+
+        await form.LaunchCommand.ExecuteAsync(null);
+
+        Assert.True(group.IsExpanded);
+        Assert.Equal(5, form.Options.Count);
+        Assert.Equal("Свернуть", form.ActionText);
+        Assert.Empty(console.Opened);
     }
 
     [Fact]
@@ -45,8 +78,9 @@ public class ClusterConsoleTests
         Assert.Equal(
             ["8.3.27.2130 32-разрядная", "8.3.24.1667 64-разрядная"],
             form.Options.Where(o => o.IsRegistered).Select(o => $"{o.Title} {o.Detail}"));
-        Assert.Equal([true, true, false, false], form.Options.Select(o => o.IsRegistered)); // обе — сверху
-        Assert.True(form.Options[2].HasSeparatorAbove);
+        Assert.Equal([true, true, false], form.Options.Select(o => o.IsRegistered)); // обе — сверху, дальше группа
+        Assert.True(form.Options[2].IsGroupHeader);
+        Assert.Equal(2, form.Options[2].GroupCount);
         Assert.Equal(1, console.RegistryLookups);
     }
 
@@ -64,17 +98,6 @@ public class ClusterConsoleTests
         Assert.Equal(("8.3.23.1865", "32-разрядная"), (registered.Title, registered.Detail));
         Assert.Equal(Path.Combine(@"D:\1C\8.3.23.1865", "bin"), registered.Platform!.BinDirectory);
         Assert.Null(ClusterConsoleViewModel.FromRegistration(new ClusterConsoleRegistration(@"C:\tools\radmin.dll", PlatformArchitecture.X64)));
-    }
-
-    [Fact]
-    public void Without_registration_there_is_no_separator()
-    {
-        var form = new ClusterConsoleViewModel(All, Console(registered: null), new FakeProcessLauncher(), puskUrl: null);
-
-        Assert.All(form.Options, o => Assert.False(o.IsRegistered));
-        Assert.All(form.Options, o => Assert.False(o.HasSeparatorAbove));
-        Assert.Equal("8.3.27.2130 64-разрядная", $"{form.SelectedOption!.Title} {form.SelectedOption.Detail}");
-        Assert.True(form.NeedsRegistration);
     }
 
     [Fact]
@@ -118,7 +141,7 @@ public class ClusterConsoleTests
 
         fixture.Dialogs.ClusterConsole = console =>
         {
-            Assert.Equal(["8.3.24.1667", "8.3.27.2130"], console.Options.Select(o => o.Title)); // зарегистрированная — сверху
+            Assert.Equal(["8.3.24.1667", "Доступные к регистрации"], console.Options.Select(o => o.Title)); // зарегистрированная — сверху
             Assert.Equal("Запустить", console.ActionText);
             return console.LaunchCommand.ExecuteAsync(null);
         };
@@ -135,6 +158,7 @@ public class ClusterConsoleTests
         var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), null);
         var closed = 0;
         form.CloseRequested += (_, _) => closed++;
+        form.ToggleGroupCommand.Execute(null); // 8.3.27 x86 — в группе «Доступные к регистрации»
         form.SelectedOption = form.Options.Single(o => o.Platform == New32);
         Assert.True(form.NeedsRegistration);
 
@@ -211,10 +235,21 @@ public class ClusterConsoleTests
         var window = new ClusterConsoleWindow(form);
         window.Show();
 
-        form.SelectedOption = form.Options.Single(o => o.Platform == New64);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         var list = window.FindControl<ListBox>("VersionsList")!;
-        Assert.Equal(5, list.ItemCount);
+        Assert.Equal(3, list.ItemCount); // «ПУСК», зарегистрированная, свёрнутая группа
+        MainWindowTests.Snapshot(window, "10-cluster-console-collapsed");
+
+        // Щелчок по заголовку группы раскрывает её.
+        var header = list.GetVisualDescendants().OfType<TextBlock>().First(t => t.Text == "Доступные к регистрации");
+        var point = header.TranslatePoint(new Avalonia.Point(5, 5), window)!.Value;
+        window.MouseDown(point, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(point, Avalonia.Input.MouseButton.Left);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
+        Assert.Equal(6, list.ItemCount);
+
+        form.SelectedOption = form.Options.Single(o => o.Platform == New64);
+        Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         Assert.Single(list.GetVisualDescendants().OfType<Border>(), b => b.Classes.Contains("optionSeparator") && b.IsVisible);
         Assert.True(window.FindControl<TextBlock>("RegistrationHint")!.IsVisible);
         Assert.Null(window.FindControl<Button>("PuskButton")); // отдельной кнопки нет — строка в списке
@@ -234,8 +269,8 @@ public class ClusterConsoleTests
 
         var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
 
-        Assert.Single(form.Options, o => o.Platform == Old64);
-        var option = Assert.Single(form.Options, o => o.Title == "8.3.27.1936");
+        Assert.Single(form.Versions, o => o.Platform == Old64);
+        var option = Assert.Single(form.Versions, o => o.Title == "8.3.27.1936");
         Assert.Equal(("32-разрядная", false), (option.Detail, option.IsRegistered));
     }
 
@@ -252,7 +287,7 @@ public class ClusterConsoleTests
 
         var registered = Assert.Single(form.Options, o => o.IsRegistered);
         Assert.Equal(("8.3.27.1936", "32-разрядная"), (registered.Title, registered.Detail));
-        Assert.False(form.Options.Single(o => o.Platform == Old32).IsRegistered); // 8.3.22 — устаревшая регистрация
+        Assert.False(form.Versions.Single(o => o.Platform == Old32).IsRegistered); // 8.3.22 — устаревшая регистрация
     }
 
     [Fact]

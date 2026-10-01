@@ -25,7 +25,11 @@
       <Setter Property="Foreground" Value="White" />
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
     </Style>
-    <!-- Разделитель между зарегистрированными версиями и доступными к регистрации. -->
+    <!-- Версии внутри группы «Доступные к регистрации» — с отступом под стрелкой заголовка. -->
+    <Style Selector="DockPanel.inGroup">
+      <Setter Property="Margin" Value="20,0,0,0" />
+    </Style>
+    <!-- Разделитель перед группой «Доступные к регистрации». -->
     <Style Selector="Border.optionSeparator">
       <Setter Property="Height" Value="1" />
       <Setter Property="Margin" Value="-12,0,-12,8" />
@@ -42,7 +46,10 @@
           <DataTemplate DataType="vm:ClusterConsoleOption">
             <StackPanel>
               <Border Classes="optionSeparator" IsVisible="{Binding HasSeparatorAbove}" />
-              <DockPanel>
+              <DockPanel Classes.inGroup="{Binding IsInGroup}">
+                <!-- Заголовок группы: стрелка сворачивания; щелчок, Enter или «Развернуть» — раскрыть. -->
+                <TextBlock DockPanel.Dock="Left" Text="{Binding ExpandGlyph}" IsVisible="{Binding IsGroupHeader}"
+                           Width="16" Margin="0,0,4,0" VerticalAlignment="Center" Opacity="0.75" />
                 <Border DockPanel.Dock="Right" Classes="registeredTag" IsVisible="{Binding IsRegistered}"
                         ToolTip.Tip="Компонент администрирования этой версии зарегистрирован в Windows">
                   <TextBlock Text="зарегистрирована" />

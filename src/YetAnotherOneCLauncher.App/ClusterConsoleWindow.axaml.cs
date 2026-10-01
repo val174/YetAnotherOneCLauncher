@@ -19,9 +19,18 @@ public partial class ClusterConsoleWindow : Window
         DataContext = console;
         console.CloseRequested += (_, _) => Close();
         CancelButton.Click += (_, _) => Close();
-        VersionsList.DoubleTapped += (_, _) =>
+        // Заголовок группы раскрывается одним щелчком, строки — запускаются двойным.
+        VersionsList.Tapped += (_, e) =>
         {
-            if (console.LaunchCommand.CanExecute(null))
+            if ((e.Source as Control)?.DataContext is ClusterConsoleOption { IsGroupHeader: true })
+            {
+                console.ToggleGroupCommand.Execute(null);
+            }
+        };
+        VersionsList.DoubleTapped += (_, e) =>
+        {
+            if ((e.Source as Control)?.DataContext is ClusterConsoleOption { IsGroupHeader: false }
+                && console.LaunchCommand.CanExecute(null))
             {
                 console.LaunchCommand.Execute(null);
             }

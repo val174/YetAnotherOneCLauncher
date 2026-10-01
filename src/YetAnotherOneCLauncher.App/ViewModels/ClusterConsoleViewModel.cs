@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YetAnotherOneCLauncher.Core.Platforms;
@@ -5,55 +6,83 @@ using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
-/// <summary>Строка окна консоли кластера: переход в «ПУСК» или версия платформы с консолью.</summary>
-public sealed class ClusterConsoleOption
+/// <summary>
+/// Строка окна консоли кластера: переход в «ПУСК», версия платформы с консолью или заголовок группы
+/// «Доступные к регистрации» (сворачивается).
+/// </summary>
+public sealed partial class ClusterConsoleOption : ObservableObject
 {
-    private ClusterConsoleOption(PlatformInstallation? platform, bool isRegistered, Uri? puskUrl)
+    private ClusterConsoleOption(PlatformInstallation? platform, bool isRegistered, Uri? puskUrl, int groupCount = -1)
     {
         Platform = platform;
         IsRegistered = isRegistered;
         PuskUrl = puskUrl;
+        GroupCount = groupCount;
     }
 
-    /// <summary>Версия платформы; <c>null</c> — строка «Панель управления сервисами и компонентами».</summary>
+    /// <summary>Версия платформы; <c>null</c> — строка «ПУСК» или заголовок группы.</summary>
     public PlatformInstallation? Platform { get; }
 
     public Uri? PuskUrl { get; }
 
     public bool IsPusk => PuskUrl is not null;
 
+    /// <summary>Заголовок группы версий, доступных к регистрации.</summary>
+    public bool IsGroupHeader => GroupCount >= 0;
+
+    /// <summary>Сколько версий в группе (у заголовка).</summary>
+    public int GroupCount { get; }
+
+    /// <summary>Строка версии внутри группы «Доступные к регистрации» — с отступом.</summary>
+    public bool IsInGroup => Platform is not null && !IsRegistered;
+
     /// <summary>Компонент этой версии зарегистрирован: консоль откроется без запроса прав.</summary>
     public bool IsRegistered { get; }
 
-    /// <summary>Первая из версий, доступных к регистрации, после зарегистрированных: над ней — разделитель.</summary>
+    /// <summary>Группа развёрнута (у заголовка).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ExpandGlyph))]
+    public partial bool IsExpanded { get; set; }
+
+    public string ExpandGlyph => IsExpanded ? "▾" : "▸";
+
+    /// <summary>Над строкой — разделитель: у заголовка группы, если выше есть другие строки.</summary>
     public bool HasSeparatorAbove { get; private init; }
 
-    public string Title => Platform?.Version.ToString() ?? "Панель управления сервисами и компонентами";
+    public string Title => IsGroupHeader
+        ? "Доступные к регистрации"
+        : Platform?.Version.ToString() ?? "Панель управления сервисами и компонентами";
 
-    public string Detail => Platform is null
-        ? string.Empty // адрес не показывается: он есть в настройках
-        : Platform.Architecture switch
-        {
-            PlatformArchitecture.X86 => "32-разрядная",
-            PlatformArchitecture.X64 => "64-разрядная",
-            _ => PlatformInstallation.ArchitectureName(Platform.Architecture),
-        };
+    public string Detail => IsGroupHeader
+        ? GroupCount.ToString(System.Globalization.CultureInfo.CurrentCulture)
+        : Platform is null
+            ? string.Empty // адрес «ПУСК» не показывается: он есть в настройках
+            : Platform.Architecture switch
+            {
+                PlatformArchitecture.X86 => "32-разрядная",
+                PlatformArchitecture.X64 => "64-разрядная",
+                _ => PlatformInstallation.ArchitectureName(Platform.Architecture),
+            };
 
     public static ClusterConsoleOption Pusk(Uri url) => new(null, false, url);
 
-    public static ClusterConsoleOption Version(PlatformInstallation platform, bool isRegistered, bool separatorAbove = false) =>
-        new(platform, isRegistered, null) { HasSeparatorAbove = separatorAbove };
+    public static ClusterConsoleOption Version(PlatformInstallation platform, bool isRegistered) => new(platform, isRegistered, null);
+
+    public static ClusterConsoleOption Group(int count, bool separatorAbove) =>
+        new(null, false, null, count) { HasSeparatorAbove = separatorAbove };
 }
 
 /// <summary>
-/// Окно «Консоль кластера серверов». Список: «Панель управления сервисами и компонентами» (если адрес задан в настройках), зарегистрированная
-/// версия, разделитель, версии, доступные к регистрации. Для незарегистрированной версии её компонент
-/// администрирования сначала регистрируется, затем открывается консоль.
+/// Окно «Консоль кластера серверов». Список: «Панель управления сервисами и компонентами» (если адрес «ПУСК»
+/// задан в настройках), зарегистрированные версии, разделитель и свёрнутая группа «Доступные к регистрации».
+/// Для незарегистрированной версии её компонент администрирования сначала регистрируется, затем открывается консоль.
 /// </summary>
 public sealed partial class ClusterConsoleViewModel : ObservableObject
 {
     private readonly IClusterConsole _console;
     private readonly IProcessLauncher _processes;
+    private readonly List<ClusterConsoleOption> _unregistered;
+    private readonly ClusterConsoleOption? _group;
 
     public ClusterConsoleViewModel(
         IEnumerable<PlatformInstallation> installations,
@@ -69,8 +98,7 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         // Регистрации читаются один раз: 64- и 32-разрядная независимы, их может быть две — от разных платформ.
         var registrations = console.FindRegistered();
         Registrations = registrations;
-        // Зарегистрированной считается только действующая регистрация — та, что откроет файл консоли;
-        // регистрации прежних версий платформы остаются в реестре, но консоль с ними не работает.
+        // Зарегистрированной считается только действующая регистрация — та, что загрузит консоль.
         bool IsRegistered(PlatformInstallation p) =>
             registrations.Any(r => r.IsActive && r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
 
@@ -97,23 +125,34 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
             .OrderByDescending(p => p.Version)
             .ThenByDescending(p => p.Architecture == PlatformArchitecture.X64)
             .ToList();
-        var registered = versions.Where(IsRegistered).ToList();
-        var unregistered = versions.Where(p => !IsRegistered(p)).ToList();
 
-        var options = new List<ClusterConsoleOption>();
         if (puskUrl is not null)
         {
-            options.Add(ClusterConsoleOption.Pusk(puskUrl));
+            Options.Add(ClusterConsoleOption.Pusk(puskUrl));
         }
 
-        options.AddRange(registered.Select(p => ClusterConsoleOption.Version(p, isRegistered: true)));
-        // Разделитель — между зарегистрированными и доступными к регистрации.
-        options.AddRange(unregistered.Select((p, i) => ClusterConsoleOption.Version(p, isRegistered: false, separatorAbove: i == 0 && registered.Count > 0)));
-        Options = options;
-        SelectedOption = options.FirstOrDefault(o => o.IsRegistered) ?? options.FirstOrDefault(o => !o.IsPusk) ?? options.FirstOrDefault();
+        foreach (var platform in versions.Where(IsRegistered))
+        {
+            Options.Add(ClusterConsoleOption.Version(platform, isRegistered: true));
+        }
+
+        // Незарегистрированные — в группе «Доступные к регистрации», по умолчанию свёрнутой.
+        _unregistered = [.. versions.Where(p => !IsRegistered(p)).Select(p => ClusterConsoleOption.Version(p, isRegistered: false))];
+        Versions = [.. Options.Where(o => o.Platform is not null), .. _unregistered];
+        if (_unregistered.Count > 0)
+        {
+            _group = ClusterConsoleOption.Group(_unregistered.Count, separatorAbove: Options.Count > 0);
+            Options.Add(_group);
+        }
+
+        SelectedOption = Options.FirstOrDefault(o => o.IsRegistered) ?? Options.FirstOrDefault();
     }
 
-    public IReadOnlyList<ClusterConsoleOption> Options { get; }
+    /// <summary>Видимые строки: версии свёрнутой группы в них не входят.</summary>
+    public ObservableCollection<ClusterConsoleOption> Options { get; } = [];
+
+    /// <summary>Все версии с консолью — зарегистрированные и из группы (даже свёрнутой).</summary>
+    public IReadOnlyList<ClusterConsoleOption> Versions { get; }
 
     /// <summary>Что нашлось в реестре — для лога.</summary>
     public IReadOnlyList<ClusterConsoleRegistration> Registrations { get; }
@@ -140,7 +179,7 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
     public bool HasOptions => Options.Count > 0;
 
     /// <summary>Есть ли версии с консолью (кроме строки «ПУСК»).</summary>
-    public bool HasVersions => Options.Any(o => !o.IsPusk);
+    public bool HasVersions => Versions.Count > 0;
 
     /// <summary>Почему версий нет.</summary>
     public string EmptyText => _console.IsSupported
@@ -154,9 +193,15 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
     public partial ClusterConsoleOption? SelectedOption { get; set; }
 
     /// <summary>Выбрана незарегистрированная версия: перед открытием Windows спросит права администратора.</summary>
-    public bool NeedsRegistration => SelectedOption is { IsPusk: false, IsRegistered: false };
+    public bool NeedsRegistration => SelectedOption is { Platform: not null, IsRegistered: false };
 
-    public string ActionText => SelectedOption?.IsPusk == true ? "Открыть" : "Запустить";
+    public string ActionText => SelectedOption switch
+    {
+        { IsPusk: true } => "Открыть",
+        { IsGroupHeader: true, IsExpanded: true } => "Свернуть",
+        { IsGroupHeader: true } => "Развернуть",
+        _ => "Запустить",
+    };
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(LaunchCommand))]
@@ -174,12 +219,52 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
     /// <summary>Окну пора закрыться.</summary>
     public event EventHandler? CloseRequested;
 
-    /// <summary>Выполнить выбранную строку: открыть «ПУСК» в браузере или консоль выбранной версии.</summary>
+    /// <summary>Развернуть или свернуть группу «Доступные к регистрации».</summary>
+    [RelayCommand]
+    private void ToggleGroup()
+    {
+        if (_group is null)
+        {
+            return;
+        }
+
+        _group.IsExpanded = !_group.IsExpanded;
+        var index = Options.IndexOf(_group);
+        if (_group.IsExpanded)
+        {
+            for (var i = 0; i < _unregistered.Count; i++)
+            {
+                Options.Insert(index + 1 + i, _unregistered[i]);
+            }
+        }
+        else
+        {
+            if (SelectedOption is { IsInGroup: true })
+            {
+                SelectedOption = _group; // выделенная версия скрывается — выделение на заголовок
+            }
+
+            foreach (var option in _unregistered)
+            {
+                Options.Remove(option);
+            }
+        }
+
+        OnPropertyChanged(nameof(ActionText));
+    }
+
+    /// <summary>Выполнить выбранную строку: открыть «ПУСК», консоль выбранной версии или развернуть группу.</summary>
     [RelayCommand(CanExecute = nameof(CanLaunch))]
     private async Task LaunchAsync()
     {
         if (SelectedOption is not { } option)
         {
+            return;
+        }
+
+        if (option.IsGroupHeader)
+        {
+            ToggleGroup();
             return;
         }
 
