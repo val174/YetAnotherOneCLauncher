@@ -39,7 +39,7 @@ public sealed partial class MainWindowViewModel
         // Для разбора «не видит консоль»: что нашлось в реестре и что попало в список.
         var registrations = console.Registrations.Count == 0
             ? "нет"
-            : string.Join("; ", console.Registrations.Select(r => $"{r.Architecture} {r.LibraryPath} {r.SnapInClassId}{(r.IsActive ? string.Empty : " (устаревшая)")}"));
+            : string.Join("; ", console.Registrations.Select(r => $"{r.Architecture} {r.LibraryPath} {r.SnapInClassId}{(r.IsActive ? string.Empty : " (не действует)")}"));
         var options = string.Join(
             "; ",
             console.Options.Where(o => !o.IsPusk).Select(o => $"{o.Title} {o.Detail}{(o.IsRegistered ? " (зарегистрирована)" : string.Empty)}"));

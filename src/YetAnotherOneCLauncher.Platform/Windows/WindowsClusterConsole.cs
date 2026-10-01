@@ -36,9 +36,19 @@ public sealed class WindowsClusterConsole : IClusterConsole
     /// </summary>
     public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() =>
     [
-        .. MarkActive(ReadRegistrations(RegistryView.Registry64, PlatformArchitecture.X64), PlatformArchitecture.X64),
-        .. MarkActive(ReadRegistrations(RegistryView.Registry32, PlatformArchitecture.X86), PlatformArchitecture.X86),
+        .. MarkActive(ReadRegistrations(PlatformArchitecture.X64), PlatformArchitecture.X64),
+        .. MarkActive(ReadRegistrations(PlatformArchitecture.X86), PlatformArchitecture.X86),
     ];
+
+    /// <summary>Путь к radmin.dll, зарегистрированной для класса в этом разделе; <c>null</c> — нет или не radmin.dll.</summary>
+    private static string? AdminLibraryOf(RegistryKey hive, string classesPath, string classId)
+    {
+        using var server = hive.OpenSubKey($@"{classesPath}\{classId}\InprocServer32");
+        return server?.GetValue(null) is string { Length: > 0 } path
+               && string.Equals(Path.GetFileName(path.Trim().Trim('"')), AdminLibraryName, StringComparison.OrdinalIgnoreCase)
+            ? path
+            : null;
+    }
 
     /// <summary>COM-классы, на которые ссылается файл консоли: атрибуты <c>CLSID="{…}"</c>.</summary>
     public static IReadOnlySet<string> SnapInClassesOf(string mscText)
@@ -55,8 +65,8 @@ public sealed class WindowsClusterConsole : IClusterConsole
     {
         ArgumentNullException.ThrowIfNull(found);
         ArgumentNullException.ThrowIfNull(consoleClasses);
-        var anyReferenced = found.Any(r => r.SnapInClassId is { } id && consoleClasses.Contains(id));
-        return found.Select(r => r with { IsActive = !anyReferenced || (r.SnapInClassId is { } id && consoleClasses.Contains(id)) });
+        var anyReferenced = found.Any(r => r.IsActive && r.SnapInClassId is { } id && consoleClasses.Contains(id));
+        return found.Select(r => r with { IsActive = r.IsActive && (!anyReferenced || (r.SnapInClassId is { } id && consoleClasses.Contains(id))) });
     }
 
     private static IEnumerable<ClusterConsoleRegistration> MarkActive(IReadOnlyList<ClusterConsoleRegistration> found, PlatformArchitecture architecture)
@@ -99,24 +109,40 @@ public sealed class WindowsClusterConsole : IClusterConsole
         }
     }
 
-    private static List<ClusterConsoleRegistration> ReadRegistrations(RegistryView view, PlatformArchitecture architecture)
+    /// <summary>
+    /// Регистрации одной разрядности. Класс может быть зарегистрирован дважды: для компьютера (HKLM) и для
+    /// пользователя (HKCU), с разными версиями radmin.dll. MMC у администратора запускается с повышенными правами,
+    /// а такой процесс пользовательские регистрации COM не видит — действует HKLM. У обычного пользователя MMC
+    /// работает без повышения, и его регистрация перекрывает общую. Перекрытая попадает в список как недействующая.
+    /// </summary>
+    private static List<ClusterConsoleRegistration> ReadRegistrations(PlatformArchitecture architecture)
     {
         var found = new List<ClusterConsoleRegistration>();
         try
         {
-            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
-            using var classes = RegistryKey.OpenBaseKey(RegistryHive.ClassesRoot, view);
-            using var snapIns = machine.OpenSubKey(@"SOFTWARE\Microsoft\MMC\SnapIns");
+            // Пути — явно: 32-разрядные классы в WOW6432Node (так их и показывает regedit).
+            var x86 = architecture == PlatformArchitecture.X86;
+            var classesPath = x86 ? @"SOFTWARE\Classes\WOW6432Node\CLSID" : @"SOFTWARE\Classes\CLSID";
+            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry64);
+            using var user = RegistryKey.OpenBaseKey(RegistryHive.CurrentUser, RegistryView.Registry64);
+            using var snapIns = machine.OpenSubKey(x86 ? @"SOFTWARE\WOW6432Node\Microsoft\MMC\SnapIns" : @"SOFTWARE\Microsoft\MMC\SnapIns");
+            var elevatedMmc = WindowsElevation.CanElevate();
 
             // Известный класс 64-разрядной оснастки — и без записи в MMC\SnapIns.
             var classIds = (snapIns?.GetSubKeyNames() ?? []).Append(SnapInClassId).Distinct(StringComparer.OrdinalIgnoreCase);
             foreach (var classId in classIds)
             {
-                using var server = classes.OpenSubKey($@"CLSID\{classId}\InprocServer32");
-                if (server?.GetValue(null) is string { Length: > 0 } path
-                    && string.Equals(Path.GetFileName(path.Trim().Trim('"')), AdminLibraryName, StringComparison.OrdinalIgnoreCase))
+                var machinePath = AdminLibraryOf(machine, classesPath, classId);
+                var userPath = AdminLibraryOf(user, classesPath, classId);
+                var (effective, overridden) = elevatedMmc || userPath is null ? (machinePath, userPath) : (userPath, machinePath);
+                if (effective is not null)
                 {
-                    found.Add(new ClusterConsoleRegistration(path, architecture, classId));
+                    found.Add(new ClusterConsoleRegistration(effective, architecture, classId));
+                }
+
+                if (overridden is not null && (effective is null || !new ClusterConsoleRegistration(effective, architecture).Matches(overridden)))
+                {
+                    found.Add(new ClusterConsoleRegistration(overridden, architecture, classId, IsActive: false));
                 }
             }
         }

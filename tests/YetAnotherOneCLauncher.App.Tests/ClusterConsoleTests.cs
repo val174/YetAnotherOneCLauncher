@@ -273,6 +273,15 @@ public class ClusterConsoleTests
 
         Assert.Equal([false, true], WindowsClusterConsole.MarkActive(found, classes).Select(r => r.IsActive));
         Assert.Equal([true, true], WindowsClusterConsole.MarkActive(found, new HashSet<string>()).Select(r => r.IsActive)); // файла нет — все
+
+        // Тот же класс зарегистрирован для компьютера (8.3.27.1936) и для пользователя (8.3.22.2239): перекрытая
+        // регистрация остаётся недействующей, хотя её класс указан в файле консоли.
+        ClusterConsoleRegistration[] twice =
+        [
+            new(@"C:\x86\8.3.27.1936\bin\radmin.dll", PlatformArchitecture.X86, "{22222222-2222-2222-2222-222222222222}"),
+            new(@"C:\x86\8.3.22.2239\bin\radmin.dll", PlatformArchitecture.X86, "{22222222-2222-2222-2222-222222222222}", IsActive: false),
+        ];
+        Assert.Equal([true, false], WindowsClusterConsole.MarkActive(twice, classes).Select(r => r.IsActive));
     }
 
     [Fact]
