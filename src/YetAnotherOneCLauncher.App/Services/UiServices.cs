@@ -19,6 +19,9 @@ public interface IDialogService
 
     Task ShowMessageAsync(string title, string text);
 
+    /// <summary>Выбор одного из вариантов; индекс выбранного или <c>null</c> — отмена.</summary>
+    Task<int?> ChooseAsync(string title, string question, IReadOnlyList<string> options);
+
     /// <summary>Однострочный ввод (например, имя папки); <c>null</c> — отмена.</summary>
     Task<string?> PromptAsync(string title, string label, string initialText);
 
@@ -103,6 +106,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task ShowMessageAsync(string title, string text) =>
         Owner is { } owner ? MessageDialog.ShowAsync(owner, title, text) : Task.CompletedTask;
+
+    public Task<int?> ChooseAsync(string title, string question, IReadOnlyList<string> options) =>
+        Owner is { } owner ? MessageDialog.ChooseAsync(owner, title, question, options) : Task.FromResult<int?>(null);
 
     public Task<string?> PromptAsync(string title, string label, string initialText) =>
         Owner is { } owner ? InputDialog.PromptAsync(owner, title, label, initialText) : Task.FromResult<string?>(null);

@@ -100,6 +100,8 @@ public sealed class HotKeyMap
 
     public string DeleteSuffix => Suffix(HotKeyCommand.Delete);
 
+    public string EditSuffix => Suffix(HotKeyCommand.Edit);
+
     /// <summary>Сочетания из настроек; нераспознанные записи пропускаются (работает сочетание по умолчанию).</summary>
     public static HotKeyMap FromSettings(IReadOnlyDictionary<string, string>? overrides)
     {

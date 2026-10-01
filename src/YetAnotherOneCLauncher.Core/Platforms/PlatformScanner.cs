@@ -3,11 +3,12 @@ namespace YetAnotherOneCLauncher.Core.Platforms;
 /// <summary>Имена исполняемых файлов платформы на конкретной ОС.</summary>
 /// <param name="ThickClientFileName"><c>1cv8.exe</c> в Windows, <c>1cv8</c> в Linux.</param>
 /// <param name="ThinClientFileName"><c>1cv8c.exe</c> в Windows, <c>1cv8c</c> в Linux.</param>
-public sealed record PlatformExecutableNames(string ThickClientFileName, string ThinClientFileName)
+/// <param name="StarterFileName">Стандартный стартер 1С: <c>1cestart.exe</c> в Windows, <c>1cestart</c> в Linux.</param>
+public sealed record PlatformExecutableNames(string ThickClientFileName, string ThinClientFileName, string StarterFileName)
 {
-    public static PlatformExecutableNames Windows { get; } = new("1cv8.exe", "1cv8c.exe");
+    public static PlatformExecutableNames Windows { get; } = new("1cv8.exe", "1cv8c.exe", "1cestart.exe");
 
-    public static PlatformExecutableNames Linux { get; } = new("1cv8", "1cv8c");
+    public static PlatformExecutableNames Linux { get; } = new("1cv8", "1cv8c", "1cestart");
 }
 
 /// <summary>Результат поиска платформ.</summary>

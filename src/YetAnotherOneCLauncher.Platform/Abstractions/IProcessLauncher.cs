@@ -17,6 +17,10 @@ public interface IProcessLauncher
     /// <summary>Открывает каталог в проводнике (Windows) или файловом менеджере (Linux).</summary>
     /// <exception cref="LaunchFailedException">Каталог не удалось открыть.</exception>
     void OpenFolder(string path);
+
+    /// <summary>Запускает программу без аргументов (например, стандартный стартер 1С) и не ждёт её завершения.</summary>
+    /// <exception cref="LaunchFailedException">Программу не удалось запустить.</exception>
+    void StartProgram(string path);
 }
 
 /// <summary>Процесс не удалось запустить: файла нет, нет прав, не найден браузер и т. п.</summary>

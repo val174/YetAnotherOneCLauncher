@@ -619,6 +619,61 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>Запустить стандартный стартер 1С (1cestart) — со своим списком баз и настройками.</summary>
+    [RelayCommand(CanExecute = nameof(CanLaunchStarter))]
+    private async Task LaunchStarterAsync()
+    {
+        const string title = "Стартер 1С";
+        if (_paths is null)
+        {
+            return;
+        }
+
+        // Стандартные каталоги установки: в Windows — «Program Files\1cv8\common» и «Program Files (x86)\1cv8\common».
+        var roots = _paths.DefaultPlatformInstallRoots;
+        var names = _paths.PlatformExecutableNames;
+        var found = StarterLocator.FindAll(roots, names);
+        if (found.Count == 0)
+        {
+            await _dialogs.ShowMessageAsync(
+                title,
+                $"Стартер 1С ({names.StarterFileName}) не найден. Искали:\n" + string.Join('\n', StarterLocator.Candidates(roots, names)));
+            return;
+        }
+
+        var path = found[0];
+        if (found.Count > 1)
+        {
+            // Найдено несколько (64- и 32-разрядный) — какой запустить, решает пользователь.
+            var choice = await _dialogs.ChooseAsync(
+                title,
+                "Найдено несколько стартеров 1С. Какой запустить?\n\n" + string.Join('\n', found),
+                [.. found.Select(StarterLabel)]);
+            if (choice is not { } index)
+            {
+                return;
+            }
+
+            path = found[index];
+        }
+
+        try
+        {
+            _processLauncher.StartProgram(path);
+            StatusText = "Стартер 1С запущен.";
+        }
+        catch (LaunchFailedException ex)
+        {
+            await _dialogs.ShowMessageAsync(title, ex.Message);
+        }
+    }
+
+    private bool CanLaunchStarter() => _paths is not null;
+
+    /// <summary>Подпись варианта: каталог над «1cv8» («Program Files», «Program Files (x86)»).</summary>
+    private static string StarterLabel(string path) =>
+        Path.GetFileName(Path.GetDirectoryName(Path.GetDirectoryName(Path.GetDirectoryName(path)))) is { Length: > 0 } name ? name : path;
+
     private bool HasTarget(InfoBaseViewModel? target) => (target ?? SelectedInfoBase) is not null;
 
     private bool CanOpenBaseFolder(InfoBaseViewModel? target) => (target ?? SelectedInfoBase)?.IsFileBase == true;

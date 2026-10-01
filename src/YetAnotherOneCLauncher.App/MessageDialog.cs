@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
+using Avalonia.LogicalTree;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -78,5 +79,27 @@ internal sealed class MessageDialog : Window
         var dialog = new MessageDialog(title, question, acceptText, "Отмена", optionText, optionChecked);
         var accepted = await dialog.ShowDialog<bool>(owner);
         return (accepted, dialog._option?.IsChecked == true);
+    }
+    /// <summary>Выбор одного из вариантов кнопками (по кнопке на вариант и «Отмена»); <c>null</c> — отмена.</summary>
+    public static async Task<int?> ChooseAsync(Window owner, string title, string question, IReadOnlyList<string> options)
+    {
+        int? chosen = null;
+        var dialog = new MessageDialog(title, question, options[0], "Отмена");
+        var accept = dialog.GetLogicalDescendants().OfType<Button>().First(b => b.IsDefault);
+        var buttons = (StackPanel)accept.Parent!;
+        accept.Click += (_, _) => chosen = 0;
+        for (var i = 1; i < options.Count; i++)
+        {
+            var index = i;
+            var button = new Button { Content = options[i], MinWidth = 90 };
+            button.Click += (_, _) =>
+            {
+                chosen = index;
+                dialog.Close(true);
+            };
+            buttons.Children.Insert(i, button);
+        }
+
+        return await dialog.ShowDialog<bool>(owner) ? chosen : null;
     }
 }

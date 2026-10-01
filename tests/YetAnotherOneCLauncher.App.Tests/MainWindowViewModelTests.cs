@@ -139,6 +139,44 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Standard_starter_is_launched_and_choice_is_asked_when_both_exist()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        var x64 = Path.Combine(fixture.InstallRoot, "common", "1cestart.exe");
+        var x86 = Path.Combine(fixture.InstallRootX86, "common", "1cestart.exe");
+
+        // Стартера нет — сообщение, где искали (оба каталога).
+        await vm.LaunchStarterCommand.ExecuteAsync(null);
+        var message = Assert.Single(fixture.Dialogs.Messages);
+        Assert.Contains(x64, message, StringComparison.Ordinal);
+        Assert.Contains(x86, message, StringComparison.Ordinal);
+        Assert.Empty(fixture.Processes.StartedPrograms);
+
+        // Только 32-разрядный — запускается без вопроса.
+        Directory.CreateDirectory(Path.GetDirectoryName(x86)!);
+        File.WriteAllBytes(x86, []);
+        await vm.LaunchStarterCommand.ExecuteAsync(null);
+        Assert.Equal(x86, Assert.Single(fixture.Processes.StartedPrograms));
+        Assert.Empty(fixture.Dialogs.Choices);
+        Assert.Equal("Стартер 1С запущен.", vm.StatusText);
+
+        // Оба — вопрос, какой запустить; отмена ничего не запускает.
+        Directory.CreateDirectory(Path.GetDirectoryName(x64)!);
+        File.WriteAllBytes(x64, []);
+        await vm.LaunchStarterCommand.ExecuteAsync(null);
+        var choice = Assert.Single(fixture.Dialogs.Choices);
+        Assert.Equal(["Program Files", "Program Files (x86)"], choice.Options);
+        Assert.Contains(x64, choice.Question, StringComparison.Ordinal);
+        Assert.Single(fixture.Processes.StartedPrograms);
+
+        fixture.Dialogs.ChoiceAnswer = 0;
+        await vm.LaunchStarterCommand.ExecuteAsync(null);
+        Assert.Equal(x64, fixture.Processes.StartedPrograms[^1]);
+    }
+
+    [Fact]
     public async Task Search_shows_ranked_list_selects_best_match_and_highlights()
     {
         using var fixture = new ViewModelFixture();

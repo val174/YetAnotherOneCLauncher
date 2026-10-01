@@ -260,6 +260,11 @@
             </MenuFlyout>
           </Button.Flyout>
         </Button>
+        <!-- Карандаш: та же команда, что «Изменить…» в контекстном меню и F2. -->
+        <Button x:Name="EditButton" Command="{Binding EditCommand}" Padding="8,6" VerticalAlignment="Stretch"
+                ToolTip.Tip="{Binding HotKeys.EditSuffix, StringFormat='Изменить базу или переименовать папку{0}'}">
+          <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource EditIconGeometry}" />
+        </Button>
         <!-- Корзина: та же команда, что «Удалить» в контекстном меню и Del. -->
         <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" Padding="8,6" VerticalAlignment="Stretch"
                 ToolTip.Tip="{Binding HotKeys.DeleteSuffix, StringFormat='Удалить из списка{0}'}">
@@ -437,6 +442,14 @@
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
               </Button>
             </Grid>
+            <!-- Стандартный стартер 1С (1cestart) — со своим списком баз; не зависит от выбранной базы. -->
+            <Button x:Name="LaunchStarterButton" Classes="launchMain" CornerRadius="4" Command="{Binding LaunchStarterCommand}"
+                    ToolTip.Tip="Запустить стандартный стартер 1С (1cestart)">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <c:ToolIcon Classes="buttonIcon" Data="{StaticResource StarterIconGeometry}" />
+                <TextBlock Text="Стартер 1С" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
           </StackPanel>
           <TextBlock x:Name="PropertiesHeader" DockPanel.Dock="Top" Classes="sectionHeader" Text="Свойства информационной базы"
                      IsVisible="{Binding ShowDetails}" />

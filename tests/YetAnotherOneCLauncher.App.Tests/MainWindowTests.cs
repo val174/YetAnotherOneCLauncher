@@ -36,6 +36,13 @@ public class MainWindowTests
         // Кнопки запуска видны и без выделенной базы — просто недоступны.
         Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
         Assert.False(window.FindControl<Button>("LaunchEnterpriseButton")!.IsEffectivelyEnabled);
+        Assert.False(window.FindControl<Button>("EditButton")!.IsEffectivelyEnabled); // «Изменить» — для выделенной записи
+        // «Стартер 1С» — только справа, под «Конфигуратором», и доступен без выделенной базы.
+        var launchButtons = window.FindControl<StackPanel>("LaunchButtons")!;
+        var starter = window.FindControl<Button>("LaunchStarterButton")!;
+        Assert.Same(launchButtons.Children[^1], starter);
+        Assert.True(starter.IsEffectivelyEnabled);
+        Assert.Equal(launchButtons.Bounds.Width, starter.Bounds.Width, tolerance: 0.5);
         Snapshot(window, "01-tree");
         window.Close();
     }
@@ -296,6 +303,29 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Choice_dialog_returns_clicked_option_or_null_on_cancel()
+    {
+        var owner = new Window();
+        owner.Show();
+        async Task<int?> Choose(string button)
+        {
+            var task = MessageDialog.ChooseAsync(owner, "Стартер 1С", "Какой запустить?", ["Program Files", "Program Files (x86)"]);
+            Render();
+            var dialog = owner.OwnedWindows.OfType<MessageDialog>().Single();
+            var buttons = dialog.GetLogicalDescendants().OfType<Button>().ToList();
+            Assert.Equal(["Program Files", "Program Files (x86)", "Отмена"], buttons.Select(b => (string)b.Content!));
+            buttons.Single(b => (string)b.Content! == button).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
+            Render();
+            return await task;
+        }
+
+        Assert.Equal(1, await Choose("Program Files (x86)"));
+        Assert.Equal(0, await Choose("Program Files"));
+        Assert.Null(await Choose("Отмена"));
+        owner.Close();
+    }
+
+    [AvaloniaFact]
     public async Task List_columns_are_resized_by_dragging_header_border()
     {
         using var fixture = new ViewModelFixture();
@@ -527,8 +557,8 @@ public class MainWindowTests
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
         // Сначала — вид списка/дерева, затем правка списка и переключатель режимов.
         Assert.Equal(
-            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "DeleteButton" },
-            toolbar.Take(5).Select(b => b.Name));
+            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "EditButton", "DeleteButton" },
+            toolbar.Take(6).Select(b => b.Name));
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
         Assert.Equal(panel.Children.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, panel.Children.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
         Assert.Equal("ThemeButton", toolbar[^2].Name);

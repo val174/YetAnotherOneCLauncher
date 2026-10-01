@@ -65,6 +65,18 @@ public sealed class ProcessLauncher : IProcessLauncher
         StartDetached(startInfo, $"Не удалось открыть каталог {path}");
     }
 
+    public void StartProgram(string path)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        if (!File.Exists(path))
+        {
+            throw new LaunchFailedException($"Файл не найден: {path}");
+        }
+
+        var startInfo = new ProcessStartInfo(path) { UseShellExecute = false, WorkingDirectory = Path.GetDirectoryName(path) ?? string.Empty };
+        StartDetached(startInfo, $"Не удалось запустить {path}");
+    }
+
     private static int StartDetached(ProcessStartInfo startInfo, string errorPrefix)
     {
         try

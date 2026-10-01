@@ -26,6 +26,8 @@
       <StreamGeometry x:Key="StarIconGeometry">M 8,1.6 L 9.71,6.05 L 14.47,6.3 L 10.76,9.3 L 12,13.9 L 8,11.3 L 4,13.9 L 5.24,9.3 L 1.53,6.3 L 6.29,6.05 Z</StreamGeometry>
       <StreamGeometry x:Key="CacheIconGeometry">M 1.5,4 A 5.5,2 0 1 0 12.5,4 A 5.5,2 0 1 0 1.5,4 M 1.5,4 L 1.5,12 A 5.5,2 0 0 0 8.5,13.8 M 12.5,4 L 12.5,8.5 M 10.2,10.2 L 14.8,14.8 M 14.8,10.2 L 10.2,14.8</StreamGeometry>
       <StreamGeometry x:Key="EditIconGeometry">M 10.5,2.5 L 13.5,5.5 L 5.5,13.5 L 2,14 L 2.5,10.5 Z M 9,4 L 12,7</StreamGeometry>
+      <!-- Стартер 1С: окно со списком баз. -->
+      <StreamGeometry x:Key="StarterIconGeometry">M 1.5,2.5 L 14.5,2.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,5.5 L 14.5,5.5 M 4,8.3 L 12,8.3 M 4,11 L 10,11</StreamGeometry>
       <StreamGeometry x:Key="UpIconGeometry">M 8,13.5 L 8,2.5 M 3.5,7 L 8,2.5 L 12.5,7</StreamGeometry>
       <StreamGeometry x:Key="DownIconGeometry">M 8,2.5 L 8,13.5 M 3.5,9 L 8,13.5 L 12.5,9</StreamGeometry>
       <!-- Консоль кластера: две стойки сервера. -->

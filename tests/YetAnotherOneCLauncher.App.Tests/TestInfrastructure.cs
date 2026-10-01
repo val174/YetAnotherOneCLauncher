@@ -59,6 +59,17 @@ internal sealed class FakeDialogs : IDialogService
         return Task.CompletedTask;
     }
 
+    /// <summary>Выбор из вариантов: индекс ответа (<c>null</c> — отмена) и что было предложено.</summary>
+    public int? ChoiceAnswer { get; set; }
+
+    public List<(string Question, IReadOnlyList<string> Options)> Choices { get; } = [];
+
+    public Task<int?> ChooseAsync(string title, string question, IReadOnlyList<string> options)
+    {
+        Choices.Add((question, options));
+        return Task.FromResult(ChoiceAnswer);
+    }
+
     /// <summary>Ответ на запрос строки; <c>null</c> — отмена.</summary>
     public string? PromptAnswer { get; set; }
 
@@ -166,7 +177,7 @@ internal sealed class FakePaths : IPlatformPaths
 
     public IReadOnlyList<string> StarterConfigPaths { get; } = [];
 
-    public IReadOnlyList<string> DefaultPlatformInstallRoots { get; } = [];
+    public IReadOnlyList<string> DefaultPlatformInstallRoots { get; set; } = [];
 
     public PlatformExecutableNames PlatformExecutableNames => PlatformExecutableNames.Windows;
 
@@ -304,6 +315,10 @@ internal sealed class FakeProcessLauncher : IProcessLauncher
     public void OpenUrl(Uri url) => OpenedUrls.Add(url);
 
     public void OpenFolder(string path) => OpenedFolders.Add(path);
+
+    public List<string> StartedPrograms { get; } = [];
+
+    public void StartProgram(string path) => StartedPrograms.Add(path);
 }
 
 /// <summary>ViewModel главного окна с поддельными службами и каталогом из временных файлов.</summary>
@@ -358,6 +373,7 @@ internal sealed class ViewModelFixture : IDisposable
             NullLogger<MainWindowViewModel>.Instance,
             new FakePaths(ListPath)
             {
+                DefaultPlatformInstallRoots = [InstallRoot, InstallRootX86],
                 InfoBaseCacheRoots =
                 [
                     new Core.Cache.CacheRoot(LocalCacheRoot, Core.Cache.CacheLocation.Local),
@@ -390,6 +406,11 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeJumpList JumpList { get; } = new();
 
     public FakeClusterConsole ClusterConsole { get; } = new();
+
+    /// <summary>Стандартные каталоги установки 1С (как «Program Files» и «Program Files (x86)») — здесь ищется стартер 1cestart; пустые.</summary>
+    public string InstallRoot => Path.Combine(_directory, "Program Files", "1cv8");
+
+    public string InstallRootX86 => Path.Combine(_directory, "Program Files (x86)", "1cv8");
 
     public string LocalCacheRoot => Path.Combine(_directory, "local");
 
