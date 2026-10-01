@@ -180,6 +180,33 @@ public class CacheTests
     }
 
     [Fact]
+    public async Task Cache_folders_open_from_context_menu()
+    {
+        using var fixture = await LoadAsync();
+        var buh = fixture.Base("Бухгалтерия предприятия");
+        var copy = fixture.Base("Копия бухгалтерии");
+
+        await fixture.ViewModel.OpenLocalCacheCommand.ExecuteAsync(buh);
+        await fixture.ViewModel.OpenRoamingCacheCommand.ExecuteAsync(buh);
+
+        Assert.Equal(
+            [Path.Combine(fixture.LocalCacheRoot, BuhId), Path.Combine(fixture.RoamingCacheRoot, BuhId)],
+            fixture.Processes.OpenedFolders);
+        Assert.False(fixture.ViewModel.OpenLocalCacheCommand.CanExecute(copy)); // кэша нет — открывать нечего
+        Assert.False(fixture.ViewModel.OpenRoamingCacheCommand.CanExecute(copy));
+
+        // Кэш удалили в обход лаунчера — сообщение вместо пустого окна проводника, и кэш пересчитывается.
+        Directory.Delete(Path.Combine(fixture.LocalCacheRoot, BuhId), recursive: true);
+        await fixture.ViewModel.OpenLocalCacheCommand.ExecuteAsync(buh);
+        await fixture.ViewModel.CacheScanTask;
+
+        Assert.StartsWith("Каталога кэша больше нет", Assert.Single(fixture.Dialogs.Messages), StringComparison.Ordinal);
+        Assert.Equal(2, fixture.Processes.OpenedFolders.Count);
+        Assert.False(fixture.ViewModel.OpenLocalCacheCommand.CanExecute(buh));
+        Assert.True(fixture.ViewModel.OpenRoamingCacheCommand.CanExecute(buh));
+    }
+
+    [Fact]
     public void Windows_probe_detects_open_file_and_keeps_directory()
     {
         if (!OperatingSystem.IsWindows())

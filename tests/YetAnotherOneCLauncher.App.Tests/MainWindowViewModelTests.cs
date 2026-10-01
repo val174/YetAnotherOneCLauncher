@@ -97,6 +97,48 @@ public class MainWindowViewModelTests
     }
 
     [Fact]
+    public async Task Favorites_mode_shows_only_favorites_and_follows_changes()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+
+        vm.ShowFavoritesCommand.Execute(null);
+        Assert.True(vm.IsFavoritesMode);
+        Assert.False(vm.IsAllBasesMode);
+        Assert.True(vm.ShowList);
+        Assert.Empty(vm.ListItems);
+        Assert.True(vm.ShowNothingFound);
+        Assert.StartsWith("Избранных баз пока нет", vm.EmptyListText, StringComparison.Ordinal);
+
+        vm.ToggleFavoriteCommand.Execute(fixture.Base("Зарплата и управление персоналом"));
+        vm.ToggleFavoriteCommand.Execute(fixture.Base("Бухгалтерия предприятия"));
+
+        // По наименованию; править список нельзя, остальное — можно.
+        Assert.Equal(new[] { "Бухгалтерия предприятия", "Зарплата и управление персоналом" }, vm.ListItems.Select(i => i.Base.Name));
+        Assert.False(vm.CanEditList);
+        Assert.False(vm.DeleteCommand.CanExecute(null));
+        Assert.False(vm.ToggleViewModeCommand.CanExecute(null));
+        Assert.True(vm.LaunchEnterpriseCommand.CanExecute(null));
+
+        // Убранная из избранного исчезает; поиск — только среди избранных.
+        vm.ToggleFavoriteCommand.Execute(fixture.Base("Бухгалтерия предприятия"));
+        Assert.Equal("Зарплата и управление персоналом", Assert.Single(vm.ListItems).Base.Name);
+        vm.SearchText = "бух";
+        Assert.Empty(vm.ListItems);
+        vm.SearchText = string.Empty;
+
+        // Положения переключателя: выбор одного снимает другие, снятие само по себе ничего не меняет.
+        vm.IsRecentMode = true;
+        Assert.Equal((false, true, false), (vm.IsAllBasesMode, vm.IsRecentMode, vm.IsFavoritesMode));
+        vm.IsRecentMode = false;
+        Assert.True(vm.IsRecentMode);
+        vm.IsAllBasesMode = true;
+        Assert.True(vm.ShowTree);
+        Assert.True(vm.CanEditList);
+    }
+
+    [Fact]
     public async Task Search_shows_ranked_list_selects_best_match_and_highlights()
     {
         using var fixture = new ViewModelFixture();

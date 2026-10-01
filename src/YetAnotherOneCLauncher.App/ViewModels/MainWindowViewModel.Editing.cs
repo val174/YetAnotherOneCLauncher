@@ -13,8 +13,8 @@ public sealed partial class MainWindowViewModel
 {
     private const string ListTitle = "Список баз";
 
-    /// <summary>Добавлять записи можно в личный список — и не в режиме «Недавние».</summary>
-    public bool CanEditList => _store is not null && !IsRecentMode;
+    /// <summary>Добавлять записи можно в личный список — и только в режиме «Все базы».</summary>
+    public bool CanEditList => _store is not null && IsAllBasesMode;
 
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task AddBaseAsync()
@@ -231,7 +231,7 @@ public sealed partial class MainWindowViewModel
     private string? SortTargetFolder() =>
         SelectedFolder is { Kind: FolderKind.Regular } folder ? folder.Path : SelectedInfoBase?.InfoBase.FolderPath;
 
-    private bool CanSortFolderByName() => _store is not null && !IsRecentMode && SortTargetFolder() is not null;
+    private bool CanSortFolderByName() => _store is not null && IsAllBasesMode && SortTargetFolder() is not null;
 
     /// <summary>Копия базы из общего списка в личном — чтобы изменить её настройки.</summary>
     [RelayCommand(CanExecute = nameof(CanCopyToPersonal))]
@@ -399,8 +399,8 @@ public sealed partial class MainWindowViewModel
     private bool HasEditableSelection() =>
         _store is not null && (SelectedInfoBase is not null || SelectedFolder is { IsEditable: true });
 
-    /// <summary>Удалять и переставлять — не в режиме «Недавние»: там порядок — по времени запуска.</summary>
-    private bool CanReorderOrDelete() => HasEditableSelection() && !IsRecentMode;
+    /// <summary>Удалять и переставлять — только в режиме «Все базы»: в недавних порядок — по времени запуска, в избранном — по имени.</summary>
+    private bool CanReorderOrDelete() => HasEditableSelection() && IsAllBasesMode;
 
     private bool HasAnySelection() => SelectedInfoBase is not null || SelectedFolder is not null;
 

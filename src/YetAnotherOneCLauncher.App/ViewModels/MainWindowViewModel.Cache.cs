@@ -73,6 +73,8 @@ public sealed partial class MainWindowViewModel
 
         ClearCacheCommand.NotifyCanExecuteChanged();
         ClearCacheAndLaunchCommand.NotifyCanExecuteChanged();
+        OpenLocalCacheCommand.NotifyCanExecuteChanged();
+        OpenRoamingCacheCommand.NotifyCanExecuteChanged();
 
         CacheSummaryText = _cacheReport.Owners.Count == 0
             ? string.Empty
@@ -102,6 +104,45 @@ public sealed partial class MainWindowViewModel
     private bool CanClearCache(InfoBaseViewModel? target) => CanManageCache && (target ?? SelectedInfoBase)?.HasCache == true;
 
     private bool CanClearCacheAndLaunch(InfoBaseViewModel? target) => CanClearCache(target) && CanLaunch(target);
+
+    /// <summary>Открыть каталог программного кэша базы (Local).</summary>
+    [RelayCommand(CanExecute = nameof(CanOpenLocalCache))]
+    private Task OpenLocalCacheAsync(InfoBaseViewModel? target) =>
+        OpenCacheFolderAsync((target ?? SelectedInfoBase)?.LocalCachePath);
+
+    /// <summary>Открыть каталог пользовательского кэша базы — настроек пользователя (Roaming).</summary>
+    [RelayCommand(CanExecute = nameof(CanOpenRoamingCache))]
+    private Task OpenRoamingCacheAsync(InfoBaseViewModel? target) =>
+        OpenCacheFolderAsync((target ?? SelectedInfoBase)?.RoamingCachePath);
+
+    private bool CanOpenLocalCache(InfoBaseViewModel? target) => (target ?? SelectedInfoBase)?.LocalCachePath is not null;
+
+    private bool CanOpenRoamingCache(InfoBaseViewModel? target) => (target ?? SelectedInfoBase)?.RoamingCachePath is not null;
+
+    private async Task OpenCacheFolderAsync(string? path)
+    {
+        if (path is null)
+        {
+            return;
+        }
+
+        if (!Directory.Exists(path))
+        {
+            // Кэш могли удалить после последнего пересчёта (например, сама 1С) — пересчитать и сказать.
+            await _dialogs.ShowMessageAsync(CacheTitle, $"Каталога кэша больше нет:\n{path}");
+            StartCacheScan();
+            return;
+        }
+
+        try
+        {
+            _processLauncher.OpenFolder(path);
+        }
+        catch (LaunchFailedException ex)
+        {
+            await _dialogs.ShowMessageAsync(CacheTitle, ex.Message);
+        }
+    }
 
     private async Task ClearBaseCacheAsync(InfoBaseViewModel target, LaunchMode? launchAfter)
     {

@@ -164,10 +164,18 @@
     <Style Selector="Button.columnHeader:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
-    <!-- Кнопка текущего режима («Все базы» / «Недавние») подсвечена. -->
-    <Style Selector="StackPanel#ToolbarButtons Button.active">
-      <Setter Property="BorderBrush" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
-      <Setter Property="BorderThickness" Value="1.5" />
+    <!-- Переключатель режимов: сегменты в общей рамке, выбранный подсвечен. -->
+    <Style Selector="Border.segmented">
+      <Setter Property="BorderBrush" Value="{DynamicResource ButtonBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="{DynamicResource ControlCornerRadius}" />
+      <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <Style Selector="RadioButton.segment">
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="CornerRadius" Value="0" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
     <Style Selector="TextBlock.columnHeader">
       <Setter Property="Opacity" Value="0.65" />
@@ -241,17 +249,34 @@
           <c:ToolIcon Brush="{DynamicResource IconDeleteBrush}"
                       Data="M 2,4 L 14,4 M 6,4 L 6,1.8 L 10,1.8 L 10,4 M 3.6,4 L 4.5,14.5 L 11.5,14.5 L 12.4,4 M 6.5,6.8 L 6.5,12 M 9.5,6.8 L 9.5,12" />
         </Button>
-        <!-- Что показать: все базы или только недавние; кнопка текущего режима подсвечена. -->
-        <Button x:Name="AllBasesButton" Command="{Binding ShowAllBasesCommand}" Classes.active="{Binding IsAllBasesMode}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Все базы">
-          <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
-                      Data="M 2.5,3.5 A 5.5,2 0 1 0 13.5,3.5 A 5.5,2 0 1 0 2.5,3.5 M 2.5,3.5 L 2.5,12.5 A 5.5,2 0 0 0 13.5,12.5 L 13.5,3.5 M 2.5,8 A 5.5,2 0 0 0 13.5,8" />
-        </Button>
-        <Button x:Name="RecentButton" Command="{Binding ShowRecentCommand}" Classes.active="{Binding IsRecentMode}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
-          <c:ToolIcon Brush="{DynamicResource IconRecentBrush}"
-                      Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
-        </Button>
+        <!-- Что показать — переключатель: все базы, недавние, избранное; выбранное положение подсвечено. -->
+        <Border x:Name="ListFilterSwitch" Classes="segmented" VerticalAlignment="Stretch">
+          <!-- Выбранный сегмент — лёгкая заливка цветом акцента, текст и значки — обычного цвета (в обеих темах). -->
+          <Border.Resources>
+            <SolidColorBrush x:Key="ToggleButtonBackgroundChecked" Color="{DynamicResource SystemAccentColor}" Opacity="0.3" />
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPointerOver" Color="{DynamicResource SystemAccentColor}" Opacity="0.4" />
+            <SolidColorBrush x:Key="ToggleButtonBackgroundCheckedPressed" Color="{DynamicResource SystemAccentColor}" Opacity="0.5" />
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushChecked" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="Transparent" />
+            <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent" />
+          </Border.Resources>
+          <StackPanel Orientation="Horizontal">
+            <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
+                         ToolTip.Tip="Все базы">
+              <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
+                          Data="M 2.5,3.5 A 5.5,2 0 1 0 13.5,3.5 A 5.5,2 0 1 0 2.5,3.5 M 2.5,3.5 L 2.5,12.5 A 5.5,2 0 0 0 13.5,12.5 L 13.5,3.5 M 2.5,8 A 5.5,2 0 0 0 13.5,8" />
+            </RadioButton>
+            <RadioButton x:Name="RecentButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsRecentMode}"
+                         ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
+              <c:ToolIcon Brush="{DynamicResource IconRecentBrush}"
+                          Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
+            </RadioButton>
+            <RadioButton x:Name="FavoritesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsFavoritesMode}"
+                         ToolTip.Tip="Избранные базы">
+              <c:ToolIcon Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" />
+            </RadioButton>
+          </StackPanel>
+        </Border>
         <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}" Padding="8,6" VerticalAlignment="Stretch"
                 ToolTip.Tip="{Binding HotKeys.ReloadSuffix, StringFormat='Обновить: перечитать списки баз и платформы{0}'}">
           <c:ToolIcon StrokeThickness="1.4" Brush="{DynamicResource IconRefreshBrush}"
@@ -559,6 +584,12 @@
           </MenuItem>
           <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource CacheIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Открыть каталог программного кэша" Command="{Binding OpenLocalCacheCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Открыть каталог пользовательского кэша" Command="{Binding OpenRoamingCacheCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
           <MenuItem Header="Сохранить ссылку в файл…" Command="{Binding ExportCommand}" />
         </ContextMenu>

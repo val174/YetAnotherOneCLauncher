@@ -22,6 +22,14 @@ public sealed record PlatformChoice(string Label, string? Version)
     public override string ToString() => Label;
 }
 
+/// <summary>Какие базы показаны в главном окне.</summary>
+public enum BaseListFilter
+{
+    All,
+    Recent,
+    Favorites,
+}
+
 /// <summary>
 /// Главное окно: дерево или список баз, быстрый поиск, избранное и недавние, подробности и запуск.
 /// </summary>
@@ -207,17 +215,45 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial bool IsTreeMode { get; set; }
 
     /// <summary>
-    /// Показаны только недавние базы (кнопка с часами): плоский список в порядке запусков, поиск — среди них.
-    /// Добавлять, удалять и переставлять записи здесь нельзя; остальное — как в общем списке.
+    /// Что показано (переключатель «Все базы / Недавние / Избранное»). Недавние и избранное — плоским списком
+    /// (недавние — в порядке запусков, избранное — по наименованию), поиск — среди них.
+    /// Добавлять, удалять и переставлять записи там нельзя; остальное — как в общем списке.
     /// </summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(CanEditList), nameof(EmptyListText))]
+    [NotifyPropertyChangedFor(
+        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode),
+        nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
         nameof(AddBaseCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
         nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
-    public partial bool IsRecentMode { get; set; }
+    public partial BaseListFilter ListFilter { get; set; }
 
-    public bool IsAllBasesMode => !IsRecentMode;
+    // Положения переключателя: установка в true выбирает режим, снятие игнорируется (его снимает выбор другого).
+    public bool IsAllBasesMode
+    {
+        get => ListFilter == BaseListFilter.All;
+        set => SelectFilter(BaseListFilter.All, value);
+    }
+
+    public bool IsRecentMode
+    {
+        get => ListFilter == BaseListFilter.Recent;
+        set => SelectFilter(BaseListFilter.Recent, value);
+    }
+
+    public bool IsFavoritesMode
+    {
+        get => ListFilter == BaseListFilter.Favorites;
+        set => SelectFilter(BaseListFilter.Favorites, value);
+    }
+
+    private void SelectFilter(BaseListFilter filter, bool selected)
+    {
+        if (selected)
+        {
+            ListFilter = filter;
+        }
+    }
 
     /// <summary>Дерево: по наименованию (по умолчанию) или свой порядок из списка баз.</summary>
     [ObservableProperty]
@@ -231,8 +267,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public bool HasSearch => !string.IsNullOrWhiteSpace(SearchText);
 
-    /// <summary>Дерево показывается только без поиска и не для недавних; результаты поиска — всегда списком.</summary>
-    public bool ShowTree => IsTreeMode && !HasSearch && !IsRecentMode;
+    /// <summary>Дерево — только для всех баз и без поиска; результаты поиска, недавние и избранное — списком.</summary>
+    public bool ShowTree => IsTreeMode && !HasSearch && IsAllBasesMode;
 
     public bool ShowList => !ShowTree;
 
@@ -253,6 +289,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(EditLaunchSettingsCommand),
         nameof(ClearCacheCommand),
         nameof(ClearCacheAndLaunchCommand),
+        nameof(OpenLocalCacheCommand),
+        nameof(OpenRoamingCacheCommand),
         nameof(ToggleFavoriteCommand),
         nameof(CopyConnectionStringCommand),
         nameof(OpenBaseFolderCommand),
@@ -537,18 +575,27 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Показать только недавние базы.</summary>
     [RelayCommand]
-    private void ShowRecent() => IsRecentMode = true;
+    private void ShowRecent() => ListFilter = BaseListFilter.Recent;
+
+    /// <summary>Показать только избранные базы.</summary>
+    [RelayCommand]
+    private void ShowFavorites() => ListFilter = BaseListFilter.Favorites;
 
     /// <summary>Вернуться к общему списку баз.</summary>
     [RelayCommand]
-    private void ShowAllBases() => IsRecentMode = false;
+    private void ShowAllBases() => ListFilter = BaseListFilter.All;
 
-    partial void OnIsRecentModeChanged(bool value)
+    partial void OnListFilterChanged(BaseListFilter value)
     {
         var key = CurrentSelectionKey();
         RebuildList();
         Reselect(key);
-        StatusText = value ? "Показаны недавние базы." : string.Empty;
+        StatusText = value switch
+        {
+            BaseListFilter.Recent => "Показаны недавние базы.",
+            BaseListFilter.Favorites => "Показаны избранные базы.",
+            _ => string.Empty,
+        };
     }
 
     partial void OnIsSortedByNameChanged(bool value)
@@ -886,11 +933,19 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         var byInfoBase = _bases.ToDictionary(b => b.InfoBase);
-        // Недавние: последние запуски, свежие сверху; поиск — только среди них.
-        var recent = IsRecentMode ? _settings.UserData.Recent(_catalog.InfoBases, RecentCount) : null;
+        // Недавние: последние запуски, свежие сверху; избранное — по наименованию; поиск — только среди них.
+        IReadOnlyList<InfoBase>? subset = ListFilter switch
+        {
+            BaseListFilter.Recent => _settings.UserData.Recent(_catalog.InfoBases, RecentCount),
+            BaseListFilter.Favorites => _bases.Where(b => b.IsFavorite)
+                .OrderBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase)
+                .Select(b => b.InfoBase)
+                .ToList(),
+            _ => null,
+        };
         if (HasSearch)
         {
-            foreach (var match in InfoBaseSearch.Search(recent ?? _catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
+            foreach (var match in InfoBaseSearch.Search(subset ?? _catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
             {
                 var infoBase = byInfoBase[match.InfoBase];
                 ListItems.Add(new BaseListItemViewModel(infoBase, Segments(infoBase.Name, match.NameHighlights)));
@@ -898,7 +953,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
         else
         {
-            var ordered = recent?.Select(b => byInfoBase[b])
+            var ordered = subset?.Select(b => byInfoBase[b])
                           ?? _bases.OrderByDescending(b => b.IsFavorite).ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase);
             foreach (var infoBase in ordered)
             {
@@ -906,11 +961,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
         }
 
-        ShowNothingFound = ListItems.Count == 0 && (HasSearch || IsRecentMode);
+        ShowNothingFound = ListItems.Count == 0 && (HasSearch || !IsAllBasesMode);
     }
 
-    /// <summary>Надпись на пустом списке: ничего не нашлось или ещё нет запусков.</summary>
-    public string EmptyListText => IsRecentMode && !HasSearch ? "Недавних запусков пока нет" : "Ничего не найдено";
+    /// <summary>Надпись на пустом списке: ничего не нашлось, ещё нет запусков или избранного.</summary>
+    public string EmptyListText => HasSearch
+        ? "Ничего не найдено"
+        : ListFilter switch
+        {
+            BaseListFilter.Recent => "Недавних запусков пока нет",
+            BaseListFilter.Favorites => "Избранных баз пока нет: добавьте базу в избранное из контекстного меню или звездой",
+            _ => "Ничего не найдено",
+        };
 
     private static int SearchBoost(InfoBaseViewModel infoBase) =>
         (infoBase.IsFavorite ? FavoriteSearchBoost : 0) + Math.Min(infoBase.LaunchCount, MaxUsageSearchBoost);

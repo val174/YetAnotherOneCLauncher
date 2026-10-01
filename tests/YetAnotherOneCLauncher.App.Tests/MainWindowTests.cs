@@ -103,12 +103,23 @@ public class MainWindowTests
         Assert.True(fixture.ViewModel.ShowTree);
         Snapshot(window, "03-favorites-and-recent");
 
-        fixture.ViewModel.ShowRecentCommand.Execute(null);
+        // Переключатель: щелчок по «Недавним» выбирает режим и снимает «Все базы».
+        var recent = window.FindControl<RadioButton>("RecentButton")!;
+        Assert.True(window.FindControl<RadioButton>("AllBasesButton")!.IsChecked);
+        recent.IsChecked = true;
         Render();
+        Assert.True(fixture.ViewModel.IsRecentMode);
+        Assert.False(window.FindControl<RadioButton>("AllBasesButton")!.IsChecked);
         Assert.True(window.FindControl<ListBox>("CatalogList")!.IsEffectivelyVisible);
         Assert.False(window.FindControl<Button>("AddButton")!.IsEffectivelyEnabled);
         Assert.False(window.FindControl<Button>("DeleteButton")!.IsEffectivelyEnabled);
         Snapshot(window, "17-recent");
+        fixture.ViewModel.ShowFavoritesCommand.Execute(null);
+        Render();
+        Assert.True(window.FindControl<RadioButton>("FavoritesButton")!.IsChecked);
+        Assert.False(recent.IsChecked);
+        Assert.Equal("Зарплата и управление персоналом", Assert.Single(fixture.ViewModel.ListItems).Base.Name);
+        Snapshot(window, "18-favorites");
         fixture.ViewModel.ShowAllBasesCommand.Execute(null);
         window.Close();
     }
@@ -461,10 +472,12 @@ public class MainWindowTests
         var window = await OpenAsync(fixture);
         var vm = fixture.ViewModel;
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
-        // Сначала — вид списка/дерева, затем правка списка и режимы.
+        // Сначала — вид списка/дерева, затем правка списка и переключатель режимов.
         Assert.Equal(
-            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "DeleteButton", "AllBasesButton", "RecentButton" },
-            toolbar.Take(7).Select(b => b.Name));
+            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "DeleteButton" },
+            toolbar.Take(5).Select(b => b.Name));
+        var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
+        Assert.Equal(panel.Children.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, panel.Children.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
         Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;

@@ -156,10 +156,18 @@ public sealed partial class InfoBaseViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HasCache { get; private set; }
 
+    /// <summary>Каталог программного кэша базы (Local); <c>null</c> — его нет.</summary>
+    public string? LocalCachePath { get; private set; }
+
+    /// <summary>Каталог пользовательского кэша — настроек пользователя (Roaming); <c>null</c> — его нет.</summary>
+    public string? RoamingCachePath { get; private set; }
+
     /// <summary>Кэш базы по результатам последнего поиска; <c>null</c> — кэша нет.</summary>
     public void SetCache(CacheOwner? owner)
     {
         HasCache = owner is { Directories.Count: > 0 };
+        LocalCachePath = owner?.Directories.FirstOrDefault(d => d.Location == CacheLocation.Local)?.Path;
+        RoamingCachePath = owner?.Directories.FirstOrDefault(d => d.Location == CacheLocation.Roaming)?.Path;
         var local = owner?.Directories.Any(d => d.Location == CacheLocation.Local) == true ? ByteSize.Format(owner.LocalBytes) : "нет";
         CacheText = owner?.Directories.Any(d => d.Location == CacheLocation.Roaming) == true
             ? $"{local} (и настройки {ByteSize.Format(owner.RoamingBytes)})"
