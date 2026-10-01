@@ -52,13 +52,12 @@ dotnet run --project src/YetAnotherOneCLauncher.App
 Один исполняемый файл без установленного .NET (профили в `src/YetAnotherOneCLauncher.App/Properties/PublishProfiles`):
 
 ```powershell
+powershell -File scripts/publish.ps1                                       # оба: Windows и Linux
 dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=win-x64    # artifacts/publish/win-x64/YetAnotherOneCLauncher.exe
-dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=win-x64-compact  # artifacts/publish/win-x64-compact/YetAnotherOneCLauncher.exe — компактный, ~63 МБ
-powershell -File scripts/publish-win.ps1                             # оба варианта для Windows
-dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=linux-x64  # artifacts/publish/linux-x64/YetAnotherOneCLauncher
+dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=linux-x64  # artifacts/publish/linux-x64/YetAnotherOneCLauncher (собирается и на Windows)
 ```
 
-Файл около 144 МБ: внутри .NET, библиотеки отрисовки и заранее скомпилированный код (`PublishReadyToRun`, без сжатия — ради скорости открытия: окно через ~0,9 с вместо ~2,1 с при файле ~48 МБ). Библиотеки отрисовки лаунчер при первом запуске распаковывает в `%TEMP%\.net\YetAnotherOneCLauncher` (Linux: `~/.net`), поэтому первый старт новой версии дольше (~3–4 с). Настройки и логи — в каталоге настроек пользователя, не рядом с файлом. Время открытия пишется в лог: «Окно открыто через …», «Список баз показан через …», «Платформы найдены …».
+Файл около 63 МБ: внутри .NET, библиотеки отрисовки и заранее скомпилированный код (`PublishReadyToRun`), сборки сжаты (`EnableCompressionInSingleFile`). Замер на Windows: окно через ~1,5 с (без ReadyToRun ~2,1 с; вариант без сжатия, ~144 МБ, открывался за ~0,9 с — убран по решению пользователя). Библиотеки отрисовки лаунчер при первом запуске распаковывает в `%TEMP%\.net\YetAnotherOneCLauncher` (Linux: `~/.net`), поэтому первый старт новой версии дольше (~7–8 с со сжатием). Настройки и логи — в каталоге настроек пользователя, не рядом с файлом. Время открытия пишется в лог: «Окно открыто через …», «Список баз показан через …», «Платформы найдены …».
 
 Предупреждения компилятора и анализаторов считаются ошибками (`TreatWarningsAsErrors`, `AnalysisLevel=latest-recommended`).
 CI (GitHub Actions, `.github/workflows/ci.yml`) собирает решение и запускает тесты на Windows и Linux.
