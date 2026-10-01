@@ -47,7 +47,7 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
         _files = files;
         Templates = templates;
         InheritedText = string.Join(" ", inherited.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()));
-        Title = kind switch
+        _title = kind switch
         {
             LaunchParametersKind.Folder => $"Параметры запуска папки «{subject}»",
             LaunchParametersKind.OneOff => $"Запуск «{subject}» с параметрами",
@@ -55,11 +55,32 @@ public sealed partial class LaunchParametersViewModel : ObservableObject
         };
     }
 
+    private readonly string _title;
+
     public LaunchParametersKind Kind { get; }
 
-    public string Title { get; }
+    /// <summary>Заголовок окна; при заданном режиме — с ним: «Запуск «База» с параметрами — Конфигуратор».</summary>
+    public string Title => PresetMode is { } mode ? $"{_title} — {ModeName(mode)}" : _title;
 
     public bool IsOneOff => Kind == LaunchParametersKind.OneOff;
+
+    /// <summary>
+    /// Режим разового запуска, заданный заранее: окно открыто кнопкой «Запустить с параметрами», прикреплённой
+    /// к «1С: Предприятие» или «Конфигуратору». Тогда вместо выбора режима — одна кнопка «Продолжить».
+    /// </summary>
+    public LaunchMode? PresetMode { get; init; }
+
+    /// <summary>Кнопки выбора режима «1С: Предприятие» и «Конфигуратор»: разовый запуск без заданного режима.</summary>
+    public bool ShowModeButtons => IsOneOff && PresetMode is null;
+
+    /// <summary>Кнопка «Продолжить»: режим задан заранее.</summary>
+    public bool ShowContinue => IsOneOff && PresetMode is not null;
+
+    public bool IsPresetDesigner => PresetMode == LaunchMode.Designer;
+
+    public string ContinueToolTip => PresetMode is { } mode ? $"Запустить: {ModeName(mode)} (Enter)" : string.Empty;
+
+    private static string ModeName(LaunchMode mode) => mode == LaunchMode.Designer ? "Конфигуратор" : "1С: Предприятие";
 
     public bool IsFolder => Kind == LaunchParametersKind.Folder;
 

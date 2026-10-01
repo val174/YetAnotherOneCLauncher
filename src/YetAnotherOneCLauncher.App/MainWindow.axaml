@@ -379,7 +379,7 @@
                 </StackPanel>
               </Button>
               <Button x:Name="EnterpriseParametersButton" Grid.Column="1" Classes="accent launchParameters"
-                      Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="{Binding HotKeys.LaunchWithParametersSuffix, StringFormat='Запустить с параметрами{0}'}">
+                      Command="{Binding LaunchEnterpriseWithParametersCommand}" ToolTip.Tip="1С: Предприятие с параметрами">
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
               </Button>
             </Grid>
@@ -391,7 +391,7 @@
                 </StackPanel>
               </Button>
               <Button x:Name="DesignerParametersButton" Grid.Column="1" Classes="launchParameters"
-                      Command="{Binding LaunchWithParametersCommand}" ToolTip.Tip="{Binding HotKeys.LaunchWithParametersSuffix, StringFormat='Запустить с параметрами{0}'}">
+                      Command="{Binding LaunchDesignerWithParametersCommand}" ToolTip.Tip="Конфигуратор с параметрами">
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
               </Button>
             </Grid>

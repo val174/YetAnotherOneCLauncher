@@ -76,14 +76,26 @@
     </Border>
 
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,8,0,0">
-      <Button x:Name="EnterpriseButton" Classes="accent" IsDefault="True" MinWidth="110" ToolTip.Tip="Enter, F3"
-              IsVisible="{Binding IsOneOff}">
+      <!-- Режим задан заранее (кнопка «Запустить с параметрами» у «1С: Предприятие» или «Конфигуратора») — одна кнопка. -->
+      <Button x:Name="ContinueButton" Classes="accent" IsDefault="{Binding ShowContinue}" MinWidth="110"
+              ToolTip.Tip="{Binding ContinueToolTip}" IsVisible="{Binding ShowContinue}">
+        <StackPanel Orientation="Horizontal" Spacing="6">
+          <Panel>
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}"
+                        IsVisible="{Binding !IsPresetDesigner}" />
+            <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" IsVisible="{Binding IsPresetDesigner}" />
+          </Panel>
+          <TextBlock Text="Продолжить" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <Button x:Name="EnterpriseButton" Classes="accent" IsDefault="{Binding ShowModeButtons}" MinWidth="110" ToolTip.Tip="Enter, F3"
+              IsVisible="{Binding ShowModeButtons}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
           <TextBlock Text="1С: Предприятие" VerticalAlignment="Center" />
         </StackPanel>
       </Button>
-      <Button x:Name="DesignerButton" MinWidth="110" ToolTip.Tip="F4" IsVisible="{Binding IsOneOff}">
+      <Button x:Name="DesignerButton" MinWidth="110" ToolTip.Tip="F4" IsVisible="{Binding ShowModeButtons}">
         <StackPanel Orientation="Horizontal" Spacing="6">
           <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
           <TextBlock Text="Конфигуратор" VerticalAlignment="Center" />

@@ -82,9 +82,19 @@ public sealed partial class MainWindowViewModel
         }
     }
 
-    /// <summary>Запуск с разовыми параметрами, пользователем, клиентом или платформой (F6).</summary>
+    /// <summary>Запуск с разовыми параметрами, пользователем, клиентом или платформой (F6): режим выбирается в окне.</summary>
     [RelayCommand(CanExecute = nameof(CanLaunch))]
-    private async Task LaunchWithParametersAsync(InfoBaseViewModel? target)
+    private Task LaunchWithParametersAsync(InfoBaseViewModel? target) => LaunchWithParametersAsync(target, presetMode: null);
+
+    /// <summary>«Запустить с параметрами» у кнопки «1С: Предприятие»: в окне вместо выбора режима — «Продолжить».</summary>
+    [RelayCommand(CanExecute = nameof(CanLaunch))]
+    private Task LaunchEnterpriseWithParametersAsync(InfoBaseViewModel? target) => LaunchWithParametersAsync(target, LaunchMode.Enterprise);
+
+    /// <summary>«Запустить с параметрами» у кнопки «Конфигуратор»: в окне вместо выбора режима — «Продолжить».</summary>
+    [RelayCommand(CanExecute = nameof(CanLaunch))]
+    private Task LaunchDesignerWithParametersAsync(InfoBaseViewModel? target) => LaunchWithParametersAsync(target, LaunchMode.Designer);
+
+    private async Task LaunchWithParametersAsync(InfoBaseViewModel? target, LaunchMode? presetMode)
     {
         target ??= SelectedInfoBase;
         if (target is null)
@@ -105,6 +115,7 @@ public sealed partial class MainWindowViewModel
             HasSavedPassword = profile?.PasswordKey is not null,
             PlatformChoices = choices,
             SelectedPlatformChoice = choices.Find(c => c.Version == target.PlatformVersionOverride) ?? choices[0],
+            PresetMode = presetMode,
         };
 
         if (!await _dialogs.EditLaunchParametersAsync(editor) || editor.Mode is not { } mode)

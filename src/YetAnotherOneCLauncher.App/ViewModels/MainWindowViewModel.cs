@@ -248,6 +248,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(LaunchEnterpriseCommand),
         nameof(LaunchDesignerCommand),
         nameof(LaunchWithParametersCommand),
+        nameof(LaunchEnterpriseWithParametersCommand),
+        nameof(LaunchDesignerWithParametersCommand),
         nameof(EditLaunchSettingsCommand),
         nameof(ClearCacheCommand),
         nameof(ClearCacheAndLaunchCommand),
@@ -272,7 +274,13 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(LaunchEnterpriseCommand), nameof(LaunchDesignerCommand), nameof(LaunchWithParametersCommand), nameof(ClearCacheAndLaunchCommand))]
+    [NotifyCanExecuteChangedFor(
+        nameof(LaunchEnterpriseCommand),
+        nameof(LaunchDesignerCommand),
+        nameof(LaunchWithParametersCommand),
+        nameof(LaunchEnterpriseWithParametersCommand),
+        nameof(LaunchDesignerWithParametersCommand),
+        nameof(ClearCacheAndLaunchCommand))]
     public partial bool IsLaunching { get; private set; }
 
     [ObservableProperty]

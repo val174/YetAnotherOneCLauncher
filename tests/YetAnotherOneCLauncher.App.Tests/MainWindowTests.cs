@@ -706,6 +706,31 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public void Launch_parameters_with_preset_mode_show_continue_and_enter_accepts_it()
+    {
+        Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+        var form = new ViewModels.LaunchParametersViewModel(
+            ViewModels.LaunchParametersKind.OneOff, "Бухгалтерия", Core.Launching.ParameterLibrary.BuiltIn, [], new FakeFiles())
+        {
+            PresetMode = Core.Launching.LaunchMode.Designer,
+        };
+        var window = new LaunchParametersWindow(form);
+        window.Show();
+        Render();
+
+        Assert.EndsWith("— Конфигуратор", window.Title, StringComparison.Ordinal);
+        Assert.True(window.FindControl<Button>("ContinueButton")!.IsVisible);
+        Assert.False(window.FindControl<Button>("EnterpriseButton")!.IsVisible);
+        Assert.False(window.FindControl<Button>("DesignerButton")!.IsVisible);
+        Snapshot(window, "06b-launch-parameters-continue");
+
+        window.KeyPressQwerty(PhysicalKey.Enter, RawInputModifiers.None);
+        Render();
+        Assert.False(window.IsVisible); // «Продолжить» — кнопка по умолчанию
+        Assert.Equal(Core.Launching.LaunchMode.Designer, form.Mode);
+    }
+
+    [AvaloniaFact]
     public async Task Cache_manager_window_snapshot()
     {
         using var fixture = new ViewModelFixture();

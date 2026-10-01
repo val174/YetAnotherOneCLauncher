@@ -27,12 +27,13 @@ public partial class LaunchParametersWindow : Window
             }
         }
 
+        ContinueButton.Click += (_, _) => Accept(viewModel.PresetMode);
         EnterpriseButton.Click += (_, _) => Accept(LaunchMode.Enterprise);
         DesignerButton.Click += (_, _) => Accept(LaunchMode.Designer);
         SaveButton.Click += (_, _) => Accept(null);
         CancelButton.Click += (_, _) => Close(false);
 
-        // Enter сохраняет форму базы и папки; при разовом запуске — запускает 1С: Предприятие (IsDefault).
+        // Enter сохраняет форму базы и папки; при разовом запуске — «Продолжить» в заданном режиме или 1С: Предприятие (IsDefault).
         // Как в главном окне: F3 — 1С: Предприятие, F4 — Конфигуратор.
         KeyDown += (_, e) =>
         {

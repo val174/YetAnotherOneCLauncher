@@ -118,6 +118,45 @@ public class LaunchParametersTests
     }
 
     [Fact]
+    public async Task Parameters_button_next_to_launch_button_fixes_the_mode()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        SelectBase(fixture, Buh);
+        var vm = fixture.ViewModel;
+
+        // Кнопка у «Конфигуратора»: в окне — «Продолжить», режим уже выбран.
+        LaunchParametersViewModel? shown = null;
+        fixture.Dialogs.LaunchParameters = form =>
+        {
+            shown = form;
+            return (true, form.PresetMode);
+        };
+        await vm.LaunchDesignerWithParametersCommand.ExecuteAsync(null);
+        Assert.Equal(LaunchMode.Designer, shown!.PresetMode);
+        Assert.True(shown.ShowContinue);
+        Assert.False(shown.ShowModeButtons);
+        Assert.EndsWith("— Конфигуратор", shown.Title, StringComparison.Ordinal);
+        Assert.Equal("DESIGNER", Assert.Single(fixture.Processes.Started).Arguments[0]);
+
+        // Кнопка у «1С: Предприятие».
+        await vm.LaunchEnterpriseWithParametersCommand.ExecuteAsync(null);
+        Assert.Equal(LaunchMode.Enterprise, shown.PresetMode);
+        Assert.Equal("ENTERPRISE", fixture.Processes.Started[1].Arguments[0]);
+
+        // F6 и контекстное меню — режим не задан, в окне выбор из двух кнопок.
+        fixture.Dialogs.LaunchParameters = form =>
+        {
+            shown = form;
+            return (false, null);
+        };
+        await vm.LaunchWithParametersCommand.ExecuteAsync(null);
+        Assert.Null(shown.PresetMode);
+        Assert.True(shown.ShowModeButtons);
+        Assert.False(shown.ShowContinue);
+    }
+
+    [Fact]
     public async Task Missing_saved_password_does_not_block_launch()
     {
         using var fixture = new ViewModelFixture();
