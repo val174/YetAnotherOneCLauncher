@@ -69,14 +69,16 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         // Регистрации читаются один раз: 64- и 32-разрядная независимы, их может быть две — от разных платформ.
         var registrations = console.FindRegistered();
         Registrations = registrations;
+        // Зарегистрированной считается только действующая регистрация — та, что откроет файл консоли;
+        // регистрации прежних версий платформы остаются в реестре, но консоль с ними не работает.
         bool IsRegistered(PlatformInstallation p) =>
-            registrations.Any(r => r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
+            registrations.Any(r => r.IsActive && r.Architecture == p.Architecture && r.Matches(console.AdminLibraryPath(p)));
 
         // Зарегистрированная консоль платформы, которой нет среди найденных (стоит в нестандартном каталоге), —
         // тоже в списке: версия и каталог — из пути к radmin.dll в реестре.
         var known = installations.ToList();
         known.AddRange(registrations
-            .Where(r => !known.Any(p => p.Architecture == r.Architecture && r.Matches(console.AdminLibraryPath(p))))
+            .Where(r => r.IsActive && !known.Any(p => p.Architecture == r.Architecture && r.Matches(console.AdminLibraryPath(p))))
             .Select(FromRegistration)
             .OfType<PlatformInstallation>());
 

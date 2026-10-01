@@ -4,9 +4,14 @@ namespace YetAnotherOneCLauncher.Platform.Abstractions;
 
 /// <summary>
 /// Компонент администрирования, зарегистрированный в Windows: путь к <c>radmin.dll</c>, её разрядность и COM-класс
-/// оснастки (у 64- и 32-разрядной консоли классы разные; <c>null</c> — неизвестен).
+/// оснастки (классы у разрядностей и у версий платформы разные; <c>null</c> — неизвестен). <see cref="IsActive"/> —
+/// именно этот класс откроет файл консоли «1CV8 Servers*.msc»; остальные регистрации остались от прежних версий.
 /// </summary>
-public sealed record ClusterConsoleRegistration(string LibraryPath, PlatformArchitecture Architecture, string? SnapInClassId = null)
+public sealed record ClusterConsoleRegistration(
+    string LibraryPath,
+    PlatformArchitecture Architecture,
+    string? SnapInClassId = null,
+    bool IsActive = true)
 {
     /// <summary>Тот же ли это файл (пути сравниваются полностью, без учёта регистра, с раскрытием переменных).</summary>
     public bool Matches(string libraryPath)

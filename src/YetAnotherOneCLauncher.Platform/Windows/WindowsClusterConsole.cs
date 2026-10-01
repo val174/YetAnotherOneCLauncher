@@ -28,16 +28,76 @@ public sealed class WindowsClusterConsole : IClusterConsole
         File.Exists(LibraryPath(platform)) && FindSnapIn(platform) is not null;
 
     /// <summary>
-    /// Зарегистрированные консоли. У 64- и 32-разрядной оснастки разные COM-классы и разные разделы реестра,
-    /// поэтому класс не угадывается: перебираются оснастки MMC каждой разрядности
-    /// (<c>HKLM\SOFTWARE\Microsoft\MMC\SnapIns</c>, для 32-разрядных — WOW6432Node), и берутся те, чей
-    /// компонент — <c>radmin.dll</c>.
+    /// Зарегистрированные консоли. COM-класс оснастки у 64- и 32-разрядной консоли разный, а у разных версий
+    /// платформы может различаться, и регистрации прежних версий остаются в реестре. Поэтому:
+    /// перебираются оснастки MMC каждой разрядности (<c>HKLM\SOFTWARE\Microsoft\MMC\SnapIns</c>, для 32-разрядных —
+    /// WOW6432Node) с компонентом <c>radmin.dll</c>, а действующими считаются те, чей класс указан в файле консоли
+    /// этой разрядности в <c>1cv8\common</c> — именно его откроет MMC. Файла нет — действующими считаются все.
     /// </summary>
     public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() =>
     [
-        .. ReadRegistrations(RegistryView.Registry64, PlatformArchitecture.X64),
-        .. ReadRegistrations(RegistryView.Registry32, PlatformArchitecture.X86),
+        .. MarkActive(ReadRegistrations(RegistryView.Registry64, PlatformArchitecture.X64), PlatformArchitecture.X64),
+        .. MarkActive(ReadRegistrations(RegistryView.Registry32, PlatformArchitecture.X86), PlatformArchitecture.X86),
     ];
+
+    /// <summary>COM-классы, на которые ссылается файл консоли: атрибуты <c>CLSID="{…}"</c>.</summary>
+    public static IReadOnlySet<string> SnapInClassesOf(string mscText)
+    {
+        ArgumentNullException.ThrowIfNull(mscText);
+        return System.Text.RegularExpressions.Regex
+            .Matches(mscText, "CLSID=\"(\\{[0-9A-Fa-f-]{36}\\})\"")
+            .Select(m => m.Groups[1].Value)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Действующие — регистрации с классом из файла консоли; если ни одна не подошла, действующими остаются все.</summary>
+    public static IEnumerable<ClusterConsoleRegistration> MarkActive(IReadOnlyList<ClusterConsoleRegistration> found, IReadOnlySet<string> consoleClasses)
+    {
+        ArgumentNullException.ThrowIfNull(found);
+        ArgumentNullException.ThrowIfNull(consoleClasses);
+        var anyReferenced = found.Any(r => r.SnapInClassId is { } id && consoleClasses.Contains(id));
+        return found.Select(r => r with { IsActive = !anyReferenced || (r.SnapInClassId is { } id && consoleClasses.Contains(id)) });
+    }
+
+    private static IEnumerable<ClusterConsoleRegistration> MarkActive(IReadOnlyList<ClusterConsoleRegistration> found, PlatformArchitecture architecture)
+    {
+        var classes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var snapIn in CommonSnapIns(architecture))
+        {
+            try
+            {
+                classes.UnionWith(SnapInClassesOf(File.ReadAllText(snapIn)));
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Не прочитался — классы этого файла неизвестны.
+            }
+        }
+
+        return MarkActive(found, classes);
+    }
+
+    /// <summary>Файлы консоли нужной разрядности в <c>1cv8\common</c> обеих Program Files.</summary>
+    private static IEnumerable<string> CommonSnapIns(PlatformArchitecture architecture)
+    {
+        foreach (var folder in new[] { Environment.SpecialFolder.ProgramFiles, Environment.SpecialFolder.ProgramFilesX86 })
+        {
+            var programFiles = Environment.GetFolderPath(folder);
+            var common = programFiles.Length == 0 ? null : Path.Combine(programFiles, "1cv8", "common");
+            if (common is null || !Directory.Exists(common))
+            {
+                continue;
+            }
+
+            foreach (var file in Directory.GetFiles(common, "1CV8 Servers*.msc"))
+            {
+                if (IsWideSnapIn(file) == (architecture != PlatformArchitecture.X86))
+                {
+                    yield return file;
+                }
+            }
+        }
+    }
 
     private static List<ClusterConsoleRegistration> ReadRegistrations(RegistryView view, PlatformArchitecture architecture)
     {
@@ -143,7 +203,9 @@ public sealed class WindowsClusterConsole : IClusterConsole
     private string NarrowCopyOf(string wideSnapIn, PlatformInstallation platform)
     {
         var classId = FindRegistered()
-            .FirstOrDefault(r => r.Architecture == PlatformArchitecture.X86 && r.Matches(LibraryPath(platform)))?.SnapInClassId;
+            .Where(r => r.Architecture == PlatformArchitecture.X86 && r.Matches(LibraryPath(platform)))
+            .OrderByDescending(r => r.IsActive)
+            .FirstOrDefault()?.SnapInClassId;
         if (classId is null || string.Equals(classId, SnapInClassId, StringComparison.OrdinalIgnoreCase))
         {
             return wideSnapIn; // класс 32-разрядной оснастки неизвестен или тот же — как есть

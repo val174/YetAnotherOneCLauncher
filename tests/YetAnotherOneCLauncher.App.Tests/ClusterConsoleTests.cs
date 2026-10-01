@@ -224,6 +224,42 @@ public class ClusterConsoleTests
     }
 
     [Fact]
+    public void Stale_registration_of_older_platform_is_not_taken_for_registered()
+    {
+        // Как на ПК: 32-разрядная консоль зарегистрирована от 8.3.27.1936, в реестре осталась и прежняя — от 8.3.22.
+        var console = Console(registered: null);
+        console.Available.Add("8.3.27.1936");
+        var stale = new ClusterConsoleRegistration(console.AdminLibraryPath(Old32), PlatformArchitecture.X86, "{11111111-1111-1111-1111-111111111111}", IsActive: false);
+        console.Registrations[PlatformArchitecture.X86] = new ClusterConsoleRegistration(
+            @"C:\Program Files (x86)\1cv8\8.3.27.1936\bin\radmin.dll", PlatformArchitecture.X86, "{22222222-2222-2222-2222-222222222222}");
+        var form = new ClusterConsoleViewModel(All, new StaleAware(console, stale), new FakeProcessLauncher(), puskUrl: null);
+
+        var registered = Assert.Single(form.Options, o => o.IsRegistered);
+        Assert.Equal(("8.3.27.1936", "32-разрядная"), (registered.Title, registered.Detail));
+        Assert.False(form.Options.Single(o => o.Platform == Old32).IsRegistered); // 8.3.22 — устаревшая регистрация
+    }
+
+    [Fact]
+    public void Active_registration_is_the_one_referenced_by_console_file()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        const string msc = """<Snapin CLSID="{22222222-2222-2222-2222-222222222222}"/><Snapin CLSID="{C96401CC-0E17-11D3-885B-00C04F72C717}"/>""";
+        var classes = WindowsClusterConsole.SnapInClassesOf(msc);
+        ClusterConsoleRegistration[] found =
+        [
+            new(@"C:\x86\8.3.22.2239\bin\radmin.dll", PlatformArchitecture.X86, "{11111111-1111-1111-1111-111111111111}"),
+            new(@"C:\x86\8.3.27.1936\bin\radmin.dll", PlatformArchitecture.X86, "{22222222-2222-2222-2222-222222222222}"),
+        ];
+
+        Assert.Equal([false, true], WindowsClusterConsole.MarkActive(found, classes).Select(r => r.IsActive));
+        Assert.Equal([true, true], WindowsClusterConsole.MarkActive(found, new HashSet<string>()).Select(r => r.IsActive)); // файла нет — все
+    }
+
+    [Fact]
     public void Narrow_snap_in_copy_gets_class_of_32_bit_snap_in()
     {
         if (!OperatingSystem.IsWindows())
@@ -273,6 +309,23 @@ public class ClusterConsoleTests
         {
             Directory.Delete(root, recursive: true);
         }
+    }
+
+    /// <summary>Подделка, которая вдобавок к регистрациям подделки возвращает устаревшую.</summary>
+    private sealed class StaleAware(FakeClusterConsole inner, ClusterConsoleRegistration stale) : IClusterConsole
+    {
+        public bool IsSupported => inner.IsSupported;
+
+        public bool IsAvailable(PlatformInstallation platform) => inner.IsAvailable(platform);
+
+        public string AdminLibraryPath(PlatformInstallation platform) => inner.AdminLibraryPath(platform);
+
+        public IReadOnlyList<ClusterConsoleRegistration> FindRegistered() => [.. inner.FindRegistered(), stale];
+
+        public Task RegisterAsync(PlatformInstallation platform, CancellationToken cancellationToken = default) =>
+            inner.RegisterAsync(platform, cancellationToken);
+
+        public void Open(PlatformInstallation platform) => inner.Open(platform);
     }
 
     private static FakeClusterConsole Console(PlatformInstallation? registered)
