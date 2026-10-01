@@ -156,18 +156,36 @@ public class MainWindowTests
         Assert.Same(node, visible.DataContext);
         Snapshot(window, "18-row-launch");
 
-        // Кнопка «Конфигуратор» в строке запускает именно эту базу.
-        var designer = visible.GetVisualDescendants().OfType<Button>().Last();
-        designer.Command!.Execute(designer.CommandParameter);
+        // Кнопки — в колонке наименования: правее имени, левее колонки «Платформа».
+        var row = visible.FindAncestorOfType<Grid>()!;
+        Assert.Equal(0, Grid.GetColumn(visible.FindAncestorOfType<DockPanel>()!));
+        double Left(Control c) => c.TranslatePoint(default, row)!.Value.X;
+        var platform = row.Children.OfType<TextBlock>().Single(t => t.Classes.Contains("platform"));
+        Assert.True(Left(visible) + visible.Bounds.Width <= Left(platform));
+
+        Button RowButton(string kind) => visible.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains(kind));
+        Assert.Equal(3, visible.GetVisualDescendants().OfType<Button>().Count());
+
+        // «Конфигуратор» в строке запускает именно эту базу.
+        RowButton("designer").Command!.Execute(RowButton("designer").CommandParameter);
         await WaitAsync(() => fixture.Processes.Started.Count == 1);
         Assert.Equal("DESIGNER", fixture.Processes.Started[0].Arguments[0]);
         Assert.Contains("buh_prod", string.Join(' ', fixture.Processes.Started[0].Arguments), StringComparison.Ordinal);
 
-        // Настройка выключает кнопки и место под них (и в заголовке колонок).
+        // «Запустить с параметрами» — окно параметров для этой базы.
+        ViewModels.LaunchParametersViewModel? asked = null;
+        fixture.Dialogs.LaunchParameters = form =>
+        {
+            asked = form;
+            return (false, null);
+        };
+        await ((CommunityToolkit.Mvvm.Input.IAsyncRelayCommand)RowButton("parameters").Command!).ExecuteAsync(RowButton("parameters").CommandParameter);
+        Assert.Contains("Бухгалтерия предприятия", asked!.Title, StringComparison.Ordinal);
+
+        // Настройка выключает кнопки.
         fixture.ViewModel.ShowRowLaunchButtons = false;
         Render();
         Assert.All(tree.GetVisualDescendants().OfType<Panel>().Where(p => p.Classes.Contains("rowLaunchCell")), p => Assert.False(p.IsEffectivelyVisible));
-        Assert.False(window.FindControl<Grid>("ColumnHeaders")!.Children.OfType<Panel>().Single(p => p.Classes.Contains("rowLaunchCell")).IsVisible);
         Assert.False(fixture.Settings.Settings.Ui.ShowRowLaunchButtons);
         window.Close();
     }
