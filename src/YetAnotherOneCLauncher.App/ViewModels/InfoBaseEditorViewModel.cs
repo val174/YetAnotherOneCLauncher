@@ -43,6 +43,8 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
 
     public string Title => ShowModePage
         ? "Добавление информационной базы"
+        : ShowTemplatePage
+            ? "Выбор шаблона информационной базы"
         : IsCreateMode
             ? AddMode == InfoBaseAddMode.FromTemplate ? "Создание информационной базы из шаблона" : "Создание информационной базы без конфигурации"
             : IsNew ? "Новая информационная база" : "Изменение информационной базы";

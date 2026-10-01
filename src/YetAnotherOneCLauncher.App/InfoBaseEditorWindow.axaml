@@ -38,7 +38,7 @@
       </StackPanel>
       <DockPanel>
         <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-          <Button x:Name="BackButton" Content="&lt; Назад" MinWidth="100" Command="{Binding BackCommand}"
+          <Button x:Name="BackButton" Content="&lt; Назад" MinWidth="100"
                   IsVisible="{Binding CanGoBack}" IsEnabled="{Binding IsIdle}" />
           <Button x:Name="SaveButton" Classes="accent" Content="{Binding AcceptText}" IsDefault="True" MinWidth="100"
                   IsEnabled="{Binding IsIdle}" />
@@ -71,32 +71,63 @@
         </RadioButton>
       </StackPanel>
 
-      <!-- Страница 2: форма базы. -->
+      <!-- Страница 2 (из шаблона): дерево «конфигурация → версии», поиск, свой файл; .cf или демо-база .dt. -->
+      <DockPanel x:Name="TemplatePage" IsVisible="{Binding ShowTemplatePage}" Height="460">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+          <Button x:Name="BrowseTemplateButton" DockPanel.Dock="Right" Content="Выбрать файл…" Command="{Binding BrowseTemplateCommand}"
+                  Margin="8,0,0,0" ToolTip.Tip="Файл конфигурации (.cf) или выгрузки (.dt) не из каталога шаблонов" />
+          <TextBox x:Name="TemplateSearchBox" Text="{Binding TemplateSearch}" PlaceholderText="Поиск: имя конфигурации или версия" />
+        </DockPanel>
+        <!-- Если в шаблоне есть и конфигурация, и выгрузка — что создавать. -->
+        <StackPanel x:Name="TemplateKindChoice" DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0" IsVisible="{Binding ShowTemplateKindChoice}">
+          <TextBlock Text="В шаблоне есть конфигурация и демонстрационная база. Создать:" />
+          <RadioButton x:Name="ConfigurationOnlyButton" GroupName="TemplateKind" IsChecked="{Binding UseConfigurationOnly}"
+                       Content="Базу с конфигурацией (из .cf), без данных" />
+          <RadioButton x:Name="DemoDataButton" GroupName="TemplateKind" IsChecked="{Binding UseDemoData}"
+                       Content="Демонстрационную базу (из .dt), с данными" />
+        </StackPanel>
+        <Panel>
+          <TreeView x:Name="TemplatesTree" ItemsSource="{Binding TemplateGroups}" SelectedItem="{Binding SelectedTemplateNode}"
+                    IsVisible="{Binding HasTemplates}">
+            <TreeView.Styles>
+              <Style Selector="TreeViewItem" x:DataType="vm:TemplateNodeViewModel">
+                <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+              </Style>
+            </TreeView.Styles>
+            <TreeView.DataTemplates>
+              <TreeDataTemplate DataType="vm:TemplateGroupViewModel" ItemsSource="{Binding Items}">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                  <TextBlock Text="{Binding Text}" FontWeight="SemiBold" />
+                  <TextBlock Classes="hint" Text="{Binding Details}" VerticalAlignment="Center" />
+                </StackPanel>
+              </TreeDataTemplate>
+              <DataTemplate DataType="vm:TemplateItemViewModel">
+                <StackPanel Orientation="Horizontal" Spacing="8" ToolTip.Tip="{Binding Template.Path}">
+                  <TextBlock Text="{Binding Text}" />
+                  <TextBlock Classes="hint" Text="{Binding Details}" VerticalAlignment="Center" />
+                </StackPanel>
+              </DataTemplate>
+            </TreeView.DataTemplates>
+          </TreeView>
+          <TextBlock Classes="hint" IsVisible="{Binding !HasTemplates}" VerticalAlignment="Top"
+                     Text="В каталогах шаблонов 1С шаблоны не найдены — выберите файл конфигурации (.cf) или выгрузки (.dt)." />
+          <TextBlock Classes="hint" IsVisible="{Binding ShowNoTemplateMatches}" VerticalAlignment="Top"
+                     Text="Ничего не найдено." />
+        </Panel>
+      </DockPanel>
+
+      <!-- Последняя страница: форма базы. -->
       <ScrollViewer x:Name="FormScroll" IsVisible="{Binding ShowForm}" HorizontalScrollBarVisibility="Disabled">
         <StackPanel x:Name="FormPage" Spacing="10" Margin="0,0,14,0" IsEnabled="{Binding IsIdle}">
           <TextBlock Text="Название" />
           <TextBox x:Name="NameBox" Text="{Binding Name}" />
 
-          <!-- Шаблон: найденные в каталогах шаблонов 1С и выбранный файл. -->
-          <StackPanel Spacing="6" IsVisible="{Binding IsTemplateMode}">
-            <DockPanel>
-              <Button x:Name="BrowseTemplateButton" DockPanel.Dock="Right" Content="Выбрать файл…" Command="{Binding BrowseTemplateCommand}" />
-              <TextBlock Text="Шаблон" VerticalAlignment="Center" />
-            </DockPanel>
-            <ListBox x:Name="TemplatesList" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
-                     MaxHeight="190" IsVisible="{Binding HasTemplates}">
-              <ListBox.ItemTemplate>
-                <DataTemplate DataType="p:ConfigurationTemplate">
-                  <StackPanel Spacing="2">
-                    <TextBlock Text="{Binding Catalog}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Path}" />
-                    <TextBlock Classes="hint" Text="{Binding Details}" />
-                  </StackPanel>
-                </DataTemplate>
-              </ListBox.ItemTemplate>
-            </ListBox>
-            <TextBlock Classes="hint" IsVisible="{Binding !HasTemplates}"
-                       Text="В каталогах шаблонов 1С шаблоны не найдены — выберите файл конфигурации (.cf) или выгрузки (.dt)." />
+          <!-- Выбранный на предыдущем шаге шаблон; сменить — «< Назад». -->
+          <StackPanel Spacing="4" IsVisible="{Binding IsTemplateMode}">
+            <TextBlock Text="Шаблон" />
+            <TextBlock x:Name="SelectedTemplateText" Text="{Binding SelectedTemplateText}" TextWrapping="Wrap" FontWeight="SemiBold" />
           </StackPanel>
+
 
           <TextBlock Text="Расположение" Margin="0,4,0,0" />
           <ComboBox x:Name="KindBox" ItemsSource="{Binding KindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"

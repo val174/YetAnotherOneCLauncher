@@ -22,36 +22,42 @@ public partial class InfoBaseEditorWindow : Window
 
         SaveButton.Click += async (_, _) =>
         {
-            if (viewModel.ShowModePage)
+            if (!viewModel.ShowForm)
             {
                 viewModel.NextCommand.Execute(null);
-                FocusForm();
+                FocusPage(viewModel);
             }
             else if (viewModel.IsCreateMode ? await viewModel.TryCreateAsync() : viewModel.TryAccept())
             {
                 Close(true);
             }
         };
-        BackButton.Click += (_, _) => ExistingModeButton.Focus();
+        BackButton.Click += (_, _) =>
+        {
+            viewModel.BackCommand.Execute(null);
+            FocusPage(viewModel);
+        };
         CancelButton.Click += (_, _) => Close(false);
         // Пока платформа создаёт базу, окно не закрывается: результат нужно дождаться.
         Closing += (_, e) => e.Cancel |= viewModel.IsBusy;
-        Opened += (_, _) =>
-        {
-            if (viewModel.ShowModePage)
-            {
-                ExistingModeButton.Focus();
-            }
-            else
-            {
-                FocusForm();
-            }
-        };
+        Opened += (_, _) => FocusPage(viewModel);
     }
 
-    private void FocusForm()
+    /// <summary>Фокус — на первое поле текущего шага.</summary>
+    private void FocusPage(InfoBaseEditorViewModel viewModel)
     {
-        NameBox.Focus();
-        NameBox.SelectAll();
+        if (viewModel.ShowModePage)
+        {
+            ExistingModeButton.Focus();
+        }
+        else if (viewModel.ShowTemplatePage)
+        {
+            TemplateSearchBox.Focus();
+        }
+        else
+        {
+            NameBox.Focus();
+            NameBox.SelectAll();
+        }
     }
 }

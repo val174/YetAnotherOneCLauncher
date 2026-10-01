@@ -26,9 +26,16 @@ public sealed partial class InfoBaseEditorViewModel
         init
         {
             field = value;
-            ShowModePage = IsNew && value is not null;
+            Page = IsNew && value is not null ? EditorPage.Mode : EditorPage.Form;
         }
     }
+
+    /// <summary>Названия баз, уже есть в списках: новую базу с таким же названием не создаём.</summary>
+    public IReadOnlyCollection<string> ExistingNames
+    {
+        get;
+        init => field = new HashSet<string>(value.Select(n => n.Trim()), StringComparer.CurrentCultureIgnoreCase);
+    } = [];
 
     /// <summary>Можно ли создать новую базу (новая запись и задан <see cref="Creator"/>).</summary>
     public bool CanCreate => IsNew && Creator is not null;
@@ -47,43 +54,19 @@ public sealed partial class InfoBaseEditorViewModel
     [ObservableProperty]
     public partial PlatformInstallation? SelectedCreationPlatform { get; set; }
 
-    /// <summary>Найденные шаблоны; «Выбрать файл…» добавляет выбранный файл в начало.</summary>
-    public ObservableCollection<ConfigurationTemplate> Templates { get; } = [];
-
-    /// <summary>Начальный список шаблонов (каталоги шаблонов 1С).</summary>
-    public IReadOnlyList<ConfigurationTemplate> FoundTemplates
-    {
-        init
-        {
-            foreach (var template in value)
-            {
-                Templates.Add(template);
-            }
-        }
-    }
-
-    public bool HasTemplates => Templates.Count > 0;
-
-    [ObservableProperty]
-    public partial ConfigurationTemplate? SelectedTemplate { get; set; }
-
-    partial void OnSelectedTemplateChanged(ConfigurationTemplate? value)
-    {
-        // Название по умолчанию — последний уровень дерева шаблонов («Бухгалтерия предприятия»).
-        if (value is not null && string.IsNullOrWhiteSpace(Name))
-        {
-            Name = value.Catalog.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).LastOrDefault() ?? string.Empty;
-        }
-    }
-
     // --- Страница выбора варианта ---
 
-    /// <summary>Показана первая страница — выбор варианта добавления.</summary>
+    /// <summary>Текущий шаг: выбор варианта, выбор шаблона (только для «из шаблона»), форма базы.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(ShowForm), nameof(Title), nameof(AcceptText))]
-    public partial bool ShowModePage { get; private set; }
+    [NotifyPropertyChangedFor(
+        nameof(ShowModePage), nameof(ShowTemplatePage), nameof(ShowForm), nameof(Title), nameof(AcceptText), nameof(CanGoBack))]
+    public partial EditorPage Page { get; private set; } = EditorPage.Form;
 
-    public bool ShowForm => !ShowModePage;
+    public bool ShowModePage => Page == EditorPage.Mode;
+
+    public bool ShowTemplatePage => Page == EditorPage.Template;
+
+    public bool ShowForm => Page == EditorPage.Form;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(
@@ -121,9 +104,9 @@ public sealed partial class InfoBaseEditorViewModel
     public bool ShowCreateServerFields => IsServer && IsCreateMode;
 
     /// <summary>Подпись главной кнопки: «Далее», «Создать» или «Сохранить».</summary>
-    public string AcceptText => ShowModePage ? "Далее >" : IsCreateMode ? "Создать" : "Сохранить";
+    public string AcceptText => !ShowForm ? "Далее >" : IsCreateMode ? "Создать" : "Сохранить";
 
-    /// <summary>Кнопка «Назад» — на форме, если до неё была страница выбора варианта.</summary>
+    /// <summary>Кнопка «Назад» — на шагах после выбора варианта.</summary>
     public bool CanGoBack => CanCreate && !ShowModePage;
 
     private void SelectMode(InfoBaseAddMode mode, bool selected)
@@ -134,12 +117,25 @@ public sealed partial class InfoBaseEditorViewModel
         }
     }
 
-    /// <summary>С первой страницы — к форме.</summary>
+    /// <summary>Следующий шаг: от варианта — к шаблону (для «из шаблона») или к форме; от шаблона — к форме.</summary>
     [RelayCommand]
     private void Next()
     {
-        ShowModePage = false;
-        OnPropertyChanged(nameof(CanGoBack));
+        if (ShowModePage && IsTemplateMode)
+        {
+            Errors = string.Empty;
+            Page = EditorPage.Template;
+            return;
+        }
+
+        if (ShowTemplatePage && SelectedTemplate is null)
+        {
+            Errors = "Выберите шаблон в списке или файл кнопкой «Выбрать файл…».";
+            return;
+        }
+
+        Errors = string.Empty;
+        Page = EditorPage.Form;
         if (IsCreateMode)
         {
             // Создать можно только в каталоге или на сервере 1С:Предприятия.
@@ -155,13 +151,12 @@ public sealed partial class InfoBaseEditorViewModel
         }
     }
 
-    /// <summary>С формы — обратно к выбору варианта.</summary>
+    /// <summary>Предыдущий шаг: с формы — к шаблону (для «из шаблона») или к варианту; с шаблона — к варианту.</summary>
     [RelayCommand]
     private void Back()
     {
         Errors = string.Empty;
-        ShowModePage = true;
-        OnPropertyChanged(nameof(CanGoBack));
+        Page = ShowForm && IsTemplateMode ? EditorPage.Template : EditorPage.Mode;
     }
 
     // --- Параметры создания ---
@@ -253,7 +248,7 @@ public sealed partial class InfoBaseEditorViewModel
         BlockScheduledJobs = BlockScheduledJobs,
         DisableLocalSpeechToText = DisableLocalSpeechToText,
         Locale = Locale?.Code ?? InfoBaseCreation.DefaultLocale,
-        TemplatePath = AddMode == InfoBaseAddMode.FromTemplate ? SelectedTemplate?.Path ?? string.Empty : null,
+        TemplatePath = AddMode == InfoBaseAddMode.FromTemplate ? SelectedTemplateFile ?? string.Empty : null,
     };
 
     /// <summary>
@@ -275,6 +270,10 @@ public sealed partial class InfoBaseEditorViewModel
         var draft = Result!;
         var creation = BuildCreation();
         var errors = creation.Validate().ToList();
+        if (ExistingNames.Contains(draft.Name))
+        {
+            errors.Insert(0, $"В списке уже есть база «{draft.Name}». Укажите другое название.");
+        }
         if (SelectedCreationPlatform is null)
         {
             errors.Add("Не найдена платформа 1С с конфигуратором (1cv8) — создать базу нечем.");
@@ -305,18 +304,6 @@ public sealed partial class InfoBaseEditorViewModel
 
         Result = draft;
         return true;
-    }
-
-    [RelayCommand]
-    private async Task BrowseTemplateAsync()
-    {
-        if (await _files.OpenFileAsync("Шаблон информационной базы", "Конфигурация или выгрузка 1С", ["*.cf", "*.dt"]) is { } path)
-        {
-            var template = new ConfigurationTemplate(path, System.IO.Path.GetFileName(path), string.Empty);
-            Templates.Insert(0, template);
-            OnPropertyChanged(nameof(HasTemplates));
-            SelectedTemplate = template;
-        }
     }
 
     /// <summary>Каталог новой файловой базы по умолчанию — как у штатного стартера: «Документы\InfoBase», «InfoBase1»…</summary>

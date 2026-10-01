@@ -208,6 +208,7 @@ public sealed partial class MainWindowViewModel
             PlatformVersions = PlatformVersionChoices(),
             LaunchParametersEditor = editor => EditListEntryParametersAsync(editor, existing),
             Creator = isNew && templates is not null ? CreateInfoBaseAsync : null,
+            ExistingNames = isNew ? [.. _bases.Select(b => b.Name)] : [],
             CreationPlatforms = isNew ? CreationPlatforms() : [],
             FoundTemplates = templates ?? [],
         };
