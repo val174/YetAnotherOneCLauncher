@@ -44,13 +44,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        WindowTitleBar.Apply(this);
+        WindowTitleBar.Apply(this, mainWindow: true);
     }
 
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
-        WindowTitleBar.Apply(this);
+        WindowTitleBar.Apply(this, mainWindow: true);
         DataContext = viewModel;
         RestorePlacement(viewModel.WindowPlacement);
 

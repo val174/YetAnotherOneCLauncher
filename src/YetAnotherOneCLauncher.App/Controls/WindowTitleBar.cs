@@ -27,11 +27,17 @@ public static class WindowTitleBar
     /// Продлить окно в область заголовка и поставить строку заголовка над содержимым. Вызывать после того, как
     /// содержимое окна задано (после InitializeComponent). Высота строки — у области заголовка, которую отдаёт система;
     /// без продления в заголовок (например, в тестах) — 0.
+    /// У вспомогательных окон (<paramref name="mainWindow"/> = false) в заголовке только кнопка «Закрыть».
     /// </summary>
-    public static void Apply(Window window)
+    public static void Apply(Window window, bool mainWindow = false)
     {
         window.ExtendClientAreaToDecorationsHint = true;
         window.ExtendClientAreaTitleBarHeightHint = Height;
+        if (!mainWindow)
+        {
+            window.CanMinimize = false;
+            window.CanMaximize = false;
+        }
 
         var title = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
         title.Bind(TextBlock.TextProperty, window.GetObservable(Window.TitleProperty));

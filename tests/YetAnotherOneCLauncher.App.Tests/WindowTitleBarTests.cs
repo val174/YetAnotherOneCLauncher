@@ -39,5 +39,10 @@ public class WindowTitleBarTests
         Assert.Single(bar.GetLogicalDescendants().OfType<Image>());
         Assert.Equal("Заголовок формы", bar.GetLogicalDescendants().OfType<TextBlock>().Single().Text);
         Assert.Equal(2, root.Children.Count); // под заголовком — прежнее содержимое формы
+
+        // У вспомогательных окон из кнопок заголовка — только «Закрыть»; главное окно сворачивается и разворачивается.
+        var main = name == nameof(MainWindow);
+        Assert.Equal(main, window.CanMinimize);
+        Assert.Equal(main, window.CanMaximize);
     }
 }
