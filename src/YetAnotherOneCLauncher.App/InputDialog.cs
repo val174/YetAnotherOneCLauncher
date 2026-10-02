@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.Media;
+using YetAnotherOneCLauncher.App.Controls;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -51,6 +52,8 @@ internal sealed class InputDialog : Window
                 },
             },
         };
+
+        WindowTitleBar.Apply(this);
 
         Opened += (_, _) =>
         {

@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Interactivity;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
 namespace YetAnotherOneCLauncher.App;
@@ -20,6 +21,7 @@ public partial class SettingsWindow : Window
     public SettingsWindow(SettingsViewModel settings)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = settings;
         SaveButton.Click += (_, _) => Close(true);
         CancelButton.Click += (_, _) => Close(false);

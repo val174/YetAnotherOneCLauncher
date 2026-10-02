@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Layout;
 using Avalonia.LogicalTree;
+using YetAnotherOneCLauncher.App.Controls;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -56,6 +57,7 @@ internal sealed class MessageDialog : Window
 
         content.Children.Add(buttons);
         Content = content;
+        WindowTitleBar.Apply(this);
 
         KeyDown += (_, e) =>
         {

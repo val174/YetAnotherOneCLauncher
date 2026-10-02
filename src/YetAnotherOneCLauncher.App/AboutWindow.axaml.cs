@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
 namespace YetAnotherOneCLauncher.App;
@@ -15,6 +16,7 @@ public partial class AboutWindow : Window
     public AboutWindow(AboutViewModel about)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = about;
         OkButton.Click += (_, _) => Close();
     }

@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
 namespace YetAnotherOneCLauncher.App;
@@ -13,11 +14,13 @@ public partial class InfoBaseEditorWindow : Window
     public InfoBaseEditorWindow()
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
     }
 
     public InfoBaseEditorWindow(InfoBaseEditorViewModel viewModel)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = viewModel;
 
         SaveButton.Click += async (_, _) =>

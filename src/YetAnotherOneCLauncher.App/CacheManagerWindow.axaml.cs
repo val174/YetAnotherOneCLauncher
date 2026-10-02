@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
 namespace YetAnotherOneCLauncher.App;
@@ -11,11 +12,13 @@ public partial class CacheManagerWindow : Window
     public CacheManagerWindow()
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
     }
 
     public CacheManagerWindow(CacheManagerViewModel viewModel)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = viewModel;
         CloseButton.Click += (_, _) => Close();
         RowsList.KeyDown += (_, e) =>

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Launching;
 
@@ -12,11 +13,13 @@ public partial class LaunchParametersWindow : Window
     public LaunchParametersWindow()
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
     }
 
     public LaunchParametersWindow(LaunchParametersViewModel viewModel)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = viewModel;
 
         void Accept(LaunchMode? mode)

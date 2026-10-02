@@ -6,6 +6,7 @@ using Avalonia.Interactivity;
 using Avalonia.Threading;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -43,11 +44,13 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
     }
 
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = viewModel;
         RestorePlacement(viewModel.WindowPlacement);
 

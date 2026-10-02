@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
@@ -16,6 +17,7 @@ public partial class ClusterConsoleWindow : Window
     public ClusterConsoleWindow(ClusterConsoleViewModel console)
     {
         InitializeComponent();
+        WindowTitleBar.Apply(this);
         DataContext = console;
         console.CloseRequested += (_, _) => Close();
         CancelButton.Click += (_, _) => Close();
