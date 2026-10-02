@@ -6,8 +6,6 @@ using Avalonia.Data;
 using Avalonia.Layout;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
-using Avalonia.Threading;
-using Avalonia.VisualTree;
 
 namespace YetAnotherOneCLauncher.App.Controls;
 
@@ -23,23 +21,10 @@ public static class WindowTitleBar
     /// <summary>Высота области заголовка, которую просим у системы.</summary>
     public const double Height = 34;
 
-    /// <summary>Имена кнопок «Свернуть», «Развернуть» и «Во весь экран» в шаблоне рисуемого заголовка.</summary>
-    internal static readonly string[] HiddenButtons = ["PART_MinimizeButton", "PART_MaximizeButton", "PART_FullScreenButton"];
+    /// <summary>Класс вспомогательного окна: в заголовке только кнопка «Закрыть» (стили в LauncherApplication.axaml).</summary>
+    public const string AuxiliaryClass = "auxiliary";
 
     private static Bitmap? _icon;
-
-    /// <summary>
-    /// Скрыть кнопки «Свернуть», «Развернуть» и «Во весь экран» в рисуемом заголовке окна. Запрет (CanMinimize,
-    /// CanMaximize) только делает их недоступными, а стиль до них не доходит — у элементов рисуемого заголовка нет
-    /// шаблонного родителя. Поэтому кнопки ищутся в окне по имени после открытия и при перестройке рамки окна.
-    /// </summary>
-    internal static void HideMinimizeMaximize(Window window)
-    {
-        foreach (var button in window.GetVisualDescendants().OfType<Control>().Where(c => HiddenButtons.Contains(c.Name)))
-        {
-            button.IsVisible = false;
-        }
-    }
 
     /// <summary>
     /// Продлить окно в область заголовка и поставить строку заголовка над содержимым. Вызывать после того, как
@@ -55,16 +40,8 @@ public static class WindowTitleBar
         {
             window.CanMinimize = false;
             window.CanMaximize = false;
-            // Запрет только делает кнопки недоступными — убираем их из заголовка совсем.
-            void Hide() => Dispatcher.UIThread.Post(() => HideMinimizeMaximize(window), DispatcherPriority.Loaded);
-            window.Opened += (_, _) => Hide();
-            window.PropertyChanged += (_, e) =>
-            {
-                if (e.Property == Window.WindowDecorationMarginProperty || e.Property == Window.WindowStateProperty)
-                {
-                    Hide();
-                }
-            };
+            // Запрет только делает кнопки недоступными; убирают их стили LauncherApplication.axaml по этому классу.
+            window.Classes.Add(AuxiliaryClass);
         }
 
         var title = new TextBlock { VerticalAlignment = VerticalAlignment.Center };
