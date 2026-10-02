@@ -7,7 +7,8 @@
         Title="YetAnotherOneCLauncher"
         Width="1040" Height="660"
         MinWidth="600" MinHeight="360"
-        c:ToolIcon.IconStyle="{Binding IconStyle}">
+        c:ToolIcon.IconStyle="{Binding IconStyle}"
+        Classes.flatToolbar="{Binding IsFlatToolbar}">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -237,6 +238,108 @@
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
+    <!-- Кнопки панели главного окна («Стиль 1», «Стиль 2»): обычные кнопки с заливкой; черты между группами и плашки
+         тумблера нет. Внутренние отступы — стилем, а не в разметке кнопок: «Стиль 3» их меняет. -->
+    <Style Selector="StackPanel#ToolbarButtons > Button">
+      <Setter Property="Padding" Value="8,6" />
+      <Setter Property="VerticalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Panel.toolbarGlyph">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+    </Style>
+    <Style Selector="Border.toolbarSeparator">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Width" Value="1" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Margin" Value="6,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlForegroundBaseMediumLowBrush}" />
+    </Style>
+    <Style Selector="Border.switchThumb">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <!-- «Стиль 3» (класс flatToolbar у окна): плоские кнопки 40×40 без фона — фон при наведении и нажатии, значки 26 px,
+         группы разделены чертой; «Все базы / Недавние / Избранное» — тумблер: дорожка и плашка, которая переезжает
+         под выбранный режим. -->
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons">
+      <Setter Property="Spacing" Value="1" />
+    </Style>
+    <Style Selector="Window.flatToolbar Border.toolbarSeparator">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button">
+      <Setter Property="Width" Value="40" />
+      <Setter Property="Height" Value="40" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonHoverBrush}" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonPressedBrush}" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button > c|ToolIcon, Window.flatToolbar Panel.toolbarGlyph">
+      <Setter Property="Width" Value="26" />
+      <Setter Property="Height" Value="26" />
+    </Style>
+    <Style Selector="Window.flatToolbar Border.segmented">
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="{DynamicResource FlatSwitchTrackBrush}" />
+      <Setter Property="CornerRadius" Value="21" />
+      <Setter Property="Padding" Value="2" />
+      <Setter Property="ClipToBounds" Value="False" />
+    </Style>
+    <Style Selector="Window.flatToolbar Border.switchThumb">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="Width" Value="48" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="CornerRadius" Value="19" />
+      <Setter Property="Background" Value="{DynamicResource FlatSwitchThumbBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource FlatSwitchThumbBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <ThicknessTransition Property="Margin" Duration="0:0:0.18" Easing="CubicEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Window.flatToolbar RadioButton.segment">
+      <Setter Property="Width" Value="48" />
+      <Setter Property="Height" Value="38" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="CornerRadius" Value="19" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Window.flatToolbar RadioButton.segment /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Window.flatToolbar RadioButton.segment > c|ToolIcon">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="24" />
+      <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Window.flatToolbar RadioButton.segment:pointerover > c|ToolIcon">
+      <Setter Property="Opacity" Value="0.85" />
+    </Style>
+    <Style Selector="Window.flatToolbar RadioButton.segment:checked > c|ToolIcon">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="TextBlock.columnHeader">
       <Setter Property="Opacity" Value="0.65" />
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
@@ -253,8 +356,8 @@
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
       <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
         <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
-        <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}" Padding="8,6" VerticalAlignment="Stretch">
-          <Panel Width="18" Height="18">
+        <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}">
+          <Panel Classes="toolbarGlyph">
             <c:ToolIcon IsVisible="{Binding IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
                         Data="M 1,2.5 L 11,2.5 M 3,2.5 L 3,13 M 3,7.75 L 6,7.75 M 3,13 L 6,13 M 8,7.75 L 15,7.75 M 8,13 L 15,13" />
             <c:ToolIcon IsVisible="{Binding !IsTreeMode}" StrokeThickness="1.5" Brush="{DynamicResource IconViewBrush}"
@@ -270,16 +373,17 @@
         <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом.
              В списке и при поиске недоступны (видны бледными) — остальные кнопки не сдвигаются. -->
         <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Развернуть все папки">
+                ToolTip.Tip="Развернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
         </Button>
         <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}"
-                Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Свернуть все папки">
+                ToolTip.Tip="Свернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
         </Button>
-        <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}" Padding="8,6" VerticalAlignment="Stretch">
+        <Border Classes="toolbarSeparator" />
+        <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}">
           <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconAddBrush}" Data="M 8,2 L 8,14 M 2,8 L 14,8" />
           <Button.Flyout>
             <MenuFlyout Placement="BottomEdgeAlignedRight">
@@ -295,16 +399,17 @@
           </Button.Flyout>
         </Button>
         <!-- Карандаш: та же команда, что «Изменить…» в контекстном меню и F2. -->
-        <Button x:Name="EditButton" Command="{Binding EditCommand}" Padding="8,6" VerticalAlignment="Stretch"
+        <Button x:Name="EditButton" Command="{Binding EditCommand}"
                 ToolTip.Tip="{Binding HotKeys.EditSuffix, StringFormat='Изменить базу или переименовать папку{0}'}">
           <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource EditIconGeometry}" />
         </Button>
         <!-- Корзина: та же команда, что «Удалить» в контекстном меню и Del. -->
-        <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" Padding="8,6" VerticalAlignment="Stretch"
+        <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="{Binding HotKeys.DeleteSuffix, StringFormat='Удалить из списка{0}'}">
           <c:ToolIcon Brush="{DynamicResource IconDeleteBrush}"
                       Data="M 2,4 L 14,4 M 6,4 L 6,1.8 L 10,1.8 L 10,4 M 3.6,4 L 4.5,14.5 L 11.5,14.5 L 12.4,4 M 6.5,6.8 L 6.5,12 M 9.5,6.8 L 9.5,12" />
         </Button>
+        <Border Classes="toolbarSeparator" />
         <!-- Что показать — переключатель: все базы, недавние, избранное; выбранное положение подсвечено. -->
         <Border x:Name="ListFilterSwitch" Classes="segmented" VerticalAlignment="Stretch">
           <!-- Выбранный сегмент — лёгкая заливка цветом акцента, текст и значки — обычного цвета (в обеих темах). -->
@@ -316,6 +421,9 @@
             <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPointerOver" Color="Transparent" />
             <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent" />
           </Border.Resources>
+          <Panel>
+            <!-- «Стиль 3»: плашка под выбранным режимом — переезжает при переключении (тумблер). -->
+            <Border x:Name="ListFilterThumb" Classes="switchThumb" Margin="{Binding ListFilter, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
           <StackPanel Orientation="Horizontal">
             <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
                          ToolTip.Tip="Все базы">
@@ -332,20 +440,22 @@
               <c:ToolIcon Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" />
             </RadioButton>
           </StackPanel>
+          </Panel>
         </Border>
-        <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}" Padding="8,6" VerticalAlignment="Stretch"
+        <Border Classes="toolbarSeparator" />
+        <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}"
                 ToolTip.Tip="{Binding HotKeys.ReloadSuffix, StringFormat='Обновить: перечитать списки баз и платформы{0}'}">
           <c:ToolIcon StrokeThickness="1.4" Brush="{DynamicResource IconRefreshBrush}"
                       Data="M 13.5,8 A 5.5,5.5 0 1 1 11.9,4.1 M 12.4,1.2 L 12.4,4.6 L 9,4.6" />
         </Button>
-        <Button x:Name="ClusterConsoleButton" Command="{Binding OpenClusterConsoleCommand}" Padding="8,6" VerticalAlignment="Stretch"
+        <Button x:Name="ClusterConsoleButton" Command="{Binding OpenClusterConsoleCommand}"
                 ToolTip.Tip="Средства администрирования: инструменты и консоль кластера серверов 1С">
           <c:ToolIcon Brush="{DynamicResource IconClusterBrush}" Data="{StaticResource ClusterIconGeometry}" />
         </Button>
         <!-- Тема по кругу: как в системе → светлая → тёмная; значок — текущая тема. -->
-        <Button x:Name="ThemeButton" Command="{Binding CycleThemeCommand}" Padding="8,6" VerticalAlignment="Stretch"
+        <Button x:Name="ThemeButton" Command="{Binding CycleThemeCommand}"
                 ToolTip.Tip="{Binding ThemeToolTip}">
-          <Panel Width="18" Height="18">
+          <Panel Classes="toolbarGlyph">
             <!-- Как в системе: круг, закрашенный наполовину. -->
             <c:ToolIcon IsVisible="{Binding IsSystemTheme}" Brush="{DynamicResource IconAutoThemeBrush}"
                         Data="M 8,1.5 A 6.5,6.5 0 1 1 7.99,1.5 Z" SolidData="M 8,1.5 A 6.5,6.5 0 0 0 8,14.5 Z" />
@@ -357,7 +467,7 @@
                         Data="M 10,1.8 A 6.5,6.5 0 1 0 14.2,10.5 A 5.2,5.2 0 0 1 10,1.8 Z" />
           </Panel>
         </Button>
-        <Button x:Name="SettingsButton" Command="{Binding OpenSettingsCommand}" Padding="8,6" VerticalAlignment="Stretch" ToolTip.Tip="Настройки">
+        <Button x:Name="SettingsButton" Command="{Binding OpenSettingsCommand}" ToolTip.Tip="Настройки">
           <!-- Шестерёнка: кольцо, ось и восемь зубцов (зубцы — толстыми короткими штрихами). -->
           <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}"
                       Data="M 8,3.5 A 4.5,4.5 0 1 1 7.99,3.5 Z M 8,6.2 A 1.8,1.8 0 1 1 7.99,6.2 Z"

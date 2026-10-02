@@ -132,7 +132,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
-    public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2"];
+    public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2", "Стиль 3"];
 
     /// <summary>В порядке <see cref="RowLaunchPlacement"/>.</summary>
     public IReadOnlyList<string> RowLaunchPlacementNames { get; } = ["Справа, у края колонки наименования", "Слева от наименования"];

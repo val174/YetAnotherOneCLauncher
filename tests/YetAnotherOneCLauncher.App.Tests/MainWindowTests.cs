@@ -773,7 +773,9 @@ public class MainWindowTests
             new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "EditButton", "DeleteButton" },
             toolbar.Take(6).Select(b => b.Name));
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
-        Assert.Equal(panel.Children.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, panel.Children.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
+        // Черты между группами («Стиль 3») не в счёт.
+        var items = panel.Children.Where(c => !c.Classes.Contains("toolbarSeparator")).ToList();
+        Assert.Equal(items.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, items.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
         Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;
@@ -815,9 +817,9 @@ public class MainWindowTests
         Render();
 
         Assert.Equal(IconStyle.Outline, vm.IconStyle);
-        Assert.Equal(new[] { "Стиль 1", "Стиль 2" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
+        Assert.Equal(new[] { "Стиль 1", "Стиль 2", "Стиль 3" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
         var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
-        foreach (var (index, style) in new[] { (1, IconStyle.Plate), (0, IconStyle.Outline) })
+        foreach (var (index, style) in new[] { (1, IconStyle.Plate), (2, IconStyle.Flat), (0, IconStyle.Outline) })
         {
             vm.IconStyleIndex = index;
             foreach (var variant in new[] { Avalonia.Styling.ThemeVariant.Light, Avalonia.Styling.ThemeVariant.Dark })
@@ -830,6 +832,52 @@ public class MainWindowTests
             }
         }
 
+        Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Style_3_has_flat_toolbar_with_larger_icons_and_mode_switch()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        var add = window.FindControl<Button>("AddButton")!;
+        var thumb = window.FindControl<Border>("ListFilterThumb")!;
+        var separators = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("toolbarSeparator")).ToList();
+
+        // «Стиль 1»: кнопки с заливкой, значок 18, тумблера и черт нет.
+        Assert.DoesNotContain("flatToolbar", window.Classes);
+        Assert.Equal(18, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
+        Assert.False(thumb.IsVisible);
+        Assert.All(separators, s => Assert.False(s.IsVisible));
+
+        vm.IconStyleIndex = 2;
+        Render();
+        Assert.Contains("flatToolbar", window.Classes);
+        Assert.Equal(IconStyle.Flat, fixture.Settings.Settings.Ui.IconStyle);
+        Assert.Equal((40, 40), (add.Bounds.Width, add.Bounds.Height));
+        Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
+        Assert.Equal(26, window.FindControl<Button>("ThemeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width);
+        Assert.Equal(3, separators.Count(s => s.IsVisible)); // вид | правка | режимы | сервис
+        Assert.Equal(Avalonia.Media.Brushes.Transparent, add.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First().Background);
+
+        // Тумблер: плашка под выбранным режимом, переезжает при переключении.
+        Assert.True(thumb.IsVisible);
+        Assert.Equal(0, thumb.Margin.Left);
+        Assert.Equal(24, window.FindControl<RadioButton>("RecentButton")!.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
+        Snapshot(window, "16b-style3-all");
+        window.FindControl<RadioButton>("FavoritesButton")!.IsChecked = true;
+        Assert.Equal(ViewModels.BaseListFilter.Favorites, vm.ListFilter);
+        await Task.Delay(300, TestContext.Current.CancellationToken);
+        Render();
+        Assert.Equal(
+            window.FindControl<RadioButton>("FavoritesButton")!.TranslatePoint(default, window)!.Value.X,
+            thumb.TranslatePoint(default, window)!.Value.X, precision: 0);
+        Snapshot(window, "16c-style3-favorites");
+        Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+        Render();
+        Snapshot(window, "16d-style3-dark");
         Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
         window.Close();
     }
