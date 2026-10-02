@@ -19,6 +19,10 @@ public static class PlatformServices
     public static IClusterConsole CreateClusterConsole() =>
         OperatingSystem.IsWindows() ? new WindowsClusterConsole() : new NoClusterConsole();
 
+    /// <summary>Значки файлов (только Windows; на Linux у программ — значок по умолчанию).</summary>
+    public static IFileIconReader CreateFileIconReader() =>
+        OperatingSystem.IsWindows() ? new WindowsFileIconReader() : new NoFileIconReader();
+
     public static ICacheUsageProbe CreateCacheUsageProbe() =>
         OperatingSystem.IsWindows() ? new WindowsCacheUsageProbe()
         : OperatingSystem.IsLinux() ? new LinuxCacheUsageProbe()

@@ -1,0 +1,118 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        x:Class="YetAnotherOneCLauncher.App.AdminToolsView"
+        x:DataType="vm:AdminToolsViewModel">
+  <UserControl.Styles>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="Opacity" Value="0.65" />
+      <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
+      <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.columnHeader">
+      <Setter Property="FontWeight" Value="SemiBold" />
+      <Setter Property="Opacity" Value="0.75" />
+    </Style>
+    <Style Selector="TextBlock.target">
+      <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, monospace" />
+      <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="c|ToolIcon.buttonIcon">
+      <Setter Property="Margin" Value="0,0,6,0" />
+    </Style>
+  </UserControl.Styles>
+
+  <!-- Колонки таблицы и полей ввода совпадают: «Имя» — 220, «Строка запуска» — остальное, «Значок» — 190. -->
+  <DockPanel>
+    <!-- Кнопки правки (сохранение — кнопкой окна настроек). -->
+    <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
+      <Button x:Name="EditButton" Command="{Binding EditCommand}" ToolTip.Tip="Изменить выбранный инструмент (F2, двойной щелчок)">
+        <StackPanel Orientation="Horizontal">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EditIconGeometry}" />
+          <TextBlock Text="Изменить" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}" ToolTip.Tip="Удалить выбранный инструмент (Del)">
+        <StackPanel Orientation="Horizontal">
+          <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DeleteIconGeometry}" />
+          <TextBlock Text="Удалить" VerticalAlignment="Center" />
+        </StackPanel>
+      </Button>
+      <Button x:Name="MoveUpButton" Command="{Binding MoveUpCommand}" ToolTip.Tip="Выше" VerticalAlignment="Stretch">
+        <c:ToolIcon Classes="buttonIcon" Margin="0" Data="{StaticResource UpIconGeometry}" />
+      </Button>
+      <Button x:Name="MoveDownButton" Command="{Binding MoveDownCommand}" ToolTip.Tip="Ниже" VerticalAlignment="Stretch">
+        <c:ToolIcon Classes="buttonIcon" Margin="0" Data="{StaticResource DownIconGeometry}" />
+      </Button>
+    </StackPanel>
+
+    <!-- Новый или изменяемый инструмент: имя, строка запуска (адрес или программа) и значок. -->
+    <StackPanel DockPanel.Dock="Bottom" Spacing="4" Margin="0,10,0,0">
+      <TextBlock x:Name="FormTitle" Text="{Binding FormTitle}" />
+      <Grid ColumnDefinitions="220,*,Auto,190,Auto,Auto">
+        <TextBox x:Name="NewNameBox" Text="{Binding NewName}" PlaceholderText="Имя" Margin="0,0,8,0" />
+        <TextBox x:Name="NewTargetBox" Grid.Column="1" Text="{Binding NewTarget}" FontFamily="Consolas, DejaVu Sans Mono, monospace"
+                 PlaceholderText="https://… или путь к программе" Margin="0,0,4,0"
+                 ToolTip.Tip="Адрес веб-страницы сервиса (http, https) или путь к программе; путь с пробелами — в кавычках, параметры — после него" />
+        <Button x:Name="BrowseProgramButton" Grid.Column="2" Content="…" Command="{Binding BrowseProgramCommand}"
+                Margin="0,0,8,0" VerticalAlignment="Stretch" ToolTip.Tip="Выбрать программу" />
+        <Button x:Name="IconButton" Grid.Column="3" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                VerticalAlignment="Stretch" Margin="0,0,8,0" ToolTip.Tip="Выбрать значок">
+          <DockPanel>
+            <TextBlock DockPanel.Dock="Right" Text="▾" Margin="6,0,0,0" VerticalAlignment="Center" />
+            <c:AdminToolIconView Icon="{Binding NewIconView}" Margin="0,0,8,0" />
+            <TextBlock x:Name="NewIconText" Text="{Binding NewIconText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                       FontSize="{StaticResource SmallFontSize}" />
+          </DockPanel>
+        </Button>
+        <Button x:Name="ApplyButton" Grid.Column="4" Command="{Binding ApplyCommand}" ToolTip.Tip="Добавить или применить изменение (Enter)">
+          <StackPanel Orientation="Horizontal">
+            <Panel>
+              <c:ToolIcon Classes="buttonIcon" Data="{StaticResource AddIconGeometry}" IsVisible="{Binding !IsEditing}" />
+              <c:ToolIcon Classes="buttonIcon" Data="{StaticResource EditIconGeometry}" IsVisible="{Binding IsEditing}" />
+            </Panel>
+            <TextBlock x:Name="ApplyText" Text="{Binding ApplyText}" VerticalAlignment="Center" />
+          </StackPanel>
+        </Button>
+        <Button x:Name="CancelEditButton" Grid.Column="5" Content="✕" Command="{Binding CancelEditCommand}" IsVisible="{Binding IsEditing}"
+                Margin="8,0,0,0" ToolTip.Tip="Отменить изменение (Esc)" VerticalAlignment="Stretch" />
+      </Grid>
+      <TextBlock x:Name="ErrorText" Text="{Binding ErrorText}" IsVisible="{Binding HasError}" Foreground="#C42B1C" TextWrapping="Wrap" />
+    </StackPanel>
+
+    <!-- Таблица «Инструменты». -->
+    <StackPanel DockPanel.Dock="Top" Spacing="2" Margin="0,4,0,10">
+      <TextBlock Text="Инструменты" FontWeight="SemiBold" />
+      <TextBlock Classes="secondary"
+                 Text="Веб-сервисы и программы для администрирования. Значок подбирается сам: у программы — её значок, у сервиса — значок сайта; его можно заменить встроенным или своим." />
+    </StackPanel>
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="220,*,190" Margin="12,0,12,4">
+      <TextBlock Classes="columnHeader" Text="Имя" />
+      <TextBlock Grid.Column="1" Classes="columnHeader" Text="Строка запуска" />
+      <TextBlock Grid.Column="2" Classes="columnHeader" Text="Значок" Margin="8,0,0,0" />
+    </Grid>
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
+      <Panel>
+        <TextBlock Classes="secondary" Text="Инструментов пока нет: заполните поля ниже и нажмите «Добавить»."
+                   Margin="12" IsVisible="{Binding !Rows.Count}" />
+        <ListBox x:Name="RowsList" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}"
+                 ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent">
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="vm:AdminToolRow">
+              <Grid ColumnDefinitions="220,*,190" Background="Transparent">
+                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="1" Classes="target" Text="{Binding Target}" VerticalAlignment="Center" ToolTip.Tip="{Binding Target}" />
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0">
+                  <c:AdminToolIconView Icon="{Binding Icon}" />
+                  <TextBlock Text="{Binding IconText}" VerticalAlignment="Center" FontSize="{StaticResource SmallFontSize}" Opacity="0.65"
+                             TextTrimming="CharacterEllipsis" />
+                </StackPanel>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Panel>
+    </Border>
+  </DockPanel>
+</UserControl>

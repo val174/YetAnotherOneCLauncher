@@ -6,7 +6,7 @@
         x:Class="YetAnotherOneCLauncher.App.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Title}"
-        Width="900" Height="600" MinWidth="700" MinHeight="440"
+        Width="1040" Height="600" MinWidth="800" MinHeight="440"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
@@ -25,7 +25,7 @@
     </Style>
     <!-- Вкладки слева: во всю ширину колонки, текст слева. -->
     <Style Selector="TabControl#Tabs /template/ ItemsPresenter#PART_ItemsPresenter">
-      <Setter Property="Width" Value="190" />
+      <Setter Property="Width" Value="260" />
     </Style>
     <Style Selector="TabControl#Tabs > TabItem">
       <Setter Property="FontSize" Value="{StaticResource AppFontSize}" />
@@ -160,6 +160,11 @@
       <!-- Шаблоны параметров: встроенные и свои; сохраняются вместе с остальными настройками. -->
       <TabItem x:Name="TemplatesTab" Header="{Binding TemplatesHeader}">
         <app:ParameterTemplatesView x:Name="TemplatesView" DataContext="{Binding Templates}" Margin="0,4,4,0" />
+      </TabItem>
+
+      <!-- Средства администрирования: таблица «Инструменты» — веб-сервисы и программы со значками. -->
+      <TabItem x:Name="AdminToolsTab" Header="{Binding AdminToolsHeader}">
+        <app:AdminToolsView x:Name="AdminToolsView" DataContext="{Binding AdminTools}" Margin="0,4,4,0" />
       </TabItem>
     </TabControl>
   </DockPanel>

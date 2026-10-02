@@ -74,6 +74,12 @@ internal static class AppServices
             DefaultRequestHeaders = { { "User-Agent", PlatformServices.AppFolderName } },
         });
         services.AddSingleton<WebInfoBaseListClient>();
+        // Значки средств администрирования: значки сайтов — тем же HttpClient, свои — в каталоге данных лаунчера.
+        services.AddSingleton<IAdminToolIconSource>(sp => new AdminToolIconStore(
+            sp.GetRequiredService<HttpClient>(),
+            PlatformServices.CreateFileIconReader(),
+            paths is null ? null : Path.Combine(paths.AppDataDirectory, "tool-icons"),
+            sp.GetRequiredService<ILogger<AdminToolIconStore>>()));
         services.AddSingleton(new AvailabilityChecker());
         services.AddSingleton<InfoBaseCatalogLoader>();
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();

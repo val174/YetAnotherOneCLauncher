@@ -48,6 +48,9 @@ public sealed record SettingsValues
 
     // Свои шаблоны параметров.
     public IReadOnlyList<ParameterTemplate> ParameterTemplates { get; init; } = [];
+
+    // Средства администрирования.
+    public IReadOnlyList<AdminTool> AdminTools { get; init; } = [];
 }
 
 /// <summary>Строка вкладки «Горячие клавиши».</summary>
@@ -86,14 +89,15 @@ public sealed partial class HotKeyRowViewModel : ObservableObject
 }
 
 /// <summary>
-/// Окно «Настройки»: вкладки «Общие», «Внешний вид», «Горячие клавиши», «Шаблоны параметров». Правки копятся в черновике и применяются
+/// Окно «Настройки»: вкладки «Общие», «Внешний вид», «Горячие клавиши», «Шаблоны параметров», «Средства администрирования». Правки копятся в черновике и применяются
 /// кнопкой «Сохранить»; пока есть несохранённые — в заголовке окна и у вкладки «*».
 /// </summary>
 public sealed partial class SettingsViewModel : ObservableObject
 {
     private readonly SettingsValues _original;
 
-    public SettingsViewModel(SettingsValues original, ICommand? showAbout = null)
+    public SettingsViewModel(
+        SettingsValues original, ICommand? showAbout = null, IAdminToolIconSource? toolIcons = null, IFileDialogService? files = null)
     {
         ArgumentNullException.ThrowIfNull(original);
         _original = original;
@@ -122,6 +126,8 @@ public sealed partial class SettingsViewModel : ObservableObject
 
         Templates = new ParameterTemplatesViewModel(original.ParameterTemplates);
         Templates.Rows.CollectionChanged += (_, _) => RaiseDirty();
+        AdminTools = new AdminToolsViewModel(original.AdminTools, toolIcons, files);
+        AdminTools.Rows.CollectionChanged += (_, _) => RaiseDirty();
         PropertyChanged += OnOwnPropertyChanged;
     }
 
@@ -199,6 +205,11 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Вкладка «Шаблоны параметров»: таблица параметров, свои добавляются, изменяются и удаляются.</summary>
     public ParameterTemplatesViewModel Templates { get; }
 
+    // --- Средства администрирования ---
+
+    /// <summary>Вкладка «Средства администрирования»: таблица «Инструменты».</summary>
+    public AdminToolsViewModel AdminTools { get; }
+
     // --- Изменения ---
     public bool IsGeneralDirty =>
         AfterLaunchIndex != _original.AfterLaunchIndex
@@ -222,7 +233,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool IsTemplatesDirty => !Templates.CustomTemplates.SequenceEqual(_original.ParameterTemplates);
 
-    public bool IsDirty => IsGeneralDirty || IsAppearanceDirty || IsHotKeysDirty || IsTemplatesDirty;
+    public bool IsAdminToolsDirty => !AdminTools.Tools.SequenceEqual(_original.AdminTools);
+
+    public bool IsDirty => IsGeneralDirty || IsAppearanceDirty || IsHotKeysDirty || IsTemplatesDirty || IsAdminToolsDirty;
 
     public string Title => IsDirty ? "Настройки*" : "Настройки";
 
@@ -233,6 +246,8 @@ public sealed partial class SettingsViewModel : ObservableObject
     public string HotKeysHeader => IsHotKeysDirty ? "Горячие клавиши*" : "Горячие клавиши";
 
     public string TemplatesHeader => IsTemplatesDirty ? "Шаблоны параметров*" : "Шаблоны параметров";
+
+    public string AdminToolsHeader => IsAdminToolsDirty ? "Средства администрирования*" : "Средства администрирования";
 
     public HotKeyMap CurrentHotKeys =>
         HotKeyRows.Aggregate(HotKeyMap.Default, (map, row) => map.With(row.Definition.Command, row.Gesture));
@@ -256,6 +271,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         HighlightRunning = HighlightRunning,
         HotKeys = CurrentHotKeys,
         ParameterTemplates = Templates.CustomTemplates,
+        AdminTools = AdminTools.Tools,
     };
 
     /// <summary>Ждать нового сочетания для строки (остальные перестают ждать).</summary>
@@ -363,7 +379,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private void OnOwnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(IsDirty) or nameof(Title) or nameof(GeneralHeader) or nameof(AppearanceHeader)
-            or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
+            or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(AdminToolsHeader) or nameof(IsAdminToolsDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
             or nameof(IsPuskUrlInvalid) or nameof(RowLaunchHint))
         {
             return;
@@ -378,11 +394,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         OnPropertyChanged(nameof(IsAppearanceDirty));
         OnPropertyChanged(nameof(IsHotKeysDirty));
         OnPropertyChanged(nameof(IsTemplatesDirty));
+        OnPropertyChanged(nameof(IsAdminToolsDirty));
         OnPropertyChanged(nameof(IsDirty));
         OnPropertyChanged(nameof(Title));
         OnPropertyChanged(nameof(GeneralHeader));
         OnPropertyChanged(nameof(AppearanceHeader));
         OnPropertyChanged(nameof(HotKeysHeader));
         OnPropertyChanged(nameof(TemplatesHeader));
+        OnPropertyChanged(nameof(AdminToolsHeader));
     }
 }

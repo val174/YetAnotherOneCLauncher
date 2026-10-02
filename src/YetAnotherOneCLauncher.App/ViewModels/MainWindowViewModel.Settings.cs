@@ -30,13 +30,14 @@ public sealed partial class MainWindowViewModel
         HighlightRunning = HighlightRunning,
         HotKeys = HotKeys,
         ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
+        AdminTools = [.. _settings.Settings.AdminTools],
     };
 
     /// <summary>Окно настроек; изменения применяются, только если нажато «Сохранить».</summary>
     [RelayCommand]
     private async Task OpenSettingsAsync()
     {
-        var settings = new SettingsViewModel(CurrentSettings, ShowAboutCommand);
+        var settings = new SettingsViewModel(CurrentSettings, ShowAboutCommand, _toolIcons, _files);
         if (await _dialogs.EditSettingsAsync(settings))
         {
             ApplySettings(settings.Result);
@@ -77,5 +78,14 @@ public sealed partial class MainWindowViewModel
             _settings.Settings.ParameterTemplates = [.. values.ParameterTemplates];
             _settings.RequestSave();
         }
+
+        if (!values.AdminTools.SequenceEqual(_settings.Settings.AdminTools))
+        {
+            _settings.Settings.AdminTools = [.. values.AdminTools];
+            _settings.RequestSave();
+        }
+
+        // Свои значки, от которых отказались (и загруженные, но не сохранённые), больше не нужны.
+        _toolIcons?.RemoveUnused(_settings.Settings.AdminTools);
     }
 }

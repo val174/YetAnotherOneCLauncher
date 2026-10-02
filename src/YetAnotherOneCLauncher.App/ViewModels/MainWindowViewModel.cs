@@ -66,6 +66,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private readonly IPlatformPaths? _paths;
     private readonly IPlatformLocator? _locator;
     private readonly IFileDialogService _files;
+    private readonly IAdminToolIconSource? _toolIcons;
     private readonly PersonalListStore? _store;
     private readonly IListChangeWatcher? _watcher;
     private readonly ICredentialStore? _credentials;
@@ -107,8 +108,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ILaunchRequestChannel? launchChannel = null,
         StartupOptions? startup = null,
         IClusterConsole? clusterConsole = null,
-        StartupCatalog? startupCatalog = null)
+        StartupCatalog? startupCatalog = null,
+        IAdminToolIconSource? toolIcons = null)
     {
+        _toolIcons = toolIcons;
         _files = files;
         _store = store;
         _watcher = watcher;

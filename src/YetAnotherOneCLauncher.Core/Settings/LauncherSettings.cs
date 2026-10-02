@@ -267,6 +267,9 @@ public sealed class LauncherSettings
     /// <summary>Свои шаблоны параметров — в дополнение к встроенным.</summary>
     public List<ParameterTemplate> ParameterTemplates { get; set; } = [];
 
+    /// <summary>Средства администрирования: веб-сервисы и программы (вкладка настроек «Средства администрирования»).</summary>
+    public List<AdminTool> AdminTools { get; set; } = [];
+
     public UiSettings Ui { get; set; } = new();
 
     public LaunchSettings Launch { get; set; } = new();
