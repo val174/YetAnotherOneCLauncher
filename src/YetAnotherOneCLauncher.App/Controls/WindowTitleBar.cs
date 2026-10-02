@@ -25,7 +25,7 @@ public static class WindowTitleBar
     public const string FlatButtonsClass = "flatButtons";
 
     /// <summary>
-    /// Плоские кнопки («Стиль 3») у открываемых окон: стиль выбирается в главном окне, оно и обновляет этот признак;
+    /// Плоские кнопки («Стиль 1») у открываемых окон: стиль выбирается в главном окне, оно и обновляет этот признак;
     /// окно получает класс при создании.
     /// </summary>
     public static bool FlatButtons { get; set; } = true;

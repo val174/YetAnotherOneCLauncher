@@ -74,9 +74,10 @@ public sealed class SettingsStore
         settings.Ui ??= new UiSettings();
         settings.Ui.CollapsedFolders ??= [];
         settings.Ui.HotKeys ??= [];
-        if (settings.Ui.IconStyle is not (IconStyle.Outline or IconStyle.Plate))
+        if (settings.Ui.IconStyle is not (IconStyle.Flat or IconStyle.Plate))
         {
-            settings.Ui.IconStyle = IconStyle.Outline; // двухтоновые значки убраны, неизвестное значение — тоже сюда
+            // Контурный и двухтоновый стили убраны — они, как и неизвестное значение, читаются как «Стиль 1».
+            settings.Ui.IconStyle = IconStyle.Flat;
         }
 
         if (!Enum.IsDefined(settings.Ui.SortMode))

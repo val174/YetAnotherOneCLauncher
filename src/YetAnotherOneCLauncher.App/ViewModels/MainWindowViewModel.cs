@@ -169,16 +169,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
     /// <summary>Стили значков в порядке списка «Стиль значков».</summary>
-    private static readonly IconStyle[] IconStyles = [IconStyle.Outline, IconStyle.Plate, IconStyle.Flat];
+    private static readonly IconStyle[] IconStyles = [IconStyle.Flat, IconStyle.Plate];
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IconStyle), nameof(IsFlatToolbar))]
     public partial int IconStyleIndex { get; set; }
 
     /// <summary>Стиль значков окна: наследуется всеми значками (<see cref="Controls.ToolIcon"/>).</summary>
-    public IconStyle IconStyle => IconStyleIndex >= 0 && IconStyleIndex < IconStyles.Length ? IconStyles[IconStyleIndex] : IconStyle.Outline;
+    public IconStyle IconStyle => IconStyleIndex >= 0 && IconStyleIndex < IconStyles.Length ? IconStyles[IconStyleIndex] : IconStyle.Flat;
 
-    /// <summary>«Стиль 3»: плоская панель главного окна (класс flatToolbar у окна).</summary>
+    /// <summary>«Стиль 1»: плоская панель главного окна (класс flatToolbar у окна).</summary>
     public bool IsFlatToolbar => IconStyle == IconStyle.Flat;
 
     partial void OnIconStyleIndexChanged(int value)

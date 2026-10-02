@@ -590,7 +590,7 @@ public class MainWindowTests
         using var fixture = new ViewModelFixture();
         fixture.Settings.Settings.Ui.DetailsWidth = 360;
         var window = await OpenAsync(fixture);
-        window.Width = 1200; // панель кнопок «Стиля 3» широкая: поле поиска должно успевать за панелью подробностей
+        window.Width = 1200; // панель кнопок «Стиля 1» широкая: поле поиска должно успевать за панелью подробностей
         Render();
         var splitter = window.FindControl<GridSplitter>("DetailsSplitter")!;
         var search = window.FindControl<TextBox>("SearchBox")!;
@@ -775,7 +775,7 @@ public class MainWindowTests
             new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "EditButton", "DeleteButton" },
             toolbar.Take(6).Select(b => b.Name));
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
-        // Черты между группами («Стиль 3») не в счёт.
+        // Черты между группами («Стиль 1») не в счёт.
         var items = panel.Children.Where(c => !c.Classes.Contains("toolbarSeparator")).ToList();
         Assert.Equal(items.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, items.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
         Assert.Equal("ThemeButton", toolbar[^2].Name);
@@ -818,10 +818,10 @@ public class MainWindowTests
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Render();
 
-        Assert.Equal(IconStyle.Flat, vm.IconStyle); // «Стиль 3» — по умолчанию
-        Assert.Equal(new[] { "Стиль 1", "Стиль 2", "Стиль 3" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
+        Assert.Equal(IconStyle.Flat, vm.IconStyle); // «Стиль 1» — по умолчанию
+        Assert.Equal(new[] { "Стиль 1", "Стиль 2" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
         var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
-        foreach (var (index, style) in new[] { (1, IconStyle.Plate), (2, IconStyle.Flat), (0, IconStyle.Outline) })
+        foreach (var (index, style) in new[] { (1, IconStyle.Plate), (0, IconStyle.Flat) })
         {
             vm.IconStyleIndex = index;
             foreach (var variant in new[] { Avalonia.Styling.ThemeVariant.Light, Avalonia.Styling.ThemeVariant.Dark })
@@ -839,7 +839,7 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public async Task Style_3_has_flat_toolbar_with_larger_icons_and_mode_switch()
+    public async Task Style_1_has_flat_toolbar_with_larger_icons_and_mode_switch()
     {
         using var fixture = new ViewModelFixture();
         var window = await OpenAsync(fixture);
@@ -848,18 +848,18 @@ public class MainWindowTests
         var thumb = window.FindControl<Border>("ListFilterThumb")!;
         var separators = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("toolbarSeparator")).ToList();
 
-        // По умолчанию — «Стиль 3»; сначала «Стиль 1» для сравнения.
+        // По умолчанию — «Стиль 1»; сначала «Стиль 2» для сравнения.
         Assert.True(vm.IsFlatToolbar);
-        vm.IconStyleIndex = 0;
+        vm.IconStyleIndex = 1;
         Render();
 
-        // «Стиль 1»: кнопки с заливкой, значок 18, тумблера и черт нет.
+        // «Стиль 2»: кнопки с заливкой, значок 18, тумблера и черт нет.
         Assert.DoesNotContain("flatToolbar", window.Classes);
         Assert.Equal(18, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
         Assert.False(thumb.IsVisible);
         Assert.All(separators, s => Assert.False(s.IsVisible));
 
-        vm.IconStyleIndex = 2;
+        vm.IconStyleIndex = 0;
         Render();
         Assert.Contains("flatToolbar", window.Classes);
         Assert.Equal(IconStyle.Flat, fixture.Settings.Settings.Ui.IconStyle);

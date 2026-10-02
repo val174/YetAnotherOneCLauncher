@@ -27,7 +27,7 @@ public sealed class ToolIcon : Control
 
     /// <summary>Стиль значков: задаётся на окне и наследуется всеми значками внутри.</summary>
     public static readonly AttachedProperty<IconStyle> IconStyleProperty =
-        AvaloniaProperty.RegisterAttached<ToolIcon, Control, IconStyle>("IconStyle", IconStyle.Outline, inherits: true);
+        AvaloniaProperty.RegisterAttached<ToolIcon, Control, IconStyle>("IconStyle", IconStyle.Flat, inherits: true);
 
     /// <summary>Линии знака.</summary>
     public static readonly StyledProperty<Geometry?> DataProperty =

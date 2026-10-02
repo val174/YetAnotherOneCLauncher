@@ -86,9 +86,11 @@ public class SettingsStoreTests
     }
 
     [Theory]
-    [InlineData("Duotone", IconStyle.Outline)] // двухтоновые значки убраны
+    [InlineData("Duotone", IconStyle.Flat)] // двухтоновые значки убраны
+    [InlineData("Outline", IconStyle.Flat)] // прежний «Стиль 1» убран
+    [InlineData("Flat", IconStyle.Flat)] // «Стиль 1» — сохраняется
     [InlineData("Plate", IconStyle.Plate)]
-    [InlineData("7", IconStyle.Outline)]
+    [InlineData("7", IconStyle.Flat)]
     public async Task Removed_icon_style_is_read_as_default(string saved, IconStyle expected)
     {
         using var temp = new TempDirectory();

@@ -89,7 +89,7 @@ public partial class MainWindow : Window
         Closed += (_, _) => viewModel.StopRunningWatch();
         InitTray(viewModel);
 
-        // «Стиль 3» выбирается здесь — открываемые окна берут его при создании.
+        // «Стиль 1» выбирается здесь — открываемые окна берут его при создании.
         WindowTitleBar.FlatButtons = viewModel.IsFlatToolbar;
         viewModel.PropertyChanged += (_, e) =>
         {
