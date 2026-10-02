@@ -35,6 +35,8 @@ public sealed record SettingsValues
 
     public bool ShowRowLaunchButtons { get; init; } = true;
 
+    public int RowLaunchPlacementIndex { get; init; }
+
     public bool ShowSideLaunchButtons { get; init; } = true;
 
     public bool TwoLineRows { get; init; }
@@ -105,6 +107,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
         ShowRowLaunchButtons = original.ShowRowLaunchButtons;
+        RowLaunchPlacementIndex = original.RowLaunchPlacementIndex;
         ShowSideLaunchButtons = original.ShowSideLaunchButtons;
         TwoLineRows = original.TwoLineRows;
         foreach (var definition in HotKeyMap.Definitions)
@@ -124,6 +127,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
     public IReadOnlyList<string> IconStyleNames { get; } = ["Стиль 1", "Стиль 2"];
+
+    /// <summary>В порядке <see cref="RowLaunchPlacement"/>.</summary>
+    public IReadOnlyList<string> RowLaunchPlacementNames { get; } = ["Справа, у края колонки наименования", "Слева от наименования"];
 
     public ICommand? ShowAboutCommand { get; }
 
@@ -163,6 +169,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     public partial bool ShowRowLaunchButtons { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(RowLaunchHint))]
+    public partial int RowLaunchPlacementIndex { get; set; }
+
+    public string RowLaunchHint => RowLaunchPlacementIndex == (int)RowLaunchPlacement.Left
+        ? "Видны только у выделенной строки: щелчок у начала строки выделяет базу, а не запускает её."
+        : "Появляются у строки под указателем мыши и у выделенной.";
+
+    [ObservableProperty]
     public partial bool ShowSideLaunchButtons { get; set; }
 
     [ObservableProperty]
@@ -193,6 +207,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         || IconStyleIndex != _original.IconStyleIndex
         || ShowDetails != _original.ShowDetails
         || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
+        || RowLaunchPlacementIndex != _original.RowLaunchPlacementIndex
         || ShowSideLaunchButtons != _original.ShowSideLaunchButtons
         || TwoLineRows != _original.TwoLineRows;
 
@@ -228,6 +243,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
+        RowLaunchPlacementIndex = RowLaunchPlacementIndex,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HotKeys = CurrentHotKeys,
@@ -340,7 +356,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     {
         if (e.PropertyName is nameof(IsDirty) or nameof(Title) or nameof(GeneralHeader) or nameof(AppearanceHeader)
             or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
-            or nameof(IsPuskUrlInvalid))
+            or nameof(IsPuskUrlInvalid) or nameof(RowLaunchHint))
         {
             return;
         }

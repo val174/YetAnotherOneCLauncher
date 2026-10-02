@@ -114,6 +114,19 @@ public enum AfterLaunchAction
     Close,
 }
 
+/// <summary>Где в строке списка баз стоят кнопки запуска.</summary>
+public enum RowLaunchPlacement
+{
+    /// <summary>У правого края колонки наименования; видны у строки под указателем и у выделенной.</summary>
+    Right,
+
+    /// <summary>
+    /// Слева от наименования; видны только у выделенной строки (место под них оставлено всегда) —
+    /// щелчок у начала строки выделяет базу, а не запускает её.
+    /// </summary>
+    Left,
+}
+
 public enum CatalogViewMode
 {
     Tree,
@@ -162,6 +175,9 @@ public sealed class UiSettings
 
     /// <summary>Кнопки «1С: Предприятие» и «Конфигуратор» в строках списка баз (у строки под мышью и выделенной).</summary>
     public bool ShowRowLaunchButtons { get; set; } = true;
+
+    /// <summary>Где в строке стоят кнопки запуска: справа (у края колонки наименования) или слева от наименования.</summary>
+    public RowLaunchPlacement RowLaunchPlacement { get; set; } = RowLaunchPlacement.Right;
 
     /// <summary>Кнопки запуска 1С справа от списка баз, над свойствами базы.</summary>
     public bool ShowSideLaunchButtons { get; set; } = true;

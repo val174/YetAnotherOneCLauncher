@@ -98,8 +98,12 @@
                     Content="Кнопки запуска 1С справа от списка баз" />
           <CheckBox x:Name="ShowRowLaunchButtonsBox" IsChecked="{Binding ShowRowLaunchButtons}"
                     Content="Кнопки запуска 1С в строках списка баз" />
-          <TextBlock Classes="secondary" Margin="28,0,0,0"
-                     Text="Появляются у строки под указателем мыши и у выделенной." />
+          <StackPanel Margin="28,2,0,0" Spacing="4" IsEnabled="{Binding ShowRowLaunchButtons}">
+            <ComboBox x:Name="RowLaunchPlacementBox" ItemsSource="{Binding RowLaunchPlacementNames}"
+                      SelectedIndex="{Binding RowLaunchPlacementIndex}" HorizontalAlignment="Stretch"
+                      ToolTip.Tip="Где в строке стоят кнопки запуска" />
+            <TextBlock Classes="secondary" Text="{Binding RowLaunchHint}" />
+          </StackPanel>
           <CheckBox x:Name="TwoLineRowsBox" IsChecked="{Binding TwoLineRows}" Margin="0,6,0,0"
                     Content="Список баз в две строки" />
           <TextBlock Classes="secondary" Margin="28,0,0,0"

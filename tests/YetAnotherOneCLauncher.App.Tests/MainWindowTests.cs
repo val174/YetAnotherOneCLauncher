@@ -253,6 +253,65 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Row_launch_buttons_can_be_placed_left_of_name_and_show_only_on_selected_row()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        Assert.False(vm.IsRowLaunchLeft); // по умолчанию — справа
+
+        // Выбирается в окне настроек («Внешний вид») и сохраняется.
+        var settings = new ViewModels.SettingsViewModel(vm.CurrentSettings) { RowLaunchPlacementIndex = 1 };
+        Assert.True(settings.IsAppearanceDirty);
+        Assert.Contains("только у выделенной", settings.RowLaunchHint, StringComparison.Ordinal);
+        vm.ApplySettings(settings.Result);
+        Assert.True(vm.IsRowLaunchLeft);
+        Assert.Equal(Core.Settings.RowLaunchPlacement.Left, fixture.Settings.Settings.Ui.RowLaunchPlacement);
+
+        vm.SearchText = "а";
+        vm.SelectedListItem = null;
+        Render();
+        var list = window.FindControl<ListBox>("CatalogList")!;
+        Grid[] Rows() => [.. list.GetVisualDescendants().OfType<Grid>().Where(g => g.Classes.Contains("baseRow"))];
+        StackPanel Buttons(Grid row) => row.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Classes.Contains("rowLaunch"));
+        Control Name(Grid row) => row.GetVisualDescendants().OfType<HighlightTextBlock>().Single();
+        double[] Tops() => [.. list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.TranslatePoint(default, list)!.Value.Y)];
+
+        // Место под кнопки оставлено всегда: имя не сдвигается, когда кнопки появляются, — но без выделения их не видно и не нажать.
+        var first = Rows()[0];
+        var nameX = Name(first).TranslatePoint(default, first)!.Value.X;
+        Assert.True(Buttons(first).Bounds.Width > 50);
+        Assert.True(nameX >= Buttons(first).Bounds.Width, $"{nameX} {Buttons(first).Bounds}");
+        Assert.All(Rows(), r => Assert.False(Buttons(r).Opacity > 0 || Buttons(r).IsHitTestVisible));
+        var tops = Tops();
+
+        vm.SelectedListItem = vm.ListItems[0];
+        Render();
+        Assert.Equal(1, Buttons(first).Opacity);
+        Assert.True(Buttons(first).IsHitTestVisible);
+        Assert.Equal(nameX, Name(first).TranslatePoint(default, first)!.Value.X);
+        Assert.Equal(tops, Tops());
+        Assert.All(Rows().Skip(1), r => Assert.False(Buttons(r).IsHitTestVisible));
+        Snapshot(window, "18c-row-launch-left");
+
+        // То же в дереве.
+        vm.SearchText = string.Empty;
+        Render();
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        vm.SelectedTreeItem = vm.TreeItems.OfType<ViewModels.FolderNodeViewModel>().Single(f => f.Name == "Рабочие").Children[0];
+        Render();
+        var selected = tree.GetVisualDescendants().OfType<TreeViewItem>().Single(i => i.IsSelected);
+        var treeRow = selected.GetVisualDescendants().OfType<Grid>().First(g => g.Classes.Contains("baseRow"));
+        Assert.True(Buttons(treeRow).IsHitTestVisible);
+        Assert.True(treeRow.GetVisualDescendants().OfType<Panel>().Single(p => p.Classes.Contains("rowLaunchCell")).Bounds.X < 1);
+
+        // Обратно — справа.
+        vm.RowLaunchPlacementIndex = 0;
+        Assert.Equal(Core.Settings.RowLaunchPlacement.Right, fixture.Settings.Settings.Ui.RowLaunchPlacement);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Row_launch_buttons_show_on_selected_row_and_launch_its_base()
     {
         using var fixture = new ViewModelFixture();

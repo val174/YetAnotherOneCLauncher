@@ -24,6 +24,7 @@ public sealed partial class MainWindowViewModel
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
+        RowLaunchPlacementIndex = RowLaunchPlacementIndex,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HotKeys = HotKeys,
@@ -58,6 +59,7 @@ public sealed partial class MainWindowViewModel
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;
         ShowRowLaunchButtons = values.ShowRowLaunchButtons;
+        RowLaunchPlacementIndex = values.RowLaunchPlacementIndex;
         ShowSideLaunchButtons = values.ShowSideLaunchButtons;
         TwoLineRows = values.TwoLineRows;
 

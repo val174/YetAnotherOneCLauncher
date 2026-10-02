@@ -143,6 +143,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IconStyleIndex = Math.Max(0, Array.IndexOf(IconStyles, ui.IconStyle));
         ShowDetails = ui.ShowDetails;
         ShowRowLaunchButtons = ui.ShowRowLaunchButtons;
+        RowLaunchPlacementIndex = ui.RowLaunchPlacement == RowLaunchPlacement.Left ? 1 : 0;
         ShowSideLaunchButtons = ui.ShowSideLaunchButtons;
         TwoLineRows = ui.TwoLineRows;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
@@ -441,6 +442,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Кнопки запуска в строках списка баз.</summary>
     [ObservableProperty]
     public partial bool ShowRowLaunchButtons { get; set; }
+
+    /// <summary>Место кнопок запуска в строке: 0 — справа, 1 — слева от наименования (<see cref="RowLaunchPlacement"/>).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsRowLaunchLeft))]
+    public partial int RowLaunchPlacementIndex { get; set; }
+
+    /// <summary>Кнопки в строке слева от наименования: видны только у выделенной строки, место под них оставлено.</summary>
+    public bool IsRowLaunchLeft => RowLaunchPlacementIndex == (int)RowLaunchPlacement.Left;
 
     /// <summary>Кнопки запуска справа от списка, над свойствами базы.</summary>
     [ObservableProperty]
@@ -867,6 +876,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.Settings.Ui.ShowRowLaunchButtons = value;
+        _settings.RequestSave();
+    }
+
+    partial void OnRowLaunchPlacementIndexChanged(int value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.RowLaunchPlacement = value == (int)RowLaunchPlacement.Left ? RowLaunchPlacement.Left : RowLaunchPlacement.Right;
         _settings.RequestSave();
     }
 

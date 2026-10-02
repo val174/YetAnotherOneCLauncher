@@ -140,7 +140,9 @@
          выделен сам (не папка выше). -->
     <!-- Кнопки (22 пкс) выше строки текста: отрицательные отступы сверху и снизу — кнопки заходят в поля строки
          и не меняют её высоту, иначе при наведении строки ниже сдвигаются. -->
+    <!-- Место (справа или слева от наименования) — стилем, не в разметке: локальное значение стиль не переопределит. -->
     <Style Selector="Panel.rowLaunchCell">
+      <Setter Property="DockPanel.Dock" Value="Right" />
       <Setter Property="Margin" Value="4,-4,8,-4" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -155,6 +157,24 @@
     </Style>
     <Style Selector="TreeViewItem:selected > Grid.baseRow StackPanel.rowLaunch">
       <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <!-- Кнопки слева от наименования (настройка): место под них оставлено всегда, иначе имя сдвигалось бы;
+         видны и нажимаются только у выделенной строки — щелчок у начала строки выделяет базу, а не запускает её. -->
+    <Style Selector="Grid.baseRow.launchLeft Panel.rowLaunchCell">
+      <Setter Property="DockPanel.Dock" Value="Left" />
+      <Setter Property="Margin" Value="-4,-4,6,-4" />
+    </Style>
+    <Style Selector="Grid.baseRow.launchLeft StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="True" />
+      <Setter Property="Opacity" Value="0" />
+      <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="Grid.baseRow.launchLeft Button.rowLaunch">
+      <Setter Property="IsTabStop" Value="False" />
+    </Style>
+    <Style Selector="ListBoxItem:selected Grid.baseRow.launchLeft StackPanel.rowLaunch, TreeViewItem:selected > Grid.baseRow.launchLeft StackPanel.rowLaunch">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="IsHitTestVisible" Value="True" />
     </Style>
     <Style Selector="Button.rowLaunch">
       <Setter Property="Padding" Value="5,3" />
@@ -674,11 +694,12 @@
           </TreeDataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
             <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
-                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}">
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
+                  Classes.launchLeft="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsRowLaunchLeft}">
               <!-- DockPanel, а не StackPanel: имя получает оставшуюся ширину и обрезается, не наезжая на колонки. -->
               <DockPanel>
                 <!-- Кнопки запуска — в колонке наименования, у её правого края; имя обрезается перед ними. -->
-                <Panel DockPanel.Dock="Right" Classes="rowLaunchCell"
+                <Panel Classes="rowLaunchCell"
                        IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
                   <StackPanel Classes="rowLaunch" Orientation="Horizontal" Spacing="2">
                     <Button Classes="rowLaunch enterprise" ToolTip.Tip="1С: Предприятие"
@@ -729,11 +750,12 @@
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
             <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
-                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}">
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
+                  Classes.launchLeft="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsRowLaunchLeft}">
               <!-- Одна строка: имя и папка; путь к базе — в подсказке к имени (поиск по нему работает). -->
               <DockPanel VerticalAlignment="Center">
                 <!-- Кнопки запуска — в колонке наименования, у её правого края; имя обрезается перед ними. -->
-                <Panel DockPanel.Dock="Right" Classes="rowLaunchCell"
+                <Panel Classes="rowLaunchCell"
                        IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
                   <StackPanel Classes="rowLaunch" Orientation="Horizontal" Spacing="2">
                     <Button Classes="rowLaunch enterprise" ToolTip.Tip="1С: Предприятие"
