@@ -146,6 +146,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RowLaunchPlacementIndex = ui.RowLaunchPlacement == RowLaunchPlacement.Left ? 1 : 0;
         ShowSideLaunchButtons = ui.ShowSideLaunchButtons;
         TwoLineRows = ui.TwoLineRows;
+        HighlightRunning = ui.HighlightRunningBases;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
@@ -489,10 +490,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         // Щелчок по базе в списке переходов Windows, когда лаунчер уже открыт.
         _launchChannel?.Start(OnLaunchRequest);
+        StartRunningWatch();
     }
 
     /// <summary>Сохранить всё при закрытии окна.</summary>
-    public Task ShutdownAsync() => _settings.FlushAsync();
+    public Task ShutdownAsync()
+    {
+        StopRunningWatch();
+        return _settings.FlushAsync();
+    }
 
     [RelayCommand]
     private async Task ReloadAsync()
@@ -568,6 +574,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
         ApplyCacheReport();
         ApplyAvailability();
+        ApplyRunning();
         RebuildTree();
         RebuildList();
         Reselect(selectionKey);
@@ -951,6 +958,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             if (outcome.Started)
             {
                 OnLaunched(target, mode);
+                _ = RefreshRunningAsync(); // точка — сразу, не дожидаясь очередного чтения процессов
             }
             else if (!outcome.Cancelled)
             {

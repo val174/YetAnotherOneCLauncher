@@ -27,6 +27,7 @@ public sealed partial class MainWindowViewModel
         RowLaunchPlacementIndex = RowLaunchPlacementIndex,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
+        HighlightRunning = HighlightRunning,
         HotKeys = HotKeys,
         ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
     };
@@ -62,6 +63,7 @@ public sealed partial class MainWindowViewModel
         RowLaunchPlacementIndex = values.RowLaunchPlacementIndex;
         ShowSideLaunchButtons = values.ShowSideLaunchButtons;
         TwoLineRows = values.TwoLineRows;
+        HighlightRunning = values.HighlightRunning;
 
         if (!values.HotKeys.SameAs(HotKeys))
         {

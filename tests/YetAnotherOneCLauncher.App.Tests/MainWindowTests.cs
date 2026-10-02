@@ -1,6 +1,7 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.Primitives;
+using Ellipse = Avalonia.Controls.Shapes.Ellipse;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
@@ -322,6 +323,52 @@ public class MainWindowTests
         Render();
         Assert.False(Menu(treeRow).IsVisible);
         Assert.Equal(Core.Settings.RowLaunchPlacement.Right, fixture.Settings.Settings.Ui.RowLaunchPlacement);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Running_base_has_green_dot_right_after_its_name()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        fixture.CacheUsage.Processes.Add(new Platform.Abstractions.PlatformProcess(1, "1cv8c", @"1cv8c.exe ENTERPRISE /S ""srv-1c\buh_prod"""));
+        fixture.CacheUsage.Processes.Add(new Platform.Abstractions.PlatformProcess(2, "1cv8c", @"1cv8c.exe ENTERPRISE /S ""srv-1c\zup"""));
+        await vm.RefreshRunningAsync();
+        Render();
+
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        Grid Row(string name) => tree.GetVisualDescendants().OfType<Grid>()
+            .Single(g => g.Classes.Contains("baseRow") && g.DataContext is ViewModels.BaseNodeViewModel n && n.Name == name);
+        Ellipse Dot(Grid row) => row.GetVisualDescendants().OfType<Ellipse>().Single(e => e.Classes.Contains("runningDot"));
+        TextBlock NameText(Grid row) => row.GetVisualDescendants().OfType<TextBlock>()
+            .First(t => t.Text == ((ViewModels.BaseNodeViewModel)row.DataContext!).Name);
+
+        // Точка — сразу за текстом имени, а не у края колонки; у незапущенной базы её нет.
+        var buh = Row("Бухгалтерия предприятия");
+        Assert.True(Dot(buh).IsEffectivelyVisible);
+        Assert.Equal("Открыта в 1С: тонкий клиент", ToolTip.GetTip(Dot(buh)));
+        var nameRight = NameText(buh).TranslatePoint(new Point(NameText(buh).Bounds.Width, 0), buh)!.Value.X;
+        var dotLeft = Dot(buh).TranslatePoint(default, buh)!.Value.X;
+        Assert.InRange(dotLeft - nameRight, 0, 10);
+        Assert.True(Dot(buh).Bounds.Width >= 10);
+        Assert.False(Dot(Row("Розница (тест)")).IsVisible);
+        Snapshot(window, "18d-running-dot");
+
+        // Узко: длинное имя обрезается, точка остаётся видна внутри колонки наименования.
+        window.Width = 900;
+        Render();
+        var zup = Row("Зарплата и управление персоналом");
+        Assert.True(Dot(zup).IsEffectivelyVisible);
+        Assert.True(NameText(zup).Bounds.Width < NameText(zup).DesiredSize.Width || NameText(zup).TextLayout.TextLines[0].HasCollapsed, "имя должно быть обрезано");
+        var platform = zup.Children.OfType<TextBlock>().Single(t => t.Classes.Contains("platform"));
+        Snapshot(window, "18e-running-dot-narrow");
+        Assert.True(Dot(zup).TranslatePoint(new Point(Dot(zup).Bounds.Width, 0), zup)!.Value.X <= platform.Bounds.X);
+
+        // Выключили — точек нет.
+        vm.HighlightRunning = false;
+        Render();
+        Assert.False(Dot(Row("Бухгалтерия предприятия")).IsVisible);
         window.Close();
     }
 

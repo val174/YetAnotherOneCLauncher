@@ -104,6 +104,10 @@
                       ToolTip.Tip="Где в строке стоят кнопки запуска" />
             <TextBlock Classes="secondary" Text="{Binding RowLaunchHint}" />
           </StackPanel>
+          <CheckBox x:Name="HighlightRunningBox" IsChecked="{Binding HighlightRunning}" Margin="0,6,0,0"
+                    Content="Подсвечивать запущенные базы" />
+          <TextBlock Classes="secondary" Margin="28,0,0,0"
+                     Text="Зелёная точка справа от наименования у баз, открытых в 1С: из лаунчера, стартером 1С или ярлыком." />
           <CheckBox x:Name="TwoLineRowsBox" IsChecked="{Binding TwoLineRows}" Margin="0,6,0,0"
                     Content="Список баз в две строки" />
           <TextBlock Classes="secondary" Margin="28,0,0,0"

@@ -108,6 +108,20 @@ public sealed partial class InfoBaseViewModel : ObservableObject
         };
     }
 
+    /// <summary>База открыта в 1С текущим пользователем: в командной строке процесса платформы — её адрес или имя.</summary>
+    [ObservableProperty]
+    public partial bool IsRunning { get; private set; }
+
+    /// <summary>Подсказка к зелёной точке: в каких клиентах открыта.</summary>
+    [ObservableProperty]
+    public partial string RunningToolTip { get; private set; } = string.Empty;
+
+    public void SetRunning(IReadOnlyList<string> clients)
+    {
+        IsRunning = clients.Count > 0;
+        RunningToolTip = IsRunning ? "Открыта в 1С: " + string.Join(", ", clients) : string.Empty;
+    }
+
     private static string KindName(ListSourceKind kind) => kind == ListSourceKind.InternetService ? "Веб-сервис списков" : "Общий список";
 
     /// <summary>Файл или адрес списка — для подсказки.</summary>

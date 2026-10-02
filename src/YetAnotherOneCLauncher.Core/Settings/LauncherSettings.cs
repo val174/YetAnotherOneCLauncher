@@ -188,6 +188,9 @@ public sealed class UiSettings
     /// </summary>
     public bool TwoLineRows { get; set; }
 
+    /// <summary>Зелёная точка справа от наименования у баз, открытых в 1С текущим пользователем.</summary>
+    public bool HighlightRunningBases { get; set; } = true;
+
     /// <summary>
     /// Переопределённые горячие клавиши: имя команды → сочетание в формате Avalonia («Ctrl+Shift+N», «F3»);
     /// пустая строка — сочетание снято. Команды, которых здесь нет, работают по умолчанию.

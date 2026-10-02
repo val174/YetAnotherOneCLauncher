@@ -118,6 +118,19 @@
     <Style Selector="Grid#ColumnHeaders:pointerover Border.columnGrip > Border">
       <Setter Property="Opacity" Value="1" />
     </Style>
+    <!-- Наименование и зелёная точка запущенной базы сразу за ним: колонка имени — «*» в сетке, прижатой влево, —
+         по ширине текста, а при нехватке места имя обрезается, точка остаётся видна. -->
+    <Style Selector="Grid.nameWithDot">
+      <Setter Property="HorizontalAlignment" Value="Left" />
+      <Setter Property="Margin" Value="0,0,8,0" />
+    </Style>
+    <Style Selector="Ellipse.runningDot">
+      <Setter Property="Width" Value="10" />
+      <Setter Property="Height" Value="10" />
+      <Setter Property="Margin" Value="6,0,0,0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Fill" Value="#2EA043" />
+    </Style>
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
@@ -719,7 +732,10 @@
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,8,0" />
-                <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" Margin="0,0,8,0" />
+                <Grid DockPanel.Dock="Left" Classes="nameWithDot" ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" />
+                  <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding Base.IsRunning}" ToolTip.Tip="{Binding Base.RunningToolTip}" />
+                </Grid>
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
                            Margin="0,0,8,0" ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
@@ -778,7 +794,10 @@
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,6,0" />
-                <c:HighlightTextBlock DockPanel.Dock="Left" Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" Margin="0,0,8,0" />
+                <Grid DockPanel.Dock="Left" Classes="nameWithDot" ColumnDefinitions="*,Auto">
+                  <c:HighlightTextBlock Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" />
+                  <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding Base.IsRunning}" ToolTip.Tip="{Binding Base.RunningToolTip}" />
+                </Grid>
                 <TextBlock Classes="secondary" Text="{Binding Base.RowFolderText}" IsVisible="{Binding Base.HasRowFolder}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"

@@ -211,7 +211,14 @@ internal sealed class FakeCacheUsage : ICacheUsageProbe
     /// <summary>Процессы 1С текущего пользователя с командными строками.</summary>
     public List<PlatformProcess> Processes { get; } = [];
 
-    public IReadOnlyList<PlatformProcess> CurrentUserPlatformProcesses() => Processes;
+    // Копия: подсветка запущенных баз читает процессы в фоне, пока тест может менять список.
+    public IReadOnlyList<PlatformProcess> CurrentUserPlatformProcesses()
+    {
+        lock (Processes)
+        {
+            return [.. Processes];
+        }
+    }
 
     public bool IsDirectoryInUse(string path) => InUse.Contains(path);
 }
@@ -491,6 +498,7 @@ internal sealed class ViewModelFixture : IDisposable
 
     public void Dispose()
     {
+        ViewModel.StopRunningWatch();
         Settings.Dispose();
         _store?.Dispose();
         try

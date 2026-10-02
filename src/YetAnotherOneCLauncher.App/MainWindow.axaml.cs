@@ -83,6 +83,7 @@ public partial class MainWindow : Window
         };
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
+        Closed += (_, _) => viewModel.StopRunningWatch();
         InitTray(viewModel);
 
         // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
