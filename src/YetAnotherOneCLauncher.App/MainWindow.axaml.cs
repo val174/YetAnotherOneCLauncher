@@ -104,6 +104,9 @@ public partial class MainWindow : Window
             grip.PointerCaptureLost += (_, _) => _columnResize = null;
         }
 
+        // Кнопка ▶ в строке (кнопки слева от наименования): меню режимов запуска этой базы.
+        AddHandler(Button.ClickEvent, OnRowLaunchMenuClick);
+
         HeaderPanel.SizeChanged += (_, _) => FitSearchBox();
         ToolbarPanel.SizeChanged += (_, _) => FitSearchBox();
         DetailsSplitter.DragDelta += (_, _) => FitSearchBox(DetailsColumn.ActualWidth);
@@ -112,6 +115,55 @@ public partial class MainWindow : Window
             viewModel.DetailsWidth = DetailsColumn.ActualWidth;
             ApplyDetailsLayout(); // ширина могла упереться в пределы
         };
+    }
+
+    /// <summary>Щелчок по ▶ в строке: строка выделяется, рядом с кнопкой — меню режимов запуска.</summary>
+    private void OnRowLaunchMenuClick(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is not Button { Tag: InfoBaseViewModel infoBase } button || !button.Classes.Contains("rowLaunchMenu")
+            || DataContext is not MainWindowViewModel viewModel)
+        {
+            return;
+        }
+
+        e.Handled = true;
+        switch (button.DataContext)
+        {
+            case BaseListItemViewModel item:
+                viewModel.SelectedListItem = item;
+                break;
+            case TreeNodeViewModel node:
+                viewModel.SelectedTreeItem = node;
+                break;
+        }
+
+        CreateRowLaunchMenu(viewModel, infoBase).ShowAt(button);
+    }
+
+    /// <summary>Меню кнопки ▶: те же команды, что у трёх кнопок строки, — для базы этой строки.</summary>
+    internal MenuFlyout CreateRowLaunchMenu(MainWindowViewModel viewModel, InfoBaseViewModel infoBase)
+    {
+        MenuItem Item(string header, ICommand command, KeyGesture? gesture, string icon, string? solidIcon = null) => new()
+        {
+            Header = header,
+            Command = command,
+            CommandParameter = infoBase,
+            InputGesture = gesture,
+            Icon = new Controls.ToolIcon
+            {
+                Classes = { "buttonIcon" },
+                Data = (Avalonia.Media.Geometry?)this.FindResource(icon),
+                SolidData = solidIcon is null ? null : (Avalonia.Media.Geometry?)this.FindResource(solidIcon),
+            },
+        };
+
+        var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
+        menu.Items.Add(Item("1С: Предприятие", viewModel.LaunchEnterpriseCommand, viewModel.HotKeys.LaunchEnterprise,
+            "EnterpriseIconGeometry", "EnterpriseIconGeometry"));
+        menu.Items.Add(Item("Конфигуратор", viewModel.LaunchDesignerCommand, viewModel.HotKeys.LaunchDesigner, "DesignerIconGeometry"));
+        menu.Items.Add(Item("Запустить с параметрами…", viewModel.LaunchWithParametersCommand, viewModel.HotKeys.LaunchWithParameters,
+            "ParametersIconGeometry", "ParametersKnobsIconGeometry"));
+        return menu;
     }
 
     private void OnColumnGripPressed(object? sender, PointerPressedEventArgs e)

@@ -448,7 +448,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsRowLaunchLeft))]
     public partial int RowLaunchPlacementIndex { get; set; }
 
-    /// <summary>Кнопки в строке слева от наименования: видны только у выделенной строки, место под них оставлено.</summary>
+    /// <summary>В строке слева от наименования — одна кнопка ▶ (видна всегда) с меню режимов запуска.</summary>
     public bool IsRowLaunchLeft => RowLaunchPlacementIndex == (int)RowLaunchPlacement.Left;
 
     /// <summary>Кнопки запуска справа от списка, над свойствами базы.</summary>

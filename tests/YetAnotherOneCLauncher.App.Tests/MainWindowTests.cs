@@ -253,7 +253,7 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public async Task Row_launch_buttons_can_be_placed_left_of_name_and_show_only_on_selected_row()
+    public async Task Row_launch_button_left_of_name_is_always_visible_and_opens_mode_menu()
     {
         using var fixture = new ViewModelFixture();
         var window = await OpenAsync(fixture);
@@ -263,7 +263,7 @@ public class MainWindowTests
         // Выбирается в окне настроек («Внешний вид») и сохраняется.
         var settings = new ViewModels.SettingsViewModel(vm.CurrentSettings) { RowLaunchPlacementIndex = 1 };
         Assert.True(settings.IsAppearanceDirty);
-        Assert.Contains("только у выделенной", settings.RowLaunchHint, StringComparison.Ordinal);
+        Assert.Contains("видна всегда", settings.RowLaunchHint, StringComparison.Ordinal);
         vm.ApplySettings(settings.Result);
         Assert.True(vm.IsRowLaunchLeft);
         Assert.Equal(Core.Settings.RowLaunchPlacement.Left, fixture.Settings.Settings.Ui.RowLaunchPlacement);
@@ -273,40 +273,54 @@ public class MainWindowTests
         Render();
         var list = window.FindControl<ListBox>("CatalogList")!;
         Grid[] Rows() => [.. list.GetVisualDescendants().OfType<Grid>().Where(g => g.Classes.Contains("baseRow"))];
+        Button Menu(Grid row) => row.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains("rowLaunchMenu"));
         StackPanel Buttons(Grid row) => row.GetVisualDescendants().OfType<StackPanel>().Single(p => p.Classes.Contains("rowLaunch"));
-        Control Name(Grid row) => row.GetVisualDescendants().OfType<HighlightTextBlock>().Single();
-        double[] Tops() => [.. list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.TranslatePoint(default, list)!.Value.Y)];
+        double NameX(Grid row) => row.GetVisualDescendants().OfType<HighlightTextBlock>().Single().TranslatePoint(default, row)!.Value.X;
 
-        // Место под кнопки оставлено всегда: имя не сдвигается, когда кнопки появляются, — но без выделения их не видно и не нажать.
-        var first = Rows()[0];
-        var nameX = Name(first).TranslatePoint(default, first)!.Value.X;
-        Assert.True(Buttons(first).Bounds.Width > 50);
-        Assert.True(nameX >= Buttons(first).Bounds.Width, $"{nameX} {Buttons(first).Bounds}");
-        Assert.All(Rows(), r => Assert.False(Buttons(r).Opacity > 0 || Buttons(r).IsHitTestVisible));
-        var tops = Tops();
+        // Во всех строках одна кнопка ▶ слева от имени — и без выделения; три кнопки справа не показываются.
+        Assert.True(Rows().Length >= 3);
+        Assert.All(Rows(), r =>
+        {
+            Assert.True(Menu(r).IsEffectivelyVisible);
+            Assert.True(Menu(r).TranslatePoint(default, r)!.Value.X < 1);
+            Assert.True(NameX(r) >= Menu(r).Bounds.Right, $"{NameX(r)} {Menu(r).Bounds}");
+            Assert.False(Buttons(r).IsVisible);
+        });
+        Assert.Single(Rows().Select(NameX).Distinct()); // имена — на одной линии
+        var tops = list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.Bounds.Y).ToList();
 
-        vm.SelectedListItem = vm.ListItems[0];
+        // Щелчок по ▶ выделяет строку и открывает меню, но базу не запускает.
+        var second = Rows()[1];
+        Menu(second).RaiseEvent(new Avalonia.Interactivity.RoutedEventArgs(Button.ClickEvent));
         Render();
-        Assert.Equal(1, Buttons(first).Opacity);
-        Assert.True(Buttons(first).IsHitTestVisible);
-        Assert.Equal(nameX, Name(first).TranslatePoint(default, first)!.Value.X);
-        Assert.Equal(tops, Tops());
-        Assert.All(Rows().Skip(1), r => Assert.False(Buttons(r).IsHitTestVisible));
+        Assert.Same(second.DataContext, vm.SelectedListItem);
+        Assert.Empty(fixture.Processes.Started);
+        Assert.False(Buttons(second).IsVisible); // и у выделенной — только ▶
+        Assert.Equal(tops, list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.Bounds.Y).ToList());
         Snapshot(window, "18c-row-launch-left");
 
-        // То же в дереве.
+        // Меню: три режима запуска для базы этой строки.
+        var infoBase = ((ViewModels.BaseListItemViewModel)second.DataContext!).Base;
+        var menu = ((MainWindow)window).CreateRowLaunchMenu(vm, infoBase);
+        var items = menu.Items.OfType<MenuItem>().ToList();
+        Assert.Equal(["1С: Предприятие", "Конфигуратор", "Запустить с параметрами…"], items.Select(i => (string)i.Header!));
+        Assert.All(items, i => Assert.Same(infoBase, i.CommandParameter));
+        items[1].Command!.Execute(items[1].CommandParameter);
+        await WaitAsync(() => fixture.Processes.Started.Count == 1);
+        Assert.Equal("DESIGNER", fixture.Processes.Started[0].Arguments[0]);
+
+        // То же в дереве: ▶ — в начале строки базы.
         vm.SearchText = string.Empty;
         Render();
         var tree = window.FindControl<TreeView>("CatalogTree")!;
-        vm.SelectedTreeItem = vm.TreeItems.OfType<ViewModels.FolderNodeViewModel>().Single(f => f.Name == "Рабочие").Children[0];
-        Render();
-        var selected = tree.GetVisualDescendants().OfType<TreeViewItem>().Single(i => i.IsSelected);
-        var treeRow = selected.GetVisualDescendants().OfType<Grid>().First(g => g.Classes.Contains("baseRow"));
-        Assert.True(Buttons(treeRow).IsHitTestVisible);
-        Assert.True(treeRow.GetVisualDescendants().OfType<Panel>().Single(p => p.Classes.Contains("rowLaunchCell")).Bounds.X < 1);
+        var treeRow = tree.GetVisualDescendants().OfType<Grid>().First(g => g.Classes.Contains("baseRow") && g.IsEffectivelyVisible);
+        Assert.True(Menu(treeRow).IsEffectivelyVisible);
+        Assert.True(Menu(treeRow).TranslatePoint(default, treeRow)!.Value.X < 1);
 
-        // Обратно — справа.
+        // Обратно — справа: ▶ нет.
         vm.RowLaunchPlacementIndex = 0;
+        Render();
+        Assert.False(Menu(treeRow).IsVisible);
         Assert.Equal(Core.Settings.RowLaunchPlacement.Right, fixture.Settings.Settings.Ui.RowLaunchPlacement);
         window.Close();
     }

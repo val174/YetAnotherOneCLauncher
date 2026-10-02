@@ -158,23 +158,20 @@
     <Style Selector="TreeViewItem:selected > Grid.baseRow StackPanel.rowLaunch">
       <Setter Property="IsVisible" Value="True" />
     </Style>
-    <!-- Кнопки слева от наименования (настройка): место под них оставлено всегда, иначе имя сдвигалось бы;
-         видны и нажимаются только у выделенной строки — щелчок у начала строки выделяет базу, а не запускает её. -->
+    <!-- Слева от наименования (настройка): одна кнопка ▶ в каждой строке, видна всегда; щелчок открывает меню режимов
+         запуска (MainWindow.axaml.cs) — сам по себе базу не запускает. Три кнопки справа в этом режиме не показываются. -->
+    <Style Selector="Button.rowLaunchMenu">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
     <Style Selector="Grid.baseRow.launchLeft Panel.rowLaunchCell">
       <Setter Property="DockPanel.Dock" Value="Left" />
-      <Setter Property="Margin" Value="-4,-4,6,-4" />
+      <Setter Property="Margin" Value="-4,-4,4,-4" />
     </Style>
     <Style Selector="Grid.baseRow.launchLeft StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Grid.baseRow.launchLeft Button.rowLaunchMenu">
       <Setter Property="IsVisible" Value="True" />
-      <Setter Property="Opacity" Value="0" />
-      <Setter Property="IsHitTestVisible" Value="False" />
-    </Style>
-    <Style Selector="Grid.baseRow.launchLeft Button.rowLaunch">
-      <Setter Property="IsTabStop" Value="False" />
-    </Style>
-    <Style Selector="ListBoxItem:selected Grid.baseRow.launchLeft StackPanel.rowLaunch, TreeViewItem:selected > Grid.baseRow.launchLeft StackPanel.rowLaunch">
-      <Setter Property="Opacity" Value="1" />
-      <Setter Property="IsHitTestVisible" Value="True" />
     </Style>
     <Style Selector="Button.rowLaunch">
       <Setter Property="Padding" Value="5,3" />
@@ -715,6 +712,9 @@
                       <c:ToolIcon Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
                     </Button>
                   </StackPanel>
+                  <Button Classes="rowLaunch enterprise rowLaunchMenu" Tag="{Binding Base}" ToolTip.Tip="Запустить…">
+                    <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
+                  </Button>
                 </Panel>
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
@@ -771,6 +771,9 @@
                       <c:ToolIcon Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
                     </Button>
                   </StackPanel>
+                  <Button Classes="rowLaunch enterprise rowLaunchMenu" Tag="{Binding Base}" ToolTip.Tip="Запустить…">
+                    <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
+                  </Button>
                 </Panel>
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"

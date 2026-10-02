@@ -173,7 +173,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     public partial int RowLaunchPlacementIndex { get; set; }
 
     public string RowLaunchHint => RowLaunchPlacementIndex == (int)RowLaunchPlacement.Left
-        ? "Видны только у выделенной строки: щелчок у начала строки выделяет базу, а не запускает её."
+        ? "Одна кнопка ▶ в каждой строке, видна всегда: щелчок открывает меню — 1С: Предприятие, Конфигуратор или запуск с параметрами."
         : "Появляются у строки под указателем мыши и у выделенной.";
 
     [ObservableProperty]
