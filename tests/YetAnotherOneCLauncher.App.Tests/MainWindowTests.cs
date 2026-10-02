@@ -160,6 +160,41 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Row_launch_buttons_do_not_change_row_height_in_search_list_and_tree()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+
+        // Поиск — плоский список: кнопки у выделенной строки (и у строки под указателем) не должны сдвигать строки ниже.
+        vm.SearchText = "а";
+        Render();
+        var list = window.FindControl<ListBox>("CatalogList")!;
+        double[] ListTops() => [.. list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.TranslatePoint(default, list)!.Value.Y)];
+        Assert.True(vm.ListItems.Count >= 3);
+        vm.SelectedListItem = null;
+        Render();
+        var before = ListTops();
+        vm.SelectedListItem = vm.ListItems[0];
+        Render();
+        Assert.Contains(list.GetVisualDescendants().OfType<StackPanel>(), p => p.Classes.Contains("rowLaunch") && p.IsVisible);
+        Assert.Equal(before, ListTops());
+
+        // То же в дереве.
+        vm.SearchText = string.Empty;
+        Render();
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        double[] TreeTops() => [.. tree.GetVisualDescendants().OfType<TreeViewItem>().Select(i => i.TranslatePoint(default, tree)!.Value.Y)];
+        vm.SelectedTreeItem = null;
+        Render();
+        var treeBefore = TreeTops();
+        vm.SelectedTreeItem = vm.TreeItems.OfType<ViewModels.FolderNodeViewModel>().Single(f => f.Name == "Рабочие").Children[0];
+        Render();
+        Assert.Equal(treeBefore, TreeTops());
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Row_launch_buttons_show_on_selected_row_and_launch_its_base()
     {
         using var fixture = new ViewModelFixture();
