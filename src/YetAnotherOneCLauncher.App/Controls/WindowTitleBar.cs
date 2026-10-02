@@ -18,6 +18,9 @@ public static class WindowTitleBar
     /// <summary>Имя строки заголовка в окне.</summary>
     public const string Name = "TitleBar";
 
+    /// <summary>Имя рамки окна (корень содержимого).</summary>
+    public const string FrameName = "WindowFrame";
+
     /// <summary>Высота области заголовка, которую просим у системы.</summary>
     public const double Height = 34;
 
@@ -74,7 +77,21 @@ public static class WindowTitleBar
             root.Children.Add(content);
         }
 
-        window.Content = root;
+        // Своя рамка по краю окна: системная в светлой теме почти белая и не видна, когда окно лежит поверх белого
+        // (вспомогательное — над списком баз главного), а заголовок того же цвета, что и окно под ним. У развёрнутого — нет.
+        var frame = new Border { Name = FrameName, Child = root };
+        frame.Bind(Border.BorderBrushProperty, frame.GetResourceObservable("SystemControlForegroundBaseLowBrush"));
+        void UpdateFrame() => frame.BorderThickness =
+            window.WindowState is WindowState.Maximized or WindowState.FullScreen ? default : new Thickness(1);
+        UpdateFrame();
+        window.PropertyChanged += (_, e) =>
+        {
+            if (e.Property == Window.WindowStateProperty)
+            {
+                UpdateFrame();
+            }
+        };
+        window.Content = frame;
     }
 
     private static Bitmap Icon => _icon ??= new Bitmap(AssetLoader.Open(new Uri("avares://YetAnotherOneCLauncher/Assets/app.png")));

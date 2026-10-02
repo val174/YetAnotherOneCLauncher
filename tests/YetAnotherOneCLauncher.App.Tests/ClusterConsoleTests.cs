@@ -225,7 +225,7 @@ public class ClusterConsoleTests
         Assert.False(new ClusterConsoleViewModel(All, console, new FakeProcessLauncher()).HasTools); // нет — подсказка, где добавить
     }
 
-    [Fact]
+    [AvaloniaFact]
     public async Task Window_lists_tools_from_settings()
     {
         using var fixture = new ViewModelFixture();

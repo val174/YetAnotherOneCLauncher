@@ -32,7 +32,12 @@ public class WindowTitleBarTests
 
         Assert.True(window.ExtendClientAreaToDecorationsHint);
         Assert.Equal(WindowTitleBar.Height, window.ExtendClientAreaTitleBarHeightHint);
-        var root = Assert.IsType<DockPanel>(window.Content);
+        // Своя рамка по краю окна (системная в светлой теме не видна поверх белого); у развёрнутого её нет.
+        var frame = Assert.IsType<Border>(window.Content);
+        Assert.Equal((WindowTitleBar.FrameName, new Avalonia.Thickness(1)), (frame.Name, frame.BorderThickness));
+        window.WindowState = WindowState.Maximized;
+        Assert.Equal(default, frame.BorderThickness);
+        var root = Assert.IsType<DockPanel>(frame.Child);
         var bar = Assert.IsType<Border>(root.Children[0]);
         Assert.Equal(WindowTitleBar.Name, bar.Name);
         Assert.Equal(Dock.Top, DockPanel.GetDock(bar));
