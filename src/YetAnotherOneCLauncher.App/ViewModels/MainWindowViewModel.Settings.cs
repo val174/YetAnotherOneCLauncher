@@ -25,6 +25,7 @@ public sealed partial class MainWindowViewModel
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
+        TwoLineRows = TwoLineRows,
         HotKeys = HotKeys,
         ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
     };
@@ -58,6 +59,7 @@ public sealed partial class MainWindowViewModel
         ShowDetails = values.ShowDetails;
         ShowRowLaunchButtons = values.ShowRowLaunchButtons;
         ShowSideLaunchButtons = values.ShowSideLaunchButtons;
+        TwoLineRows = values.TwoLineRows;
 
         if (!values.HotKeys.SameAs(HotKeys))
         {

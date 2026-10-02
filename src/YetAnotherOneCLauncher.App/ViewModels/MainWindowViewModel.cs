@@ -144,6 +144,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ShowDetails = ui.ShowDetails;
         ShowRowLaunchButtons = ui.ShowRowLaunchButtons;
         ShowSideLaunchButtons = ui.ShowSideLaunchButtons;
+        TwoLineRows = ui.TwoLineRows;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
@@ -445,6 +446,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowRightPanel))]
     public partial bool ShowSideLaunchButtons { get; set; }
+
+    /// <summary>Строки списка баз в две строки: платформа, режим и последний запуск — под наименованием, колонок нет.</summary>
+    [ObservableProperty]
+    public partial bool TwoLineRows { get; set; }
 
     /// <summary>Правой панели есть что показать: кнопки запуска или свойства. Нет — колонка убирается.</summary>
     public bool ShowRightPanel => ShowDetails || ShowSideLaunchButtons;
@@ -862,6 +867,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.Settings.Ui.ShowRowLaunchButtons = value;
+        _settings.RequestSave();
+    }
+
+    partial void OnTwoLineRowsChanged(bool value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.TwoLineRows = value;
         _settings.RequestSave();
     }
 

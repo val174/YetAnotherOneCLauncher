@@ -121,6 +121,20 @@
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
+    <!-- Список в две строки (настройка «Внешний вид»): колонок нет — платформа, режим запуска и последний запуск
+         во второй строке, под наименованием и кнопками запуска. -->
+    <Style Selector="Grid#ColumnHeaders.twoLine > TextBlock.cell, Grid#ColumnHeaders.twoLine > Border.columnGrip, Grid.baseRow.twoLine > TextBlock.cell">
+      <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="StackPanel.rowDetails">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Orientation" Value="Horizontal" />
+      <Setter Property="Spacing" Value="6" />
+      <Setter Property="Margin" Value="0,1,0,0" />
+    </Style>
+    <Style Selector="Grid.baseRow.twoLine > StackPanel.rowDetails">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
     <!-- Кнопки запуска в строке базы — в колонке наименования, у её правого края: видны у строки под указателем
          и у выделенной (имя на это время обрезается перед ними). Выделенная строка дерева — та, чей TreeViewItem
          выделен сам (не папка выше). -->
@@ -545,7 +559,8 @@
     <DockPanel Grid.Column="0" Margin="8,4,8,8">
     <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
          поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
-    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}">
+    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}"
+          Classes.twoLine="{Binding TwoLineRows}">
       <!-- В дереве заголовок переключает порядок: по наименованию (стрелка) или свой. -->
       <Button x:Name="SortByNameButton" Classes="columnHeader" Command="{Binding ToggleSortCommand}"
               IsHitTestVisible="{Binding ShowTree}" ToolTip.Tip="{Binding SortToolTip}" HorizontalAlignment="Left">
@@ -658,7 +673,8 @@
             </StackPanel>
           </TreeDataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
-            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}">
               <!-- DockPanel, а не StackPanel: имя получает оставшуюся ширину и обрезается, не наезжая на колонки. -->
               <DockPanel>
                 <!-- Кнопки запуска — в колонке наименования, у её правого края; имя обрезается перед ними. -->
@@ -692,6 +708,13 @@
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
               <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
+                <TextBlock Classes="secondary" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
+                           Classes.missing="{Binding Base.IsPlatformMissing}" />
+                <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
+                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
+                           IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
             </Grid>
           </DataTemplate>
         </TreeView.DataTemplates>
@@ -705,7 +728,8 @@
                Background="Transparent">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
-            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" Background="Transparent">
+            <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}">
               <!-- Одна строка: имя и папка; путь к базе — в подсказке к имени (поиск по нему работает). -->
               <DockPanel VerticalAlignment="Center">
                 <!-- Кнопки запуска — в колонке наименования, у её правого края; имя обрезается перед ними. -->
@@ -736,6 +760,13 @@
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
               <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
+                <TextBlock Classes="secondary" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
+                           Classes.missing="{Binding Base.IsPlatformMissing}" />
+                <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
+                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
+                           IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+              </StackPanel>
             </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>

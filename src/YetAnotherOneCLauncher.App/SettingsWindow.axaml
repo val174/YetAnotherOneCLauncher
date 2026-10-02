@@ -100,6 +100,10 @@
                     Content="Кнопки запуска 1С в строках списка баз" />
           <TextBlock Classes="secondary" Margin="28,0,0,0"
                      Text="Появляются у строки под указателем мыши и у выделенной." />
+          <CheckBox x:Name="TwoLineRowsBox" IsChecked="{Binding TwoLineRows}" Margin="0,6,0,0"
+                    Content="Список баз в две строки" />
+          <TextBlock Classes="secondary" Margin="28,0,0,0"
+                     Text="В первой строке — наименование базы и кнопки запуска, во второй — платформа, режим запуска и последний запуск." />
         </StackPanel>
       </TabItem>
 

@@ -37,6 +37,8 @@ public sealed record SettingsValues
 
     public bool ShowSideLaunchButtons { get; init; } = true;
 
+    public bool TwoLineRows { get; init; }
+
     // Горячие клавиши.
     public HotKeyMap HotKeys { get; init; } = HotKeyMap.Default;
 
@@ -104,6 +106,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowDetails = original.ShowDetails;
         ShowRowLaunchButtons = original.ShowRowLaunchButtons;
         ShowSideLaunchButtons = original.ShowSideLaunchButtons;
+        TwoLineRows = original.TwoLineRows;
         foreach (var definition in HotKeyMap.Definitions)
         {
             var row = new HotKeyRowViewModel(definition, original.HotKeys[definition.Command]);
@@ -162,6 +165,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool ShowSideLaunchButtons { get; set; }
 
+    [ObservableProperty]
+    public partial bool TwoLineRows { get; set; }
+
     // --- Горячие клавиши ---
     public ObservableCollection<HotKeyRowViewModel> HotKeyRows { get; } = [];
 
@@ -187,7 +193,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         || IconStyleIndex != _original.IconStyleIndex
         || ShowDetails != _original.ShowDetails
         || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
-        || ShowSideLaunchButtons != _original.ShowSideLaunchButtons;
+        || ShowSideLaunchButtons != _original.ShowSideLaunchButtons
+        || TwoLineRows != _original.TwoLineRows;
 
     public bool IsHotKeysDirty => !CurrentHotKeys.SameAs(_original.HotKeys);
 
@@ -222,6 +229,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
+        TwoLineRows = TwoLineRows,
         HotKeys = CurrentHotKeys,
         ParameterTemplates = Templates.CustomTemplates,
     };

@@ -167,6 +167,12 @@ public sealed class UiSettings
     public bool ShowSideLaunchButtons { get; set; } = true;
 
     /// <summary>
+    /// Строка базы в две строки: наименование и кнопки запуска, под ними — платформа, режим запуска и последний запуск
+    /// (вместо колонок справа).
+    /// </summary>
+    public bool TwoLineRows { get; set; }
+
+    /// <summary>
     /// Переопределённые горячие клавиши: имя команды → сочетание в формате Avalonia («Ctrl+Shift+N», «F3»);
     /// пустая строка — сочетание снято. Команды, которых здесь нет, работают по умолчанию.
     /// </summary>

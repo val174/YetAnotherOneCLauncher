@@ -195,6 +195,64 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
+    public async Task Two_line_rows_show_platform_mode_and_last_launch_under_name()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        var headers = window.FindControl<Grid>("ColumnHeaders")!;
+        var tree = window.FindControl<TreeView>("CatalogTree")!;
+        bool HeaderCellsVisible() => headers.Children.OfType<TextBlock>().Where(t => t.Classes.Contains("cell")).Any(t => t.IsVisible);
+        StackPanel[] Details(Control root) => [.. root.GetVisualDescendants().OfType<StackPanel>().Where(p => p.Classes.Contains("rowDetails"))];
+        Assert.False(vm.TwoLineRows); // по умолчанию — колонки
+        Assert.True(HeaderCellsVisible());
+        Assert.All(Details(tree), p => Assert.False(p.IsVisible));
+
+        // Включается в окне настроек («Внешний вид») и сохраняется.
+        var settings = new ViewModels.SettingsViewModel(vm.CurrentSettings) { TwoLineRows = true };
+        Assert.True(settings.IsAppearanceDirty);
+        vm.ApplySettings(settings.Result);
+        Render();
+        Assert.True(vm.TwoLineRows);
+        Assert.True(fixture.Settings.Settings.Ui.TwoLineRows);
+
+        // Колонок нет: под наименованием — платформа, режим запуска (и последний запуск, если был).
+        Assert.False(HeaderCellsVisible());
+        var row = tree.GetVisualDescendants().OfType<Grid>().First(g => g.Classes.Contains("baseRow") && g.IsEffectivelyVisible);
+        Assert.All(row.Children.OfType<TextBlock>().Where(t => t.Classes.Contains("cell")), t => Assert.False(t.IsVisible));
+        var details = Details(row).Single();
+        Assert.True(details.IsEffectivelyVisible);
+        var name = row.GetVisualDescendants().OfType<TextBlock>().First(t => t.IsEffectivelyVisible && !string.IsNullOrEmpty(t.Text));
+        Assert.True(details.TranslatePoint(default, row)!.Value.Y >= name.Bounds.Height);
+        var texts = details.Children.OfType<TextBlock>().Where(t => t.IsVisible).Select(t => t.Text).ToList();
+        var node = (ViewModels.BaseNodeViewModel)row.DataContext!;
+        Assert.Equal(node.Base.PlatformText, texts[0]);
+        Assert.Equal("·  " + node.Base.ClientShortText, texts[1]);
+
+        // Кнопки запуска — в первой строке, высоту строк не меняют (поиск — плоский список).
+        vm.SearchText = "а";
+        Render();
+        var list = window.FindControl<ListBox>("CatalogList")!;
+        Assert.All(Details(list), p => Assert.True(p.IsEffectivelyVisible));
+        double[] ListTops() => [.. list.GetVisualDescendants().OfType<ListBoxItem>().Select(i => i.TranslatePoint(default, list)!.Value.Y)];
+        vm.SelectedListItem = null;
+        Render();
+        var before = ListTops();
+        vm.SelectedListItem = vm.ListItems[0];
+        Render();
+        Assert.Equal(before, ListTops());
+        Snapshot(window, "18b-two-line-rows");
+
+        // Выключается обратно.
+        vm.TwoLineRows = false;
+        Render();
+        Assert.True(HeaderCellsVisible());
+        Assert.All(Details(list), p => Assert.False(p.IsEffectivelyVisible));
+        Assert.False(fixture.Settings.Settings.Ui.TwoLineRows);
+        window.Close();
+    }
+
+    [AvaloniaFact]
     public async Task Row_launch_buttons_show_on_selected_row_and_launch_its_base()
     {
         using var fixture = new ViewModelFixture();
