@@ -24,8 +24,6 @@ public sealed record SettingsValues
 
     public bool CheckAvailability { get; init; }
 
-    public string PuskUrl { get; init; } = string.Empty;
-
     // Внешний вид.
     public int ThemeIndex { get; init; }
 
@@ -108,7 +106,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         SingleInstance = original.SingleInstance;
         UseThickClientForFileBases = original.UseThickClientForFileBases;
         CheckAvailability = original.CheckAvailability;
-        PuskUrl = original.PuskUrl;
         ThemeIndex = original.ThemeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
@@ -157,12 +154,6 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool CheckAvailability { get; set; }
-
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPuskUrlInvalid))]
-    public partial string PuskUrl { get; set; } = string.Empty;
-
-    public bool IsPuskUrlInvalid => !string.IsNullOrWhiteSpace(PuskUrl) && NetworkSettings.ParseWebUrl(PuskUrl) is null;
 
     // --- Внешний вид ---
     [ObservableProperty]
@@ -216,8 +207,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         || MinimizeToTray != _original.MinimizeToTray
         || SingleInstance != _original.SingleInstance
         || UseThickClientForFileBases != _original.UseThickClientForFileBases
-        || CheckAvailability != _original.CheckAvailability
-        || !string.Equals(PuskUrl.Trim(), _original.PuskUrl.Trim(), StringComparison.Ordinal);
+        || CheckAvailability != _original.CheckAvailability;
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
@@ -260,7 +250,6 @@ public sealed partial class SettingsViewModel : ObservableObject
         SingleInstance = SingleInstance,
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
-        PuskUrl = PuskUrl.Trim(),
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
@@ -379,8 +368,7 @@ public sealed partial class SettingsViewModel : ObservableObject
     private void OnOwnPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(IsDirty) or nameof(Title) or nameof(GeneralHeader) or nameof(AppearanceHeader)
-            or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(AdminToolsHeader) or nameof(IsAdminToolsDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty)
-            or nameof(IsPuskUrlInvalid) or nameof(RowLaunchHint))
+            or nameof(HotKeysHeader) or nameof(TemplatesHeader) or nameof(IsTemplatesDirty) or nameof(AdminToolsHeader) or nameof(IsAdminToolsDirty) or nameof(IsGeneralDirty) or nameof(IsAppearanceDirty) or nameof(IsHotKeysDirty) or nameof(RowLaunchHint))
         {
             return;
         }

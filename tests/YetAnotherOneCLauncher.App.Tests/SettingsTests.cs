@@ -30,9 +30,6 @@ public class SettingsTests
         form.ThemeIndex = 0;
         Assert.False(form.IsDirty);
         Assert.Equal("Настройки", form.Title);
-
-        form.PuskUrl = "  "; // пробелы — не изменение
-        Assert.False(form.IsDirty);
     }
 
     [Fact]

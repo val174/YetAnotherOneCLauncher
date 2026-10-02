@@ -52,6 +52,9 @@ public static class AdminToolIcon
             : null;
 }
 
+/// <summary>Программа инструмента: существующий файл и параметры командной строки.</summary>
+public sealed record ResolvedProgram(string Path, string Arguments);
+
 /// <summary>Разбор строки запуска инструмента.</summary>
 public static partial class AdminToolTarget
 {
@@ -79,6 +82,55 @@ public static partial class AdminToolTarget
         }
 
         return (Environment.ExpandEnvironmentVariables(text), string.Empty);
+    }
+
+    /// <summary>
+    /// Программа из строки запуска: полный путь к существующему файлу и параметры. Путь без кавычек может быть и целой
+    /// строкой (с пробелами в пути), и её началом до пробела (<c>mmc.exe compmgmt.msc</c>) — берётся первый существующий
+    /// файл: вся строка, затем начала от короткого к длинному, как у командной строки Windows. Имя без каталога
+    /// (<c>mmc.exe</c>, <c>notepad</c>) ищется по каталогам PATH. <c>null</c> — файл не найден.
+    /// </summary>
+    public static ResolvedProgram? ResolveProgram(string? target)
+    {
+        var (program, arguments) = SplitProgram(target);
+        if (program.Length == 0)
+        {
+            return null;
+        }
+
+        var candidates = new List<(string Program, string Arguments)> { (program, arguments) };
+        if (arguments.Length == 0)
+        {
+            for (var space = program.IndexOf(' ', StringComparison.Ordinal); space > 0; space = program.IndexOf(' ', space + 1))
+            {
+                candidates.Add((program[..space], program[(space + 1)..].Trim()));
+            }
+        }
+
+        return candidates
+            .Select(c => FindProgram(c.Program) is { } path ? new ResolvedProgram(path, c.Arguments) : null)
+            .FirstOrDefault(p => p is not null);
+    }
+
+    private static string? FindProgram(string program)
+    {
+        if (File.Exists(program))
+        {
+            return Path.GetFullPath(program);
+        }
+
+        if (Path.GetFileName(program) != program)
+        {
+            return null;
+        }
+
+        var extensions = OperatingSystem.IsWindows() && !Path.HasExtension(program)
+            ? (Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.CMD;.BAT").Split(';', StringSplitOptions.RemoveEmptyEntries)
+            : [string.Empty];
+        return (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
+            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .SelectMany(dir => extensions.Select(ext => Path.Combine(dir.Trim('"'), program + ext)))
+            .FirstOrDefault(File.Exists);
     }
 
     /// <summary>

@@ -1,31 +1,37 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.Core.Platforms;
+using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
 /// <summary>
-/// Строка окна консоли кластера: переход в «ПУСК», версия платформы с консолью или заголовок группы
-/// «Доступные к регистрации» (сворачивается).
+/// Строка окна «Средства администрирования»: инструмент из настроек, версия платформы с консолью кластера или
+/// заголовок группы «Доступные к регистрации» (сворачивается).
 /// </summary>
 public sealed partial class ClusterConsoleOption : ObservableObject
 {
-    private ClusterConsoleOption(PlatformInstallation? platform, bool isRegistered, Uri? puskUrl, int groupCount = -1)
+    private ClusterConsoleOption(PlatformInstallation? platform, bool isRegistered, AdminTool? tool, int groupCount = -1)
     {
         Platform = platform;
         IsRegistered = isRegistered;
-        PuskUrl = puskUrl;
+        Tool = tool;
         GroupCount = groupCount;
     }
 
-    /// <summary>Версия платформы; <c>null</c> — строка «ПУСК» или заголовок группы.</summary>
+    /// <summary>Версия платформы; <c>null</c> — инструмент или заголовок группы.</summary>
     public PlatformInstallation? Platform { get; }
 
-    public Uri? PuskUrl { get; }
+    /// <summary>Средство администрирования из настроек (таблица «Инструменты»).</summary>
+    public AdminTool? Tool { get; }
 
-    public bool IsPusk => PuskUrl is not null;
+    public bool IsTool => Tool is not null;
+
+    /// <summary>Значок инструмента: свой, встроенный или подобранный сам; если не задан — по умолчанию.</summary>
+    public AdminToolIconViewModel? Icon { get; private init; }
 
     /// <summary>Заголовок группы версий, доступных к регистрации.</summary>
     public bool IsGroupHeader => GroupCount >= 0;
@@ -46,17 +52,17 @@ public sealed partial class ClusterConsoleOption : ObservableObject
 
     public string ExpandGlyph => IsExpanded ? "▾" : "▸";
 
-    /// <summary>Над строкой — разделитель: у заголовка группы, если выше есть другие строки.</summary>
+    /// <summary>Над строкой — разделитель: у первой строки группы (консоли, «Доступные к регистрации»), если выше есть другие.</summary>
     public bool HasSeparatorAbove { get; private init; }
 
     public string Title => IsGroupHeader
         ? "Доступные к регистрации"
-        : Platform?.Version.ToString() ?? "Панель управления сервисами и компонентами";
+        : Platform?.Version.ToString() ?? Tool?.Name ?? string.Empty;
 
     public string Detail => IsGroupHeader
         ? GroupCount.ToString(System.Globalization.CultureInfo.CurrentCulture)
         : Platform is null
-            ? string.Empty // адрес «ПУСК» не показывается: он есть в настройках
+            ? string.Empty // строка запуска инструмента не показывается: она есть в настройках
             : Platform.Architecture switch
             {
                 PlatformArchitecture.X86 => "32-разрядная",
@@ -64,17 +70,20 @@ public sealed partial class ClusterConsoleOption : ObservableObject
                 _ => PlatformInstallation.ArchitectureName(Platform.Architecture),
             };
 
-    public static ClusterConsoleOption Pusk(Uri url) => new(null, false, url);
+    public static ClusterConsoleOption ForTool(AdminTool tool, IAdminToolIconSource? icons) =>
+        new(null, false, tool) { Icon = AdminToolIconViewModel.For(tool.Icon, tool.Target, icons) };
 
-    public static ClusterConsoleOption Version(PlatformInstallation platform, bool isRegistered) => new(platform, isRegistered, null);
+    public static ClusterConsoleOption Version(PlatformInstallation platform, bool isRegistered, bool separatorAbove = false) =>
+        new(platform, isRegistered, null) { HasSeparatorAbove = separatorAbove };
 
     public static ClusterConsoleOption Group(int count, bool separatorAbove) =>
         new(null, false, null, count) { HasSeparatorAbove = separatorAbove };
 }
 
 /// <summary>
-/// Окно «Консоль кластера серверов». Список: «Панель управления сервисами и компонентами» (если адрес «ПУСК»
-/// задан в настройках), зарегистрированные версии, разделитель и свёрнутая группа «Доступные к регистрации».
+/// Окно «Средства администрирования». Список: инструменты из настроек (таблица «Инструменты»), разделитель,
+/// зарегистрированные консоли кластера серверов, разделитель и свёрнутая группа «Доступные к регистрации» — консоли,
+/// которые можно зарегистрировать.
 /// Для незарегистрированной версии её компонент администрирования сначала регистрируется, затем открывается консоль.
 /// </summary>
 public sealed partial class ClusterConsoleViewModel : ObservableObject
@@ -88,7 +97,8 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         IEnumerable<PlatformInstallation> installations,
         IClusterConsole console,
         IProcessLauncher processes,
-        Uri? puskUrl)
+        IEnumerable<AdminTool>? tools = null,
+        IAdminToolIconSource? toolIcons = null)
     {
         ArgumentNullException.ThrowIfNull(installations);
         ArgumentNullException.ThrowIfNull(console);
@@ -126,14 +136,15 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
             .ThenByDescending(p => p.Architecture == PlatformArchitecture.X64)
             .ToList();
 
-        if (puskUrl is not null)
+        foreach (var tool in tools ?? [])
         {
-            Options.Add(ClusterConsoleOption.Pusk(puskUrl));
+            Options.Add(ClusterConsoleOption.ForTool(tool, toolIcons));
         }
 
         foreach (var platform in versions.Where(IsRegistered))
         {
-            Options.Add(ClusterConsoleOption.Version(platform, isRegistered: true));
+            // Первая консоль — под чертой, если выше инструменты.
+            Options.Add(ClusterConsoleOption.Version(platform, isRegistered: true, separatorAbove: Options.Count > 0 && Options[^1].IsTool));
         }
 
         // Незарегистрированные — в группе «Доступные к регистрации», по умолчанию свёрнутой.
@@ -178,7 +189,10 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
 
     public bool HasOptions => Options.Count > 0;
 
-    /// <summary>Есть ли версии с консолью (кроме строки «ПУСК»).</summary>
+    /// <summary>Есть ли инструменты из настроек; нет — подсказка, где их добавить.</summary>
+    public bool HasTools => Options.Any(o => o.IsTool);
+
+    /// <summary>Есть ли версии с консолью (кроме инструментов).</summary>
     public bool HasVersions => Versions.Count > 0;
 
     /// <summary>Почему версий нет.</summary>
@@ -197,7 +211,7 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
 
     public string ActionText => SelectedOption switch
     {
-        { IsPusk: true } => "Открыть",
+        { IsTool: true } => "Открыть",
         { IsGroupHeader: true, IsExpanded: true } => "Свернуть",
         { IsGroupHeader: true } => "Развернуть",
         _ => "Запустить",
@@ -253,7 +267,7 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         OnPropertyChanged(nameof(ActionText));
     }
 
-    /// <summary>Выполнить выбранную строку: открыть «ПУСК», консоль выбранной версии или развернуть группу.</summary>
+    /// <summary>Выполнить выбранную строку: открыть инструмент, консоль выбранной версии или развернуть группу.</summary>
     [RelayCommand(CanExecute = nameof(CanLaunch))]
     private async Task LaunchAsync()
     {
@@ -272,10 +286,9 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         ErrorText = string.Empty;
         try
         {
-            if (option.PuskUrl is { } url)
+            if (option.Tool is { } tool)
             {
-                _processes.OpenUrl(url);
-                ResultMessage = "«ПУСК» открыт в браузере: " + url;
+                ResultMessage = OpenTool(tool);
             }
             else if (option.Platform is { } platform)
             {
@@ -298,6 +311,30 @@ public sealed partial class ClusterConsoleViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Открыть инструмент: веб-сервис — в браузере, программу — с её параметрами. Программа, которой нет ни по пути,
+    /// ни в PATH, всё равно передаётся оболочке: Windows найдёт и зарегистрированные у себя (App Paths).
+    /// </summary>
+    private string OpenTool(AdminTool tool)
+    {
+        if (AdminToolTarget.WebUrl(tool.Target) is { } url)
+        {
+            _processes.OpenUrl(url);
+            return $"«{tool.Name}» открыт в браузере: {url}";
+        }
+
+        var (path, arguments) = AdminToolTarget.ResolveProgram(tool.Target) is { } program
+            ? (program.Path, program.Arguments)
+            : AdminToolTarget.SplitProgram(tool.Target);
+        if (path.Length == 0)
+        {
+            throw new LaunchFailedException($"У инструмента «{tool.Name}» не задана строка запуска.");
+        }
+
+        _processes.OpenProgram(path, arguments);
+        return $"«{tool.Name}» запущен.";
     }
 
     private bool CanLaunch() => SelectedOption is not null && !IsBusy;

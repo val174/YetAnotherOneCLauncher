@@ -122,57 +122,11 @@ public sealed partial class AdminToolIconStore : IAdminToolIconSource
         }
     }
 
-    /// <summary>
-    /// Путь к программе из строки запуска. Путь без кавычек может быть и целой строкой (с пробелами в пути), и её началом
-    /// до пробела (<c>mmc.exe compmgmt.msc</c>) — берётся первый существующий файл: вся строка, затем начала от короткого
-    /// к длинному, как у командной строки Windows. Имя без каталога (<c>mmc.exe</c>, <c>notepad</c>) ищется по каталогам PATH.
-    /// </summary>
-    internal static string? ResolveProgram(string target)
-    {
-        var (program, arguments) = AdminToolTarget.SplitProgram(target);
-        if (program.Length == 0)
-        {
-            return null;
-        }
-
-        var candidates = new List<string> { program };
-        if (arguments.Length == 0)
-        {
-            for (var space = program.IndexOf(' ', StringComparison.Ordinal); space > 0; space = program.IndexOf(' ', space + 1))
-            {
-                candidates.Add(program[..space]);
-            }
-        }
-
-        return candidates.Select(FindProgram).FirstOrDefault(p => p is not null);
-    }
-
-    private static string? FindProgram(string program)
-    {
-        if (File.Exists(program))
-        {
-            return Path.GetFullPath(program);
-        }
-
-        if (Path.GetFileName(program) != program)
-        {
-            return null;
-        }
-
-        var extensions = OperatingSystem.IsWindows() && !Path.HasExtension(program)
-            ? (Environment.GetEnvironmentVariable("PATHEXT") ?? ".EXE;.CMD;.BAT").Split(';', StringSplitOptions.RemoveEmptyEntries)
-            : [string.Empty];
-        return (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .SelectMany(dir => extensions.Select(ext => Path.Combine(dir.Trim('"'), program + ext)))
-            .FirstOrDefault(File.Exists);
-    }
-
     private Bitmap? LoadProgramIcon(string target)
     {
         try
         {
-            return ResolveProgram(target) is { } path && _fileIcons.Read(path) is { } pixels ? ToBitmap(pixels) : null;
+            return AdminToolTarget.ResolveProgram(target) is { } program && _fileIcons.Read(program.Path) is { } pixels ? ToBitmap(pixels) : null;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
         {

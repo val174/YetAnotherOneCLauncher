@@ -26,6 +26,13 @@ public interface IProcessLauncher
     /// <summary>Запускает программу без аргументов (например, стандартный стартер 1С) и не ждёт её завершения.</summary>
     /// <exception cref="LaunchFailedException">Программу не удалось запустить.</exception>
     void StartProgram(string path);
+
+    /// <summary>
+    /// Запускает программу средства администрирования с параметрами и не ждёт её завершения. В Windows — через оболочку:
+    /// так открываются и оснастки <c>.msc</c>, ярлыки, документы.
+    /// </summary>
+    /// <exception cref="LaunchFailedException">Программу не удалось запустить.</exception>
+    void OpenProgram(string path, string arguments);
 }
 
 /// <summary>Процесс не удалось запустить: файла нет, нет прав, не найден браузер и т. п.</summary>

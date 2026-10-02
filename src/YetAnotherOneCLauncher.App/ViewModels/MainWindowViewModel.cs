@@ -152,7 +152,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         HighlightRunning = ui.HighlightRunningBases;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
-        PuskUrl = settings.Settings.Network.PuskUrl ?? string.Empty;
+        // Прежняя настройка «Адрес сервиса ПУСК» — теперь инструмент в «Средствах администрирования».
+        if (settings.Settings.MigratePuskUrl())
+        {
+            settings.RequestSave();
+        }
+
         HotKeys = HotKeyMap.FromSettings(ui.HotKeys);
         _suppressSettingsSync = false;
     }

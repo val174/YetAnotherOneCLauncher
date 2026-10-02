@@ -5,12 +5,13 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Platforms;
+using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 using YetAnotherOneCLauncher.Platform.Windows;
 
 namespace YetAnotherOneCLauncher.App.Tests;
 
-/// <summary>Консоль кластера серверов: список версий, регистрация компонента, «Панель управления сервисами и компонентами».</summary>
+/// <summary>Окно «Средства администрирования»: инструменты из настроек, версии с консолью кластера, регистрация компонента.</summary>
 public class ClusterConsoleTests
 {
     private static readonly PlatformInstallation New64 = Platform("8.3.27.2130", PlatformArchitecture.X64);
@@ -24,7 +25,7 @@ public class ClusterConsoleTests
     {
         var console = Console(registered: Old32); // 32-разрядная тоже распознаётся как зарегистрированная
 
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
 
         // Группа «Доступные к регистрации» по умолчанию свёрнута: видно зарегистрированную и заголовок с числом версий.
         Assert.Equal(["8.3.22.2239 32-разрядная", "Доступные к регистрации 3"], form.Options.Select(o => $"{o.Title} {o.Detail}"));
@@ -53,7 +54,7 @@ public class ClusterConsoleTests
     public async Task Enter_on_group_header_expands_it_instead_of_launching()
     {
         var console = Console(registered: null);
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
         var group = Assert.Single(form.Options); // ничего не зарегистрировано — только свёрнутая группа
         Assert.Same(group, form.SelectedOption);
         Assert.False(group.HasSeparatorAbove); // выше ничего нет — разделитель не нужен
@@ -73,7 +74,7 @@ public class ClusterConsoleTests
         var console = Console(registered: Old64);
         console.RegisterNow(New32);
 
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
 
         Assert.Equal(
             ["8.3.27.2130 32-разрядная", "8.3.24.1667 64-разрядная"],
@@ -92,7 +93,7 @@ public class ClusterConsoleTests
         console.Registrations[PlatformArchitecture.X86] =
             new ClusterConsoleRegistration(@"D:\1C\8.3.23.1865\bin\radmin.dll", PlatformArchitecture.X86);
 
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
 
         var registered = Assert.Single(form.Options, o => o.IsRegistered);
         Assert.Equal(("8.3.23.1865", "32-разрядная"), (registered.Title, registered.Detail));
@@ -104,31 +105,63 @@ public class ClusterConsoleTests
     public void Same_library_of_other_bitness_is_not_taken_for_registered()
     {
         // В реестре — 64-разрядная 8.3.27; 32-разрядная той же версии зарегистрированной не считается.
-        var form = new ClusterConsoleViewModel(All, Console(registered: New64), new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, Console(registered: New64), new FakeProcessLauncher());
 
         var registered = Assert.Single(form.Options, o => o.IsRegistered);
         Assert.Equal(PlatformArchitecture.X64, registered.Platform!.Architecture);
     }
 
-    [Fact]
-    public async Task Pusk_is_the_first_row_and_opens_in_browser()
+    [AvaloniaFact]
+    public async Task Tools_come_first_and_open_site_in_browser_and_program_with_arguments()
     {
         var processes = new FakeProcessLauncher();
-        var form = new ClusterConsoleViewModel(All, Console(registered: Old64), processes, new Uri("https://pusk.example/app"));
+        AdminTool[] tools =
+        [
+            new() { Name = "ПУСК", Target = "https://pusk.example/app", Icon = AdminToolIcon.BuiltIn("pusk") },
+            new() { Name = "Управление компьютером", Target = "mmc.exe compmgmt.msc" },
+            new() { Name = "Своя утилита", Target = @"C:\нет\такой\tool.exe -x" },
+        ];
+        var form = new ClusterConsoleViewModel(All, Console(registered: Old64), processes, tools);
 
-        var pusk = form.Options[0];
-        Assert.True(pusk.IsPusk);
-        Assert.Equal(("Панель управления сервисами и компонентами", string.Empty), (pusk.Title, pusk.Detail)); // адрес не показывается
-        Assert.True(form.Options[1].IsRegistered); // затем — зарегистрированная
-        Assert.Same(form.Options[1], form.SelectedOption); // выбрана по умолчанию версия, а не «ПУСК»
+        // Строка инструмента — как прежде строка «ПУСК»: значок и имя, строка запуска не показывается.
+        Assert.Equal(
+            ["ПУСК ", "Управление компьютером ", "Своя утилита ", "8.3.24.1667 64-разрядная", "Доступные к регистрации 3"],
+            form.Options.Select(o => $"{o.Title} {o.Detail}"));
+        Assert.All(form.Options.Take(3), o => Assert.True(o.IsTool));
+        Assert.False(form.Options[0].Icon!.IsAppBadge); // встроенный «ПУСК»
+        Assert.True(form.Options[2].Icon!.IsAppBadge); // значок не задан, программы нет — значок по умолчанию
+        Assert.True(form.HasTools);
 
-        form.SelectedOption = pusk;
+        // Разделители: перед зарегистрированными консолями и перед группой «Доступные к регистрации».
+        Assert.Equal([false, false, false, true, true], form.Options.Select(o => o.HasSeparatorAbove));
+        Assert.Same(form.Options[3], form.SelectedOption); // по умолчанию — зарегистрированная консоль
+
+        form.SelectedOption = form.Options[0];
         Assert.Equal("Открыть", form.ActionText);
         Assert.False(form.NeedsRegistration);
         await form.LaunchCommand.ExecuteAsync(null);
-
         Assert.Equal(new Uri("https://pusk.example/app"), Assert.Single(processes.OpenedUrls));
-        Assert.Contains("«ПУСК» открыт", form.ResultMessage, StringComparison.Ordinal);
+        Assert.Equal("«ПУСК» открыт в браузере: https://pusk.example/app", form.ResultMessage);
+
+        form.SelectedOption = form.Options[2];
+        await form.LaunchCommand.ExecuteAsync(null);
+        Assert.Equal((@"C:\нет\такой\tool.exe -x", string.Empty), processes.OpenedPrograms[^1]); // не найдена — оболочке как есть
+        Assert.Equal("«Своя утилита» запущен.", form.ResultMessage);
+
+        if (OperatingSystem.IsWindows())
+        {
+            form.SelectedOption = form.Options[1];
+            await form.LaunchCommand.ExecuteAsync(null);
+            Assert.Equal((Path.Combine(Environment.SystemDirectory, "mmc.exe"), "compmgmt.msc"), processes.OpenedPrograms[^1], new PathAndArguments());
+        }
+    }
+
+    private sealed class PathAndArguments : IEqualityComparer<(string Path, string Arguments)>
+    {
+        public bool Equals((string Path, string Arguments) x, (string Path, string Arguments) y) =>
+            string.Equals(x.Path, y.Path, StringComparison.OrdinalIgnoreCase) && x.Arguments == y.Arguments;
+
+        public int GetHashCode((string Path, string Arguments) obj) => 0;
     }
 
     [Fact]
@@ -155,7 +188,7 @@ public class ClusterConsoleTests
     public async Task Other_version_is_registered_first_and_refusal_keeps_window_open()
     {
         var console = Console(registered: Old64);
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
         var closed = 0;
         form.CloseRequested += (_, _) => closed++;
         form.ToggleGroupCommand.Execute(null); // 8.3.27 x86 — в группе «Доступные к регистрации»
@@ -177,42 +210,38 @@ public class ClusterConsoleTests
         Assert.False(form.HasError);
     }
 
-    [Fact]
-    public void Nothing_to_choose_explains_why_but_pusk_stays()
+    [AvaloniaFact]
+    public void Nothing_to_choose_explains_why_but_tools_stay()
     {
         var console = Console(registered: null);
         console.Available.Clear();
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), new Uri("https://pusk.example/"));
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), [new AdminTool { Name = "ПУСК", Target = "https://pusk.example/" }]);
         Assert.False(form.HasVersions);
-        Assert.True(Assert.Single(form.Options).IsPusk);
+        Assert.True(Assert.Single(form.Options).IsTool);
         Assert.Contains("radmin.dll", form.EmptyText, StringComparison.Ordinal);
 
         console.IsSupported = false;
         Assert.Contains("только в Windows", form.EmptyText, StringComparison.Ordinal);
+        Assert.False(new ClusterConsoleViewModel(All, console, new FakeProcessLauncher()).HasTools); // нет — подсказка, где добавить
     }
 
     [Fact]
-    public async Task Pusk_address_is_saved_and_validated()
+    public async Task Window_lists_tools_from_settings()
     {
         using var fixture = new ViewModelFixture();
         await fixture.LoadAsync();
-        var vm = fixture.ViewModel;
-
-        vm.PuskUrl = "pusk.example"; // без схемы — не адрес
-        Assert.True(vm.IsPuskUrlInvalid);
-        vm.PuskUrl = "  https://pusk.example/app  ";
-        Assert.False(vm.IsPuskUrlInvalid);
-        Assert.Equal("https://pusk.example/app", fixture.Settings.Settings.Network.PuskUrl);
+        fixture.Settings.Settings.AdminTools =
+        [
+            new AdminTool { Name = "ПУСК", Target = "https://pusk.example/", Icon = AdminToolIcon.BuiltIn("pusk") },
+            new AdminTool { Name = "Блокнот", Target = "notepad.exe" },
+        ];
 
         fixture.Dialogs.ClusterConsole = console =>
         {
-            Assert.True(console.Options[0].IsPusk);
+            Assert.Equal(["ПУСК", "Блокнот"], console.Options.Where(o => o.IsTool).Select(o => o.Title));
             return Task.CompletedTask;
         };
-        await vm.OpenClusterConsoleCommand.ExecuteAsync(null);
-
-        vm.PuskUrl = string.Empty;
-        Assert.Null(fixture.Settings.Settings.Network.PuskUrl);
+        await fixture.ViewModel.OpenClusterConsoleCommand.ExecuteAsync(null);
     }
 
     [Fact]
@@ -228,16 +257,22 @@ public class ClusterConsoleTests
     }
 
     [AvaloniaFact]
-    public void Window_shows_pusk_row_separator_and_registration_hint()
+    public void Window_shows_tools_separators_and_registration_hint()
     {
         Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;
-        var form = new ClusterConsoleViewModel(All, Console(registered: Old64), new FakeProcessLauncher(), new Uri("https://pusk.example/"));
+        var form = new ClusterConsoleViewModel(All, Console(registered: Old64), new FakeProcessLauncher(),
+        [
+            new AdminTool { Name = "Панель управления сервисами и компонентами", Target = "https://pusk.example/", Icon = AdminToolIcon.BuiltIn("pusk") },
+            new AdminTool { Name = "Своя утилита", Target = @"C:\нет\tool.exe" },
+        ]);
         var window = new ClusterConsoleWindow(form);
         window.Show();
 
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
         var list = window.FindControl<ListBox>("VersionsList")!;
-        Assert.Equal(3, list.ItemCount); // «ПУСК», зарегистрированная, свёрнутая группа
+        Assert.Equal(4, list.ItemCount); // два инструмента, зарегистрированная, свёрнутая группа
+        Assert.Equal("Средства администрирования", window.Title);
+        Assert.False(window.FindControl<TextBlock>("NoToolsHint")!.IsVisible);
         MainWindowTests.Snapshot(window, "10-cluster-console-collapsed");
 
         // Щелчок по заголовку группы раскрывает её.
@@ -246,14 +281,16 @@ public class ClusterConsoleTests
         window.MouseDown(point, Avalonia.Input.MouseButton.Left);
         window.MouseUp(point, Avalonia.Input.MouseButton.Left);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        Assert.Equal(6, list.ItemCount);
+        Assert.Equal(7, list.ItemCount);
 
         form.SelectedOption = form.Options.Single(o => o.Platform == New64);
         Avalonia.Threading.Dispatcher.UIThread.RunJobs();
-        Assert.Single(list.GetVisualDescendants().OfType<Border>(), b => b.Classes.Contains("optionSeparator") && b.IsVisible);
+        // Черта перед зарегистрированными консолями и перед группой «Доступные к регистрации».
+        Assert.Equal(2, list.GetVisualDescendants().OfType<Border>().Count(b => b.Classes.Contains("optionSeparator") && b.IsVisible));
         Assert.True(window.FindControl<TextBlock>("RegistrationHint")!.IsVisible);
-        Assert.Null(window.FindControl<Button>("PuskButton")); // отдельной кнопки нет — строка в списке
-        Assert.Single(list.GetVisualDescendants().OfType<Image>(), i => i.Name == "PuskLogo" && i.IsEffectivelyVisible); // логотип «ПУСК» — только у своей строки
+        // Значок — только у строк инструментов: встроенный «ПУСК» и по умолчанию «App».
+        var icons = list.GetVisualDescendants().OfType<YetAnotherOneCLauncher.App.Controls.AdminToolIconView>().Where(i => i.IsEffectivelyVisible).ToList();
+        Assert.Equal([false, true], icons.Select(i => i.Icon!.IsAppBadge));
         MainWindowTests.Snapshot(window, "10-cluster-console");
         window.Close();
     }
@@ -267,7 +304,7 @@ public class ClusterConsoleTests
         console.Available.Add("8.3.27.1936");
         console.AdminInstallations.AddRange([serverOnly, Old64]); // Old64 уже есть среди платформ — не дублируется
 
-        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, console, new FakeProcessLauncher());
 
         Assert.Single(form.Versions, o => o.Platform == Old64);
         var option = Assert.Single(form.Versions, o => o.Title == "8.3.27.1936");
@@ -283,7 +320,7 @@ public class ClusterConsoleTests
         var stale = new ClusterConsoleRegistration(console.AdminLibraryPath(Old32), PlatformArchitecture.X86, "{11111111-1111-1111-1111-111111111111}", IsActive: false);
         console.Registrations[PlatformArchitecture.X86] = new ClusterConsoleRegistration(
             @"C:\Program Files (x86)\1cv8\8.3.27.1936\bin\radmin.dll", PlatformArchitecture.X86, "{22222222-2222-2222-2222-222222222222}");
-        var form = new ClusterConsoleViewModel(All, new StaleAware(console, stale), new FakeProcessLauncher(), puskUrl: null);
+        var form = new ClusterConsoleViewModel(All, new StaleAware(console, stale), new FakeProcessLauncher());
 
         var registered = Assert.Single(form.Options, o => o.IsRegistered);
         Assert.Equal(("8.3.27.1936", "32-разрядная"), (registered.Title, registered.Detail));

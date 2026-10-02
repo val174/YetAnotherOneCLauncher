@@ -39,7 +39,7 @@ public interface IDialogService
 
     Task ShowAboutAsync(AboutViewModel about);
 
-    /// <summary>Окно консоли кластера: выбор версии платформы, переход в «ПУСК».</summary>
+    /// <summary>Окно «Средства администрирования»: инструменты и консоль кластера серверов (выбор версии платформы).</summary>
     Task ShowClusterConsoleAsync(ClusterConsoleViewModel console);
 
     /// <summary>Окно «Настройки»; <c>true</c> — сохранить.</summary>

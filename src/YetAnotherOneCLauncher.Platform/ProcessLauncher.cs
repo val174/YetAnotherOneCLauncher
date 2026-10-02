@@ -103,6 +103,17 @@ public sealed class ProcessLauncher : IProcessLauncher
         StartDetached(startInfo, $"Не удалось запустить {path}");
     }
 
+    public void OpenProgram(string path, string arguments)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        var startInfo = new ProcessStartInfo(path, arguments ?? string.Empty)
+        {
+            UseShellExecute = OperatingSystem.IsWindows(),
+            WorkingDirectory = Path.GetDirectoryName(path) ?? string.Empty,
+        };
+        StartDetached(startInfo, $"Не удалось запустить {path}");
+    }
+
     private static int StartDetached(ProcessStartInfo startInfo, string errorPrefix)
     {
         try

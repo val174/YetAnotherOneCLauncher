@@ -191,11 +191,12 @@ public class AdminToolsTests
             return;
         }
 
-        Assert.Equal(Path.Combine(Environment.SystemDirectory, "notepad.exe"), AdminToolIconStore.ResolveProgram("notepad"), ignoreCase: true);
+        Assert.Equal(Path.Combine(Environment.SystemDirectory, "notepad.exe"), AdminToolTarget.ResolveProgram("notepad")?.Path, ignoreCase: true);
         // Программа с параметрами без кавычек: путь — начало строки до пробела.
-        Assert.Equal(Path.Combine(Environment.SystemDirectory, "mmc.exe"), AdminToolIconStore.ResolveProgram("mmc.exe compmgmt.msc"), ignoreCase: true);
-        Assert.Equal(Path.Combine(Environment.SystemDirectory, "compmgmt.msc"), AdminToolIconStore.ResolveProgram(@"%windir%\system32\compmgmt.msc"), ignoreCase: true);
-        Assert.Null(AdminToolIconStore.ResolveProgram(@"C:\нет\такой\программы.exe"));
+        Assert.Equal(Path.Combine(Environment.SystemDirectory, "mmc.exe"), AdminToolTarget.ResolveProgram("mmc.exe compmgmt.msc")?.Path, ignoreCase: true);
+        Assert.Equal(Path.Combine(Environment.SystemDirectory, "compmgmt.msc"), AdminToolTarget.ResolveProgram(@"%windir%\system32\compmgmt.msc")?.Path, ignoreCase: true);
+        Assert.Equal("compmgmt.msc /computer=srv", AdminToolTarget.ResolveProgram("mmc compmgmt.msc /computer=srv")?.Arguments);
+        Assert.Null(AdminToolTarget.ResolveProgram(@"C:\нет\такой\программы.exe"));
     }
 
     [Fact]

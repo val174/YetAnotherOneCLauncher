@@ -228,10 +228,13 @@ public sealed class NetworkSettings
     /// <summary>Проверять в фоне, доступны ли базы: каталог файловой базы, порт сервера, веб-сервер.</summary>
     public bool CheckAvailability { get; set; } = true;
 
-    /// <summary>Адрес опубликованного сервиса «ПУСК»; пусто — не задан. Открывается из окна консоли кластера.</summary>
+    /// <summary>
+    /// Адрес сервиса «ПУСК» из прежних версий (отдельная настройка). Читается только для переноса в
+    /// <see cref="LauncherSettings.AdminTools"/> (<see cref="LauncherSettings.MigratePuskUrl"/>), после него — пусто.
+    /// </summary>
     public string? PuskUrl { get; set; }
 
-    /// <summary><see cref="PuskUrl"/>, если это адрес http или https; иначе <c>null</c>.</summary>
+    /// <summary>Адрес http или https; иначе <c>null</c>.</summary>
     public static Uri? ParseWebUrl(string? text) =>
         Uri.TryCreate(text?.Trim(), UriKind.Absolute, out var url) && (url.Scheme == Uri.UriSchemeHttp || url.Scheme == Uri.UriSchemeHttps)
             ? url
@@ -277,4 +280,30 @@ public sealed class LauncherSettings
     public CacheSettings Cache { get; set; } = new();
 
     public NetworkSettings Network { get; set; } = new();
+
+    /// <summary>Название инструмента, в который переносится прежний адрес «ПУСК».</summary>
+    public const string PuskToolName = "Панель управления сервисами и компонентами";
+
+    /// <summary>
+    /// Перенести прежнюю настройку «Адрес сервиса ПУСК» в инструменты: первым, со значком «ПУСК», если такого адреса
+    /// среди инструментов ещё нет. Неверный адрес отбрасывается — он и раньше не показывался.
+    /// </summary>
+    /// <returns><c>true</c> — настройки изменились, их нужно сохранить.</returns>
+    public bool MigratePuskUrl()
+    {
+        if (Network.PuskUrl is null)
+        {
+            return false;
+        }
+
+        if (NetworkSettings.ParseWebUrl(Network.PuskUrl) is { } url
+            && !AdminTools.Any(t => AdminToolTarget.WebUrl(t.Target) == url))
+        {
+            var name = AdminTools.Any(t => string.Equals(t.Name, PuskToolName, StringComparison.OrdinalIgnoreCase)) ? "ПУСК" : PuskToolName;
+            AdminTools.Insert(0, new AdminTool { Name = name, Target = Network.PuskUrl.Trim(), Icon = AdminToolIcon.BuiltIn("pusk") });
+        }
+
+        Network.PuskUrl = null;
+        return true;
+    }
 }

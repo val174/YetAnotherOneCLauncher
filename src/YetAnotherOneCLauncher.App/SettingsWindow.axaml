@@ -76,10 +76,6 @@
             <CheckBox x:Name="CheckAvailabilityBox" IsChecked="{Binding CheckAvailability}">
               <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
             </CheckBox>
-            <TextBlock Classes="fieldLabel" Text="Адрес сервиса «ПУСК»" />
-            <TextBox x:Name="PuskUrlBox" Text="{Binding PuskUrl}" PlaceholderText="https://…"
-                     ToolTip.Tip="Опубликованный сервис «ПУСК»: открывается из окна консоли кластера" />
-            <TextBlock Classes="error" Text="Нужен адрес http:// или https://" IsVisible="{Binding IsPuskUrlInvalid}" />
           </StackPanel>
         </ScrollViewer>
       </TabItem>

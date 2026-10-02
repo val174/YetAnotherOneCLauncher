@@ -1,33 +1,15 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Extensions.Logging;
-using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
-/// <summary>Консоль кластера серверов и переход в сервис «ПУСК».</summary>
+/// <summary>Окно «Средства администрирования»: инструменты из настроек и консоль кластера серверов.</summary>
 public sealed partial class MainWindowViewModel
 {
-    /// <summary>Адрес сервиса «ПУСК» как введён в настройках.</summary>
-    [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsPuskUrlInvalid))]
-    public partial string PuskUrl { get; set; } = string.Empty;
-
-    /// <summary>Адрес введён, но это не адрес http(s): переход в «ПУСК» не появится.</summary>
-    public bool IsPuskUrlInvalid => !string.IsNullOrWhiteSpace(PuskUrl) && NetworkSettings.ParseWebUrl(PuskUrl) is null;
-
-    partial void OnPuskUrlChanged(string value)
-    {
-        if (_suppressSettingsSync)
-        {
-            return;
-        }
-
-        _settings.Settings.Network.PuskUrl = string.IsNullOrWhiteSpace(value) ? null : value.Trim();
-        _settings.RequestSave();
-    }
-
-    /// <summary>Окно выбора версии платформы для консоли кластера (и перехода в «ПУСК», если адрес задан).</summary>
+    /// <summary>
+    /// Окно «Средства администрирования»: инструменты из таблицы «Инструменты» настроек, затем консоли кластера серверов —
+    /// зарегистрированные и доступные к регистрации.
+    /// </summary>
     [RelayCommand]
     private async Task OpenClusterConsoleAsync()
     {
@@ -35,14 +17,15 @@ public sealed partial class MainWindowViewModel
             _installations,
             _clusterConsole,
             _processLauncher,
-            NetworkSettings.ParseWebUrl(_settings.Settings.Network.PuskUrl));
+            _settings.Settings.AdminTools,
+            _toolIcons);
         // Для разбора «не видит консоль»: что нашлось в реестре и что попало в список.
         var registrations = console.Registrations.Count == 0
             ? "нет"
             : string.Join("; ", console.Registrations.Select(r => $"{r.Architecture} {r.LibraryPath} {r.SnapInClassId}{(r.IsActive ? string.Empty : " (не действует)")}"));
         var options = string.Join(
             "; ",
-            console.Options.Where(o => !o.IsPusk).Select(o => $"{o.Title} {o.Detail}{(o.IsRegistered ? " (зарегистрирована)" : string.Empty)}"));
+            console.Versions.Select(o => $"{o.Title} {o.Detail}{(o.IsRegistered ? " (зарегистрирована)" : string.Empty)}"));
         LogClusterConsoles(_logger, registrations, options);
 
         await _dialogs.ShowClusterConsoleAsync(console);

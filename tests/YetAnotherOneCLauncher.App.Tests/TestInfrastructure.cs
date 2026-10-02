@@ -340,6 +340,11 @@ internal sealed class FakeProcessLauncher : IProcessLauncher
     public List<string> StartedPrograms { get; } = [];
 
     public void StartProgram(string path) => StartedPrograms.Add(path);
+
+    /// <summary>Программы средств администрирования: путь и параметры.</summary>
+    public List<(string Path, string Arguments)> OpenedPrograms { get; } = [];
+
+    public void OpenProgram(string path, string arguments) => OpenedPrograms.Add((path, arguments));
 }
 
 /// <summary>ViewModel главного окна с поддельными службами и каталогом из временных файлов.</summary>

@@ -65,6 +65,31 @@ public class AdminToolsTests
     }
 
     [Fact]
+    public void Former_pusk_address_becomes_first_tool_once()
+    {
+        var settings = new LauncherSettings
+        {
+            Network = { PuskUrl = " https://pusk.example/app " },
+            AdminTools = [new AdminTool { Name = "Блокнот", Target = "notepad.exe" }],
+        };
+
+        Assert.True(settings.MigratePuskUrl());
+        Assert.Equal(
+            new AdminTool { Name = LauncherSettings.PuskToolName, Target = "https://pusk.example/app", Icon = "builtin:pusk" },
+            settings.AdminTools[0]);
+        Assert.Null(settings.Network.PuskUrl);
+        Assert.False(settings.MigratePuskUrl()); // второй раз — нечего переносить
+
+        // Такой адрес уже среди инструментов — не дублируется; неверный адрес отбрасывается.
+        settings.Network.PuskUrl = "https://pusk.example/app";
+        Assert.True(settings.MigratePuskUrl());
+        settings.Network.PuskUrl = "pusk.example";
+        Assert.True(settings.MigratePuskUrl());
+        Assert.Equal(2, settings.AdminTools.Count);
+        Assert.Null(settings.Network.PuskUrl);
+    }
+
+    [Fact]
     public async Task Tools_are_saved_in_settings()
     {
         var directory = Path.Combine(Path.GetTempPath(), "yaocl-tools-" + Guid.NewGuid().ToString("N"));

@@ -19,7 +19,6 @@ public sealed partial class MainWindowViewModel
         SingleInstance = SingleInstance,
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
-        PuskUrl = PuskUrl,
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
@@ -56,7 +55,6 @@ public sealed partial class MainWindowViewModel
         SingleInstance = values.SingleInstance;
         UseThickClientForFileBases = values.UseThickClientForFileBases;
         CheckAvailability = values.CheckAvailability;
-        PuskUrl = values.PuskUrl;
         ThemeIndex = values.ThemeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;
