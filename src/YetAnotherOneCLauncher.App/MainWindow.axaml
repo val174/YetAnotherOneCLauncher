@@ -8,7 +8,8 @@
         Width="1040" Height="660"
         MinWidth="600" MinHeight="360"
         c:ToolIcon.IconStyle="{Binding IconStyle}"
-        Classes.flatToolbar="{Binding IsFlatToolbar}">
+        Classes.flatToolbar="{Binding IsFlatToolbar}"
+        Classes.flatButtons="{Binding IsFlatToolbar}">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -79,11 +80,11 @@
     </Style>
     <!-- Колонки списка баз. -->
     <Style Selector="Grid#ColumnHeaders">
-      <Setter Property="Margin" Value="12,0,12,4" />
+      <Setter Property="Margin" Value="12,6,12,6" />
     </Style>
     <!-- У строк дерева отступ справа меньше, чем у строк списка. -->
     <Style Selector="Grid#ColumnHeaders.tree">
-      <Setter Property="Margin" Value="12,0,1,4" />
+      <Setter Property="Margin" Value="12,6,1,6" />
     </Style>
     <Style Selector="TextBlock.cell">
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -348,6 +349,51 @@
       <Setter Property="Opacity" Value="0.6" />
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
     </Style>
+    <!-- Отдельная кнопка запуска (стартер 1С) — скруглена со всех сторон. -->
+    <Style Selector="Button.launchMain.single">
+      <Setter Property="CornerRadius" Value="4" />
+    </Style>
+    <!-- «Стиль 3»: кнопки запуска справа выше, скругление 6 (у пары «запуск + с параметрами» — по внешним углам), значки 18;
+         кнопки-значки в строках списка и в свойствах базы — скругление 6, значки крупнее. -->
+    <Style Selector="Window.flatToolbar Button.launchMain">
+      <Setter Property="Padding" Value="12,9" />
+      <Setter Property="CornerRadius" Value="6,0,0,6" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.launchMain.single">
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.launchParameters">
+      <Setter Property="Padding" Value="11,0" />
+      <Setter Property="CornerRadius" Value="0,6,6,0" />
+    </Style>
+    <Style Selector="Window.flatToolbar StackPanel#LaunchButtons c|ToolIcon.buttonIcon">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.rowLaunch">
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.rowLaunch c|ToolIcon">
+      <Setter Property="Width" Value="18" />
+      <Setter Property="Height" Value="18" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.icon">
+      <Setter Property="Width" Value="30" />
+      <Setter Property="Height" Value="30" />
+      <Setter Property="Padding" Value="5" />
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Window.flatToolbar Button.icon c|ToolIcon">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+    </Style>
+    <!-- Строка заголовков колонок списка баз — на лёгком фоне. -->
+    <Style Selector="Border#ColumnHeadersBand">
+      <Setter Property="Background" Value="{DynamicResource ListHeaderBrush}" />
+      <Setter Property="CornerRadius" Value="4" />
+      <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
   </Window.Styles>
 
   <DockPanel>
@@ -481,7 +527,7 @@
                PlaceholderText="{Binding HotKeys.FocusSearchSuffix, StringFormat='Поиск: имя, сервер, путь{0}'}"
                ToolTip.Tip="Поиск по имени, серверу и пути; можно набирать в любой раскладке">
         <TextBox.InnerRightContent>
-          <Button Content="✕" Command="{Binding ClearSearchCommand}" IsVisible="{Binding HasSearch}"
+          <Button Classes="bare" Content="✕" Command="{Binding ClearSearchCommand}" IsVisible="{Binding HasSearch}"
                   Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc, Ctrl+Q)" />
         </TextBox.InnerRightContent>
       </TextBox>
@@ -587,7 +633,7 @@
               </Button>
             </Grid>
             <!-- Стандартный стартер 1С (1cestart) — со своим списком баз; не зависит от выбранной базы. -->
-            <Button x:Name="LaunchStarterButton" Classes="launchMain" CornerRadius="4" Command="{Binding LaunchStarterCommand}"
+            <Button x:Name="LaunchStarterButton" Classes="launchMain single" Command="{Binding LaunchStarterCommand}"
                     ToolTip.Tip="Запустить стандартный стартер 1С (1cestart)">
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource StarterIconGeometry}" />
@@ -687,7 +733,8 @@
     <DockPanel Grid.Column="0" Margin="8,4,8,8">
     <!-- Заголовки колонок. Колонки справа — фиксированной ширины и прижаты к правому краю строки,
          поэтому совпадают и в дереве, где вложенные базы сдвинуты вправо. -->
-    <Grid x:Name="ColumnHeaders" DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}"
+    <Border x:Name="ColumnHeadersBand" DockPanel.Dock="Top">
+    <Grid x:Name="ColumnHeaders" ColumnDefinitions="*,Auto,Auto,Auto" Classes.tree="{Binding ShowTree}"
           Classes.twoLine="{Binding TwoLineRows}">
       <!-- В дереве заголовок переключает порядок: по наименованию (стрелка) или свой. -->
       <Button x:Name="SortByNameButton" Classes="columnHeader" Command="{Binding ToggleSortCommand}"
@@ -711,6 +758,7 @@
       <Border x:Name="ModeColumnGrip" Grid.Column="2" Classes="columnGrip" Tag="{x:Static vm:ListColumn.Mode}"><Border /></Border>
       <Border x:Name="LastLaunchColumnGrip" Grid.Column="3" Classes="columnGrip" Tag="{x:Static vm:ListColumn.LastLaunch}"><Border /></Border>
     </Grid>
+    </Border>
 
     <Panel>
       <Panel.ContextMenu>

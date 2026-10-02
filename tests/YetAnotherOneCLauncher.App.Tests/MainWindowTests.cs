@@ -590,6 +590,8 @@ public class MainWindowTests
         using var fixture = new ViewModelFixture();
         fixture.Settings.Settings.Ui.DetailsWidth = 360;
         var window = await OpenAsync(fixture);
+        window.Width = 1200; // панель кнопок «Стиля 3» широкая: поле поиска должно успевать за панелью подробностей
+        Render();
         var splitter = window.FindControl<GridSplitter>("DetailsSplitter")!;
         var search = window.FindControl<TextBox>("SearchBox")!;
         var tree = window.FindControl<TreeView>("CatalogTree")!;
@@ -816,7 +818,7 @@ public class MainWindowTests
         window.KeyPress(Key.Escape, RawInputModifiers.None, PhysicalKey.Escape, null);
         Render();
 
-        Assert.Equal(IconStyle.Outline, vm.IconStyle);
+        Assert.Equal(IconStyle.Flat, vm.IconStyle); // «Стиль 3» — по умолчанию
         Assert.Equal(new[] { "Стиль 1", "Стиль 2", "Стиль 3" }, new ViewModels.SettingsViewModel(vm.CurrentSettings).IconStyleNames);
         var addIcon = window.FindControl<Button>("AddButton")!.GetVisualDescendants().OfType<ToolIcon>().Single();
         foreach (var (index, style) in new[] { (1, IconStyle.Plate), (2, IconStyle.Flat), (0, IconStyle.Outline) })
@@ -845,6 +847,11 @@ public class MainWindowTests
         var add = window.FindControl<Button>("AddButton")!;
         var thumb = window.FindControl<Border>("ListFilterThumb")!;
         var separators = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("toolbarSeparator")).ToList();
+
+        // По умолчанию — «Стиль 3»; сначала «Стиль 1» для сравнения.
+        Assert.True(vm.IsFlatToolbar);
+        vm.IconStyleIndex = 0;
+        Render();
 
         // «Стиль 1»: кнопки с заливкой, значок 18, тумблера и черт нет.
         Assert.DoesNotContain("flatToolbar", window.Classes);

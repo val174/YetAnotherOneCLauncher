@@ -27,7 +27,7 @@
              FontFamily="Consolas, DejaVu Sans Mono, monospace"
              PlaceholderText="например, /DisableStartupMessages /UC 123">
       <TextBox.InnerRightContent>
-        <Button x:Name="ClearParametersButton" Content="✕" Command="{Binding ClearParametersCommand}" IsVisible="{Binding HasParameters}"
+        <Button x:Name="ClearParametersButton" Classes="bare" Content="✕" Command="{Binding ClearParametersCommand}" IsVisible="{Binding HasParameters}"
                 Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить параметры" />
       </TextBox.InnerRightContent>
     </TextBox>

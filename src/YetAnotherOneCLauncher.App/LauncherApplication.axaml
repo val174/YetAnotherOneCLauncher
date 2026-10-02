@@ -82,6 +82,13 @@
           <SolidColorBrush x:Key="FlatSwitchTrackBrush" Color="#14000000" />
           <SolidColorBrush x:Key="FlatSwitchThumbBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="FlatSwitchThumbBorderBrush" Color="#26000000" />
+          <!-- «Стиль 3»: кнопки с надписью — лёгкая заливка без рамки; отмеченная (переключатель) — тоном акцента. -->
+          <SolidColorBrush x:Key="FlatButtonFillBrush" Color="#0F000000" />
+          <SolidColorBrush x:Key="FlatButtonFillHoverBrush" Color="#1A000000" />
+          <SolidColorBrush x:Key="FlatButtonFillPressedBrush" Color="#24000000" />
+          <SolidColorBrush x:Key="FlatButtonCheckedBrush" Color="#33378ADD" />
+          <!-- Фон строки заголовков колонок списка баз. -->
+          <SolidColorBrush x:Key="ListHeaderBrush" Color="#0D000000" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -103,6 +110,11 @@
           <SolidColorBrush x:Key="FlatSwitchTrackBrush" Color="#14FFFFFF" />
           <SolidColorBrush x:Key="FlatSwitchThumbBrush" Color="#3C3C3C" />
           <SolidColorBrush x:Key="FlatSwitchThumbBorderBrush" Color="#30FFFFFF" />
+          <SolidColorBrush x:Key="FlatButtonFillBrush" Color="#14FFFFFF" />
+          <SolidColorBrush x:Key="FlatButtonFillHoverBrush" Color="#1FFFFFFF" />
+          <SolidColorBrush x:Key="FlatButtonFillPressedBrush" Color="#2AFFFFFF" />
+          <SolidColorBrush x:Key="FlatButtonCheckedBrush" Color="#4085B7EB" />
+          <SolidColorBrush x:Key="ListHeaderBrush" Color="#12FFFFFF" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -143,6 +155,29 @@
       <Setter Property="Height" Value="16" />
       <Setter Property="StrokeThickness" Value="1.8" />
       <Setter Property="c:ToolIcon.IconStyle" Value="Outline" />
+    </Style>
+    <!-- «Стиль 3» (класс flatButtons у окна): кнопки со скруглением 6, лёгкая заливка вместо рамки, при наведении темнее;
+         основные (accent) — прежнего цвета. Без заливки — кнопки-значки и кнопки-надписи: класс bare (крестик «очистить» в поле),
+         заголовки колонок, значки строк списка и свойств; кнопки панели главного окна — в MainWindow.axaml. -->
+    <Style Selector="Window.flatButtons Button, Window.flatButtons ToggleButton">
+      <Setter Property="CornerRadius" Value="6" />
+    </Style>
+    <Style Selector="Window.flatButtons Button:not(.accent):not(.bare):not(.rowLaunch):not(.icon):not(.statusIcon):not(.columnHeader):not(.sortHeader) /template/ ContentPresenter#PART_ContentPresenter, Window.flatButtons ToggleButton /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonFillBrush}" />
+      <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Window.flatButtons Button:not(.accent):not(.bare):not(.rowLaunch):not(.icon):not(.statusIcon):not(.columnHeader):not(.sortHeader):pointerover /template/ ContentPresenter#PART_ContentPresenter, Window.flatButtons ToggleButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonFillHoverBrush}" />
+    </Style>
+    <Style Selector="Window.flatButtons Button:not(.accent):not(.bare):not(.rowLaunch):not(.icon):not(.statusIcon):not(.columnHeader):not(.sortHeader):pressed /template/ ContentPresenter#PART_ContentPresenter, Window.flatButtons ToggleButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonFillPressedBrush}" />
+    </Style>
+    <Style Selector="Window.flatButtons ToggleButton:checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonCheckedBrush}" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
+    </Style>
+    <Style Selector="Window.flatButtons Button.accent /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="BorderBrush" Value="Transparent" />
     </Style>
     <Style Selector="Window">
       <Setter Property="Icon" Value="/Assets/app.ico" />

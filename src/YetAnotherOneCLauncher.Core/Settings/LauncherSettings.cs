@@ -157,7 +157,7 @@ public sealed class UiSettings
 {
     public ThemeMode Theme { get; set; } = ThemeMode.System;
 
-    public IconStyle IconStyle { get; set; } = IconStyle.Outline;
+    public IconStyle IconStyle { get; set; } = IconStyle.Flat;
 
     public CatalogViewMode ViewMode { get; set; } = CatalogViewMode.Tree;
 
