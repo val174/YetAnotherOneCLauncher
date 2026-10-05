@@ -124,6 +124,22 @@ public enum AfterLaunchAction
     Close,
 }
 
+/// <summary>Чередование цвета строк списка баз: каждая вторая видимая строка — на лёгкой подложке.</summary>
+public enum RowStripes
+{
+    /// <summary>Не использовать.</summary>
+    None,
+
+    /// <summary>Едва заметно.</summary>
+    Subtle,
+
+    /// <summary>Умеренно.</summary>
+    Moderate,
+
+    /// <summary>Заметно.</summary>
+    Strong,
+}
+
 /// <summary>Где в строке списка баз стоят кнопки запуска.</summary>
 public enum RowLaunchPlacement
 {
@@ -200,6 +216,9 @@ public sealed class UiSettings
 
     /// <summary>Зелёная точка справа от наименования у баз, открытых в 1С текущим пользователем.</summary>
     public bool HighlightRunningBases { get; set; } = true;
+
+    /// <summary>Чередование цвета строк списка баз и его заметность.</summary>
+    public RowStripes RowStripes { get; set; } = RowStripes.Moderate;
 
     /// <summary>
     /// Переопределённые горячие клавиши: имя команды → сочетание в формате Avalonia («Ctrl+Shift+N», «F3»);

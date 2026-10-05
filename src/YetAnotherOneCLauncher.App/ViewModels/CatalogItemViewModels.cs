@@ -11,6 +11,10 @@ public abstract partial class TreeNodeViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool IsExpanded { get; set; }
+
+    /// <summary>Чётная видимая строка дерева (вторая, четвёртая…) — на подложке, если чередование включено.</summary>
+    [ObservableProperty]
+    public partial bool IsStripe { get; set; }
 }
 
 public enum FolderKind
@@ -81,11 +85,15 @@ public sealed record TextSegment(string Text, bool IsMatch);
 /// <summary>Строка плоского списка и результатов поиска.</summary>
 public sealed class BaseListItemViewModel
 {
-    public BaseListItemViewModel(InfoBaseViewModel infoBase, IReadOnlyList<TextSegment> nameSegments)
+    public BaseListItemViewModel(InfoBaseViewModel infoBase, IReadOnlyList<TextSegment> nameSegments, bool isStripe = false)
     {
         Base = infoBase;
         NameSegments = nameSegments;
+        IsStripe = isStripe;
     }
+
+    /// <summary>Чётная строка списка (вторая, четвёртая…) — на подложке, если чередование включено.</summary>
+    public bool IsStripe { get; }
 
     public InfoBaseViewModel Base { get; }
 

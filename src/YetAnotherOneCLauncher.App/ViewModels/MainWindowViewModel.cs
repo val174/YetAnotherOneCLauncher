@@ -149,6 +149,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RowLaunchPlacementIndex = ui.RowLaunchPlacement == RowLaunchPlacement.Left ? 1 : 0;
         ShowSideLaunchButtons = ui.ShowSideLaunchButtons;
         TwoLineRows = ui.TwoLineRows;
+        RowStripesIndex = (int)ui.RowStripes;
         HighlightRunning = ui.HighlightRunningBases;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
@@ -468,6 +469,18 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Строки списка баз в две строки: платформа, режим и последний запуск — под наименованием, колонок нет.</summary>
     [ObservableProperty]
     public partial bool TwoLineRows { get; set; }
+
+    /// <summary>Чередование цвета строк списка баз, в порядке <see cref="RowStripes"/>: не использовать, едва заметно, умеренно, заметно.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsStripeSubtle), nameof(IsStripeModerate), nameof(IsStripeStrong))]
+    public partial int RowStripesIndex { get; set; }
+
+    // Классы окна stripeSubtle, stripeModerate, stripeStrong: цвет подложки чётных строк.
+    public bool IsStripeSubtle => RowStripesIndex == (int)RowStripes.Subtle;
+
+    public bool IsStripeModerate => RowStripesIndex == (int)RowStripes.Moderate;
+
+    public bool IsStripeStrong => RowStripesIndex == (int)RowStripes.Strong;
 
     /// <summary>Правой панели есть что показать: кнопки запуска или свойства. Нет — колонка убирается.</summary>
     public bool ShowRightPanel => ShowDetails || ShowSideLaunchButtons;
@@ -916,6 +929,17 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _settings.RequestSave();
     }
 
+    partial void OnRowStripesIndexChanged(int value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        _settings.Settings.Ui.RowStripes = (RowStripes)value;
+        _settings.RequestSave();
+    }
+
     partial void OnShowSideLaunchButtonsChanged(bool value)
     {
         if (_suppressSettingsSync)
@@ -1031,6 +1055,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             TreeItems.Add(ToNode(item, byInfoBase, collapsed));
         }
+
+        UpdateTreeStripes();
     }
 
     private FolderNodeViewModel SpecialFolder(
@@ -1080,6 +1106,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     private void OnFolderExpansionChanged(FolderNodeViewModel folder)
     {
+        UpdateTreeStripes();
         var collapsed = _settings.Settings.Ui.CollapsedFolders;
         collapsed.RemoveAll(p => string.Equals(p, folder.Path, StringComparison.OrdinalIgnoreCase));
         if (!folder.IsExpanded)
@@ -1088,6 +1115,28 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         _settings.RequestSave();
+    }
+
+    /// <summary>
+    /// Отметить чётные видимые строки дерева (для чередования цвета): по порядку показа, дети — только у развёрнутых папок.
+    /// Пересчитывается после перестройки дерева и при сворачивании и разворачивании папки.
+    /// </summary>
+    private void UpdateTreeStripes()
+    {
+        var index = 0;
+        void Mark(IEnumerable<TreeNodeViewModel> nodes)
+        {
+            foreach (var node in nodes)
+            {
+                node.IsStripe = index++ % 2 == 1;
+                if (node is FolderNodeViewModel { IsExpanded: true } folder)
+                {
+                    Mark(folder.Children);
+                }
+            }
+        }
+
+        Mark(TreeItems);
     }
 
     private void RebuildList()
@@ -1115,7 +1164,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
             foreach (var match in InfoBaseSearch.Search(subset ?? _catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
             {
                 var infoBase = byInfoBase[match.InfoBase];
-                ListItems.Add(new BaseListItemViewModel(infoBase, Segments(infoBase.Name, match.NameHighlights)));
+                ListItems.Add(new BaseListItemViewModel(infoBase, Segments(infoBase.Name, match.NameHighlights), isStripe: ListItems.Count % 2 == 1));
             }
         }
         else
@@ -1124,7 +1173,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
                           ?? _bases.OrderByDescending(b => b.IsFavorite).ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase);
             foreach (var infoBase in ordered)
             {
-                ListItems.Add(new BaseListItemViewModel(infoBase, [new TextSegment(infoBase.Name, false)]));
+                ListItems.Add(new BaseListItemViewModel(infoBase, [new TextSegment(infoBase.Name, false)], isStripe: ListItems.Count % 2 == 1));
             }
         }
 

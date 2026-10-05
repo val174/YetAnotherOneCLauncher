@@ -1224,7 +1224,7 @@ public class MainWindowTests
         window.Close();
     }
 
-    private static async Task<MainWindow> OpenAsync(ViewModelFixture fixture)
+    internal static async Task<MainWindow> OpenAsync(ViewModelFixture fixture)
     {
         // Настоящее окно применяет тему через Application; в тестах — через подделку, поэтому ставим вручную.
         Avalonia.Application.Current!.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Light;

@@ -91,6 +91,10 @@
           <SolidColorBrush x:Key="FlatButtonCheckedBrush" Color="#33378ADD" />
           <!-- Фон строки заголовков колонок списка баз. -->
           <SolidColorBrush x:Key="ListHeaderBrush" Color="#0D000000" />
+          <!-- Чередование цвета строк списка баз: едва заметно, умеренно, заметно. -->
+          <SolidColorBrush x:Key="RowStripeSubtleBrush" Color="#06000000" />
+          <SolidColorBrush x:Key="RowStripeModerateBrush" Color="#0B000000" />
+          <SolidColorBrush x:Key="RowStripeStrongBrush" Color="#12000000" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -118,6 +122,9 @@
           <SolidColorBrush x:Key="FlatButtonFillPressedBrush" Color="#2AFFFFFF" />
           <SolidColorBrush x:Key="FlatButtonCheckedBrush" Color="#4085B7EB" />
           <SolidColorBrush x:Key="ListHeaderBrush" Color="#12FFFFFF" />
+          <SolidColorBrush x:Key="RowStripeSubtleBrush" Color="#0BFFFFFF" />
+          <SolidColorBrush x:Key="RowStripeModerateBrush" Color="#13FFFFFF" />
+          <SolidColorBrush x:Key="RowStripeStrongBrush" Color="#1CFFFFFF" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

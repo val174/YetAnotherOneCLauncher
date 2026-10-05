@@ -41,6 +41,8 @@ public sealed record SettingsValues
 
     public bool HighlightRunning { get; init; } = true;
 
+    public int RowStripesIndex { get; init; } = (int)RowStripes.Moderate;
+
     // Горячие клавиши.
     public HotKeyMap HotKeys { get; init; } = HotKeyMap.Default;
 
@@ -114,6 +116,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowSideLaunchButtons = original.ShowSideLaunchButtons;
         TwoLineRows = original.TwoLineRows;
         HighlightRunning = original.HighlightRunning;
+        RowStripesIndex = original.RowStripesIndex;
         foreach (var definition in HotKeyMap.Definitions)
         {
             var row = new HotKeyRowViewModel(definition, original.HotKeys[definition.Command]);
@@ -136,6 +139,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>В порядке <see cref="RowLaunchPlacement"/>.</summary>
     public IReadOnlyList<string> RowLaunchPlacementNames { get; } = ["Справа, у края колонки наименования", "Слева от наименования"];
+
+    /// <summary>В порядке <see cref="RowStripes"/>.</summary>
+    public IReadOnlyList<string> RowStripesNames { get; } = ["Не использовать", "Едва заметно", "Умеренно", "Заметно"];
 
     public ICommand? ShowAboutCommand { get; }
 
@@ -185,6 +191,9 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool HighlightRunning { get; set; }
 
+    [ObservableProperty]
+    public partial int RowStripesIndex { get; set; }
+
     // --- Горячие клавиши ---
     public ObservableCollection<HotKeyRowViewModel> HotKeyRows { get; } = [];
 
@@ -217,7 +226,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         || RowLaunchPlacementIndex != _original.RowLaunchPlacementIndex
         || ShowSideLaunchButtons != _original.ShowSideLaunchButtons
         || TwoLineRows != _original.TwoLineRows
-        || HighlightRunning != _original.HighlightRunning;
+        || HighlightRunning != _original.HighlightRunning
+        || RowStripesIndex != _original.RowStripesIndex;
 
     public bool IsHotKeysDirty => !CurrentHotKeys.SameAs(_original.HotKeys);
 
@@ -258,6 +268,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HighlightRunning = HighlightRunning,
+        RowStripesIndex = RowStripesIndex,
         HotKeys = CurrentHotKeys,
         ParameterTemplates = Templates.CustomTemplates,
         AdminTools = AdminTools.Tools,

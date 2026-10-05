@@ -85,6 +85,11 @@ public sealed class SettingsStore
             settings.Ui.SortMode = CatalogSortMode.Name;
         }
 
+        if (!Enum.IsDefined(settings.Ui.RowStripes))
+        {
+            settings.Ui.RowStripes = RowStripes.Moderate;
+        }
+
         settings.Launch ??= new LaunchSettings();
         settings.Cache ??= new CacheSettings();
         settings.Network ??= new NetworkSettings();

@@ -27,6 +27,7 @@ public sealed partial class MainWindowViewModel
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HighlightRunning = HighlightRunning,
+        RowStripesIndex = RowStripesIndex,
         HotKeys = HotKeys,
         ParameterTemplates = [.. _settings.Settings.ParameterTemplates],
         AdminTools = [.. _settings.Settings.AdminTools],
@@ -63,6 +64,7 @@ public sealed partial class MainWindowViewModel
         ShowSideLaunchButtons = values.ShowSideLaunchButtons;
         TwoLineRows = values.TwoLineRows;
         HighlightRunning = values.HighlightRunning;
+        RowStripesIndex = values.RowStripesIndex;
 
         if (!values.HotKeys.SameAs(HotKeys))
         {

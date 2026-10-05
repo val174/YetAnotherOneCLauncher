@@ -8,7 +8,10 @@
         Width="1040" Height="660"
         MinWidth="600" MinHeight="360"
         c:ToolIcon.IconStyle="{Binding IconStyle}"
-        Classes="flatToolbar flatButtons">
+        Classes="flatToolbar flatButtons"
+        Classes.stripeSubtle="{Binding IsStripeSubtle}"
+        Classes.stripeModerate="{Binding IsStripeModerate}"
+        Classes.stripeStrong="{Binding IsStripeStrong}">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -392,6 +395,17 @@
       <Setter Property="Background" Value="{DynamicResource ListHeaderBrush}" />
       <Setter Property="CornerRadius" Value="4" />
       <Setter Property="Margin" Value="0,0,0,4" />
+    </Style>
+    <!-- Чередование цвета строк списка баз (настройка «Чередование цвета строк»): у чётной строки (класс stripe — RowStripe)
+         фон строки целиком, по заметности — класс окна. Выделение и наведение его перекрывают (стили темы с триггерами). -->
+    <Style Selector="Window.stripeSubtle TreeViewItem.stripe, Window.stripeSubtle ListBoxItem.stripe">
+      <Setter Property="Background" Value="{DynamicResource RowStripeSubtleBrush}" />
+    </Style>
+    <Style Selector="Window.stripeModerate TreeViewItem.stripe, Window.stripeModerate ListBoxItem.stripe">
+      <Setter Property="Background" Value="{DynamicResource RowStripeModerateBrush}" />
+    </Style>
+    <Style Selector="Window.stripeStrong TreeViewItem.stripe, Window.stripeStrong ListBoxItem.stripe">
+      <Setter Property="Background" Value="{DynamicResource RowStripeStrongBrush}" />
     </Style>
   </Window.Styles>
 
@@ -829,6 +843,7 @@
         <TreeView.Styles>
           <Style Selector="TreeViewItem" x:DataType="vm:TreeNodeViewModel">
             <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+            <Setter Property="c:RowStripe.IsStripe" Value="{Binding IsStripe}" />
           </Style>
           <!-- Строка на всю ширину, чтобы колонки прижались к правому краю. -->
           <Style Selector="TreeViewItem /template/ ContentPresenter#PART_HeaderPresenter">
@@ -908,6 +923,11 @@
                SelectedItem="{Binding SelectedListItem}"
                IsVisible="{Binding ShowList}"
                Background="Transparent">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem" x:DataType="vm:BaseListItemViewModel">
+            <Setter Property="c:RowStripe.IsStripe" Value="{Binding IsStripe}" />
+          </Style>
+        </ListBox.Styles>
         <ListBox.ItemTemplate>
           <DataTemplate DataType="vm:BaseListItemViewModel">
             <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"

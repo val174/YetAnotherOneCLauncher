@@ -108,6 +108,9 @@
                     Content="Список баз в две строки" />
           <TextBlock Classes="secondary" Margin="28,0,0,0"
                      Text="В первой строке — наименование базы и кнопки запуска, во второй — платформа, режим запуска и последний запуск." />
+          <TextBlock Classes="fieldLabel" Text="Чередование цвета строк" />
+          <ComboBox x:Name="RowStripesBox" ItemsSource="{Binding RowStripesNames}" SelectedIndex="{Binding RowStripesIndex}"
+                    HorizontalAlignment="Stretch" ToolTip.Tip="Каждая вторая строка списка баз — на лёгкой подложке" />
         </StackPanel>
       </TabItem>
 
