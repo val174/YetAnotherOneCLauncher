@@ -6,7 +6,7 @@
         x:Class="YetAnotherOneCLauncher.App.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Title}"
-        Width="1040" Height="600" MinWidth="800" MinHeight="440"
+        Width="1040" Height="680" MinWidth="800" MinHeight="440"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
   <Window.Styles>
@@ -82,7 +82,8 @@
 
       <!-- Внешний вид. -->
       <TabItem x:Name="AppearanceTab" Header="{Binding AppearanceHeader}">
-        <StackPanel Margin="0,0,12,0">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <StackPanel Margin="0,0,12,8">
           <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
           <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
           <TextBlock Classes="fieldLabel" Text="Стиль значков" />
@@ -112,6 +113,7 @@
           <ComboBox x:Name="RowStripesBox" ItemsSource="{Binding RowStripesNames}" SelectedIndex="{Binding RowStripesIndex}"
                     HorizontalAlignment="Stretch" ToolTip.Tip="Каждая вторая строка списка баз — на лёгкой подложке" />
         </StackPanel>
+        </ScrollViewer>
       </TabItem>
 
       <!-- Горячие клавиши. -->

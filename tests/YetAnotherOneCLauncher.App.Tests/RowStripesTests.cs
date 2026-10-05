@@ -1,3 +1,4 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Media;
@@ -107,5 +108,26 @@ public class RowStripesTests
         settings.RowStripesIndex = 0;
         Assert.True(settings.IsAppearanceDirty);
         Assert.Equal(0, settings.Result.RowStripesIndex);
+    }
+}
+
+/// <summary>Вкладка «Внешний вид» окна настроек: все поля доступны, нижние — прокруткой.</summary>
+public class AppearanceTabTests
+{
+    [AvaloniaFact]
+    public void Appearance_tab_scrolls_to_last_field()
+    {
+        var window = new SettingsWindow(new SettingsViewModel(new SettingsValues()));
+        window.Show();
+        window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("AppearanceTab");
+        MainWindowTests.Render();
+
+        var box = window.FindControl<ComboBox>("RowStripesBox")!;
+        var scroll = box.FindAncestorOfType<ScrollViewer>()!;
+        Assert.NotNull(scroll);
+        // Помещается без прокрутки и с местом под заголовок окна (в тестах его нет — система его не рисует).
+        var bottom = box.TranslatePoint(new Avalonia.Point(0, box.Bounds.Height), scroll)!.Value.Y;
+        Assert.True(scroll.Viewport.Height - bottom >= Controls.WindowTitleBar.Height, $"низ поля {bottom}, область {scroll.Viewport.Height}");
+        window.Close();
     }
 }
