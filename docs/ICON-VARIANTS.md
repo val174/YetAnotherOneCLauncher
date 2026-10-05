@@ -22,6 +22,7 @@
 | Все базы (цилиндр) | `IconAllBasesBrush` | `#D85A30` | `#F0997B` |
 | Недавние (часы) | `IconRecentBrush` | `#378ADD` | `#85B7EB` |
 | Консоль кластера (стойки сервера) | `IconClusterBrush` | `#185FA5` | `#9CC3EE` |
+| Строка списка: запуск «1С: Предприятие» (▶) | `IconRowEnterpriseBrush` | `#2E7D32` | `#4CAF50` |
 | Избранное: папка и звезда у базы | `IconFavoriteBrush` | `#E0900F` | `#FAC775` |
 | Подробности: копировать строку подключения | `IconCopyBrush` | `#7F77DD` | `#AFA9EC` |
 | Подробности: открыть каталог базы | `IconFolderBrush` | `#BA7517` | `#EF9F27` |

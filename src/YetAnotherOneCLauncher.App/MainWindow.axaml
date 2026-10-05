@@ -197,7 +197,7 @@
       <Setter Property="StrokeThickness" Value="1.8" />
     </Style>
     <Style Selector="Button.rowLaunch.enterprise c|ToolIcon">
-      <Setter Property="Brush" Value="{DynamicResource IconViewBrush}" />
+      <Setter Property="Brush" Value="{DynamicResource IconRowEnterpriseBrush}" />
     </Style>
     <Style Selector="Button.rowLaunch.designer c|ToolIcon">
       <Setter Property="Brush" Value="{DynamicResource IconCopyBrush}" />

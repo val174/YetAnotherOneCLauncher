@@ -76,6 +76,8 @@
           <SolidColorBrush x:Key="IconCopyBrush" Color="#7F77DD" />
           <SolidColorBrush x:Key="IconAllBasesBrush" Color="#D85A30" />
           <SolidColorBrush x:Key="IconClusterBrush" Color="#185FA5" />
+          <!-- Запуск «1С: Предприятие» в строках списка баз — тёмно-зелёный. -->
+          <SolidColorBrush x:Key="IconRowEnterpriseBrush" Color="#2E7D32" />
           <!-- Фон плоской кнопки при наведении и нажатии, дорожка и плашка тумблера режимов. -->
           <SolidColorBrush x:Key="FlatButtonHoverBrush" Color="#0F000000" />
           <SolidColorBrush x:Key="FlatButtonPressedBrush" Color="#1C000000" />
@@ -105,6 +107,7 @@
           <SolidColorBrush x:Key="IconCopyBrush" Color="#AFA9EC" />
           <SolidColorBrush x:Key="IconAllBasesBrush" Color="#F0997B" />
           <SolidColorBrush x:Key="IconClusterBrush" Color="#9CC3EE" />
+          <SolidColorBrush x:Key="IconRowEnterpriseBrush" Color="#4CAF50" />
           <SolidColorBrush x:Key="FlatButtonHoverBrush" Color="#15FFFFFF" />
           <SolidColorBrush x:Key="FlatButtonPressedBrush" Color="#24FFFFFF" />
           <SolidColorBrush x:Key="FlatSwitchTrackBrush" Color="#14FFFFFF" />
