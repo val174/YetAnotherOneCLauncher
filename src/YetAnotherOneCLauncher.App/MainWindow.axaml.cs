@@ -89,16 +89,6 @@ public partial class MainWindow : Window
         Closed += (_, _) => viewModel.StopRunningWatch();
         InitTray(viewModel);
 
-        // «Стиль 1» выбирается здесь — открываемые окна берут его при создании.
-        WindowTitleBar.FlatButtons = viewModel.IsFlatToolbar;
-        viewModel.PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(MainWindowViewModel.IsFlatToolbar))
-            {
-                WindowTitleBar.FlatButtons = viewModel.IsFlatToolbar;
-            }
-        };
-
         // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
         ApplyDetailsLayout();
         viewModel.PropertyChanged += (_, e) =>

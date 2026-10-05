@@ -839,7 +839,7 @@ public class MainWindowTests
     }
 
     [AvaloniaFact]
-    public async Task Style_1_has_flat_toolbar_with_larger_icons_and_mode_switch()
+    public async Task Both_styles_have_flat_toolbar_with_larger_icons_and_mode_switch()
     {
         using var fixture = new ViewModelFixture();
         var window = await OpenAsync(fixture);
@@ -848,20 +848,18 @@ public class MainWindowTests
         var thumb = window.FindControl<Border>("ListFilterThumb")!;
         var separators = window.GetVisualDescendants().OfType<Border>().Where(b => b.Classes.Contains("toolbarSeparator")).ToList();
 
-        // По умолчанию — «Стиль 1»; сначала «Стиль 2» для сравнения.
-        Assert.True(vm.IsFlatToolbar);
+        // Панель плоская в обоих стилях значков; «Стиль 2» отличается только значками на плашке.
+        Assert.Contains("flatToolbar", window.Classes);
         vm.IconStyleIndex = 1;
         Render();
-
-        // «Стиль 2»: кнопки с заливкой, значок 18, тумблера и черт нет.
-        Assert.DoesNotContain("flatToolbar", window.Classes);
-        Assert.Equal(18, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
-        Assert.False(thumb.IsVisible);
-        Assert.All(separators, s => Assert.False(s.IsVisible));
+        Assert.Contains("flatToolbar", window.Classes);
+        Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
+        Assert.True(thumb.IsVisible);
+        Assert.Equal(3, separators.Count(s => s.IsVisible));
+        Snapshot(window, "16a-style2-flat");
 
         vm.IconStyleIndex = 0;
         Render();
-        Assert.Contains("flatToolbar", window.Classes);
         Assert.Equal(IconStyle.Flat, fixture.Settings.Settings.Ui.IconStyle);
         Assert.Equal((40, 40), (add.Bounds.Width, add.Bounds.Height));
         Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);

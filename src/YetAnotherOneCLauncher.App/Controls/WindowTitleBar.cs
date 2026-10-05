@@ -21,14 +21,8 @@ public static class WindowTitleBar
     /// <summary>Имя рамки окна (корень содержимого).</summary>
     public const string FrameName = "WindowFrame";
 
-    /// <summary>Класс окна в «Стиле 3»: кнопки со скруглением 6 и лёгкой заливкой вместо рамки (стили — LauncherApplication.axaml).</summary>
+    /// <summary>Класс окна: кнопки со скруглением 6 и лёгкой заливкой вместо рамки (стили — LauncherApplication.axaml).</summary>
     public const string FlatButtonsClass = "flatButtons";
-
-    /// <summary>
-    /// Плоские кнопки («Стиль 1») у открываемых окон: стиль выбирается в главном окне, оно и обновляет этот признак;
-    /// окно получает класс при создании.
-    /// </summary>
-    public static bool FlatButtons { get; set; } = true;
 
     /// <summary>Высота области заголовка, которую просим у системы.</summary>
     public const double Height = 34;
@@ -48,13 +42,9 @@ public static class WindowTitleBar
     {
         window.ExtendClientAreaToDecorationsHint = true;
         window.ExtendClientAreaTitleBarHeightHint = Height;
-        if (FlatButtons && !mainWindow)
-        {
-            window.Classes.Add(FlatButtonsClass);
-        }
-
         if (!mainWindow)
         {
+            window.Classes.Add(FlatButtonsClass); // у главного окна класс задан в разметке
             window.CanMinimize = false;
             window.CanMaximize = false;
             // Запрет только делает кнопки недоступными; убирают их стили LauncherApplication.axaml по этому классу.

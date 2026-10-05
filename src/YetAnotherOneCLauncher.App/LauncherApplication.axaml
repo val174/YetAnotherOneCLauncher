@@ -76,13 +76,13 @@
           <SolidColorBrush x:Key="IconCopyBrush" Color="#7F77DD" />
           <SolidColorBrush x:Key="IconAllBasesBrush" Color="#D85A30" />
           <SolidColorBrush x:Key="IconClusterBrush" Color="#185FA5" />
-          <!-- «Стиль 1»: фон плоской кнопки при наведении и нажатии, дорожка и плашка тумблера режимов. -->
+          <!-- Фон плоской кнопки при наведении и нажатии, дорожка и плашка тумблера режимов. -->
           <SolidColorBrush x:Key="FlatButtonHoverBrush" Color="#0F000000" />
           <SolidColorBrush x:Key="FlatButtonPressedBrush" Color="#1C000000" />
           <SolidColorBrush x:Key="FlatSwitchTrackBrush" Color="#14000000" />
           <SolidColorBrush x:Key="FlatSwitchThumbBrush" Color="#FFFFFF" />
           <SolidColorBrush x:Key="FlatSwitchThumbBorderBrush" Color="#26000000" />
-          <!-- «Стиль 1»: кнопки с надписью — лёгкая заливка без рамки; отмеченная (переключатель) — тоном акцента. -->
+          <!-- Кнопки с надписью — лёгкая заливка без рамки; отмеченная (переключатель) — тоном акцента. -->
           <SolidColorBrush x:Key="FlatButtonFillBrush" Color="#0F000000" />
           <SolidColorBrush x:Key="FlatButtonFillHoverBrush" Color="#1A000000" />
           <SolidColorBrush x:Key="FlatButtonFillPressedBrush" Color="#24000000" />
@@ -156,7 +156,7 @@
       <Setter Property="StrokeThickness" Value="1.8" />
       <Setter Property="c:ToolIcon.IconStyle" Value="Flat" />
     </Style>
-    <!-- «Стиль 1» (класс flatButtons у окна): кнопки со скруглением 6, лёгкая заливка вместо рамки, при наведении темнее;
+    <!-- Кнопки всех окон (класс flatButtons, в обоих стилях значков): кнопки со скруглением 6, лёгкая заливка вместо рамки, при наведении темнее;
          основные (accent) — прежнего цвета. Без заливки — кнопки-значки и кнопки-надписи: класс bare (крестик «очистить» в поле),
          заголовки колонок, значки строк списка и свойств; кнопки панели главного окна — в MainWindow.axaml. -->
     <Style Selector="Window.flatButtons Button, Window.flatButtons ToggleButton">

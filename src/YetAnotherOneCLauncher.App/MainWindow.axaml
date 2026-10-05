@@ -8,8 +8,7 @@
         Width="1040" Height="660"
         MinWidth="600" MinHeight="360"
         c:ToolIcon.IconStyle="{Binding IconStyle}"
-        Classes.flatToolbar="{Binding IsFlatToolbar}"
-        Classes.flatButtons="{Binding IsFlatToolbar}">
+        Classes="flatToolbar flatButtons">
 
   <Window.Styles>
     <Style Selector="TextBlock.label">
@@ -239,8 +238,8 @@
       <Setter Property="BorderThickness" Value="0" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
     </Style>
-    <!-- Кнопки панели главного окна («Стиль 2»): обычные кнопки с заливкой; черты между группами и плашки
-         тумблера нет. Внутренние отступы — стилем, а не в разметке кнопок: «Стиль 1» их меняет. -->
+    <!-- Кнопки панели главного окна — базовые значения (кнопки с заливкой, без черт и плашки тумблера); окно всегда с классом
+         flatToolbar, и плоский вид ниже их меняет. Внутренние отступы — стилем, а не в разметке кнопок. -->
     <Style Selector="StackPanel#ToolbarButtons > Button">
       <Setter Property="Padding" Value="8,6" />
       <Setter Property="VerticalAlignment" Value="Stretch" />
@@ -260,7 +259,7 @@
     <Style Selector="Border.switchThumb">
       <Setter Property="IsVisible" Value="False" />
     </Style>
-    <!-- «Стиль 1» (класс flatToolbar у окна): плоские кнопки 40×40 без фона — фон при наведении и нажатии, значки 26 px,
+    <!-- Панель плоская (класс flatToolbar у окна, в обоих стилях значков): плоские кнопки 40×40 без фона — фон при наведении и нажатии, значки 26 px,
          группы разделены чертой; «Все базы / Недавние / Избранное» — тумблер: дорожка и плашка, которая переезжает
          под выбранный режим. -->
     <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons">
@@ -353,7 +352,7 @@
     <Style Selector="Button.launchMain.single">
       <Setter Property="CornerRadius" Value="4" />
     </Style>
-    <!-- «Стиль 1»: кнопки запуска справа выше, скругление 6 (у пары «запуск + с параметрами» — по внешним углам), значки 18;
+    <!-- Кнопки запуска справа выше, скругление 6 (у пары «запуск + с параметрами» — по внешним углам), значки 18;
          кнопки-значки в строках списка и в свойствах базы — скругление 6, значки крупнее. -->
     <Style Selector="Window.flatToolbar Button.launchMain">
       <Setter Property="Padding" Value="12,9" />
@@ -468,7 +467,7 @@
             <SolidColorBrush x:Key="ToggleButtonBorderBrushCheckedPressed" Color="Transparent" />
           </Border.Resources>
           <Panel>
-            <!-- «Стиль 1»: плашка под выбранным режимом — переезжает при переключении (тумблер). -->
+            <!-- Плашка под выбранным режимом — переезжает при переключении (тумблер). -->
             <Border x:Name="ListFilterThumb" Classes="switchThumb" Margin="{Binding ListFilter, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
           <StackPanel Orientation="Horizontal">
             <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
