@@ -1,6 +1,4 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
@@ -49,17 +47,24 @@ public class GroupPickerTests
     {
         var picker = new GroupPickerViewModel(["/", "/Рабочие/Отчёты", "/Архив", "/рабочие"], "/Рабочие/Отчёты");
 
-        Assert.Equal(["Архив", "Рабочие"], picker.Groups.Select(g => g.Name)); // без строки «Не выбрана»
-        var work = picker.Groups[1];
+        // Один корень «Информационные базы», группы — внутри него.
+        var root = Assert.Single(picker.Groups);
+        Assert.Same(picker.Root, root);
+        Assert.Equal("Информационные базы", root.Name);
+        Assert.True(root.IsRoot);
+        Assert.True(root.IsExpanded);
+        Assert.Equal(["Архив", "Рабочие"], root.Children.Select(g => g.Name));
+        var work = root.Children[1];
         Assert.Equal("/Рабочие", work.Path);
         Assert.Equal("Отчёты", Assert.Single(work.Children).Name);
         Assert.True(work.IsExpanded); // выбранная группа видна
         Assert.Equal("/Рабочие/Отчёты", picker.SelectedPath);
 
+        // База без группы — выделен корень.
         var atRoot = new GroupPickerViewModel(["/Архив"], "/");
-        Assert.Null(atRoot.SelectedGroup); // база в корне — ничего не выделено, «Выбрать» недоступна
-        Assert.False(atRoot.HasSelection);
-        Assert.True(picker.HasSelection);
+        Assert.Same(atRoot.Root, atRoot.SelectedGroup);
+        Assert.Equal("/", atRoot.SelectedPath);
+        Assert.True(atRoot.HasSelection);
     }
 
     [Fact]
@@ -76,13 +81,14 @@ public class GroupPickerTests
         await picker.CreateGroupCommand.ExecuteAsync(null);
         Assert.Equal(["/Рабочие"], asked);
         Assert.Equal("/Рабочие/Новая", picker.SelectedPath);
-        Assert.Equal("Новая", Assert.Single(picker.Groups[0].Children).Name);
+        Assert.Equal("Новая", Assert.Single(picker.Root.Children[0].Children).Name);
 
-        // В корне — когда ничего не выделено; «/» в имени — ошибка, выбор не меняется.
-        picker.SelectedGroup = null;
+        // В корне — когда выделено «Информационные базы»; «/» в имени — ошибка, выбор не меняется.
+        picker.SelectedGroup = picker.Root;
         answer = "А";
         await picker.CreateGroupCommand.ExecuteAsync(null);
-        Assert.Equal(["А", "Рабочие"], picker.Groups.Select(g => g.Name));
+        Assert.Equal(["/"], asked.Skip(1));
+        Assert.Equal(["А", "Рабочие"], picker.Root.Children.Select(g => g.Name));
         answer = "a/b";
         await picker.CreateGroupCommand.ExecuteAsync(null);
         Assert.True(picker.HasError);
@@ -116,7 +122,7 @@ public class GroupPickerTests
 
         await vm.EditCommand.ExecuteAsync(null);
 
-        Assert.Equal(["Рабочие"], shownPicker!.Groups.Select(g => g.Name));
+        Assert.Equal(["Рабочие"], shownPicker!.Root.Children.Select(g => g.Name));
         Assert.Equal("/Рабочие/Кадры", fixture.SavedList().Sections.Single(s => s.Name == "Зарплата и управление персоналом").Get("Folder"));
     }
 
@@ -127,7 +133,7 @@ public class GroupPickerTests
         {
             GroupChooser = picker =>
             {
-                picker.SelectedGroup = null;
+                picker.SelectedGroup = picker.Root;
                 return Task.FromResult(false);
             },
         };
@@ -165,26 +171,20 @@ public class GroupPickerTests
         MainWindowTests.Render();
         var tree = window.FindControl<TreeView>("GroupsTree")!;
         var shown = tree.GetVisualDescendants().OfType<TreeViewItem>().Select(i => ((GroupNodeViewModel)i.DataContext!).Name).ToList();
-        Assert.Equal(["Архив", "Рабочие", "Отчёты"], shown);
-        Assert.False(window.FindControl<TextBlock>("NoGroupsText")!.IsVisible);
+        Assert.Equal(["Информационные базы", "Архив", "Рабочие", "Отчёты"], shown);
         Assert.Equal("Отчёты", ((GroupNodeViewModel)tree.SelectedItem!).Name);
         Assert.True(window.FindControl<Button>("CreateGroupButton")!.IsEffectivelyEnabled);
         Assert.True(window.FindControl<Button>("OkButton")!.IsEffectivelyEnabled);
         MainWindowTests.Snapshot(window, "42-group-picker");
-
-        // Щелчок по пустому месту дерева снимает выделение — новая группа создастся в корне.
-        var bottom = tree.TranslatePoint(new Avalonia.Point(tree.Bounds.Width / 2, tree.Bounds.Height - 10), window)!.Value;
-        window.MouseDown(bottom, Avalonia.Input.MouseButton.Left);
-        window.MouseUp(bottom, Avalonia.Input.MouseButton.Left);
-        MainWindowTests.Render();
-        Assert.Null(picker.SelectedGroup);
-        Assert.False(window.FindControl<Button>("OkButton")!.IsEffectivelyEnabled);
         window.Close();
 
+        // Групп нет — в дереве только корень, он и выделен.
         var empty = new GroupPickerWindow(new GroupPickerViewModel([], "/", _ => Task.FromResult<string?>(null)));
         empty.Show();
         MainWindowTests.Render();
-        Assert.True(empty.FindControl<TextBlock>("NoGroupsText")!.IsVisible);
+        var emptyTree = empty.FindControl<TreeView>("GroupsTree")!;
+        Assert.Equal("Информационные базы", ((GroupNodeViewModel)Assert.Single(emptyTree.GetVisualDescendants().OfType<TreeViewItem>()).DataContext!).Name);
+        Assert.True(empty.FindControl<Button>("OkButton")!.IsEffectivelyEnabled);
         MainWindowTests.Snapshot(empty, "42-group-picker-empty");
         empty.Close();
     }

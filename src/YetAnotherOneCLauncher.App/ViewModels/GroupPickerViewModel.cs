@@ -14,6 +14,9 @@ public sealed partial class GroupPickerViewModel : ObservableObject
     /// <summary>Подпись «группа не выбрана» — база в корне списка.</summary>
     public const string NoGroupText = "Не выбрана";
 
+    /// <summary>Корень дерева в окне выбора: «группа» самого списка баз.</summary>
+    public const string RootText = "Информационные базы";
+
     private readonly Func<string, Task<string?>>? _askName;
 
     /// <param name="folders">Пути существующих групп («/Рабочие/Отчёты»); родительские группы добавляются сами.</param>
@@ -22,27 +25,30 @@ public sealed partial class GroupPickerViewModel : ObservableObject
     public GroupPickerViewModel(IEnumerable<string> folders, string? selected, Func<string, Task<string?>>? askName = null)
     {
         _askName = askName;
-        Groups = [];
+        Root = new GroupNodeViewModel(RootText, FolderPaths.Root) { IsExpanded = true };
+        Groups = [Root];
         foreach (var path in folders)
         {
             Ensure(path);
         }
 
-        var current = FolderPaths.Normalize(selected);
-        SelectedGroup = current == FolderPaths.Root ? null : Ensure(current);
+        SelectedGroup = Ensure(FolderPaths.Normalize(selected));
     }
 
-    /// <summary>Группы в корне списка.</summary>
+    /// <summary>Верхний уровень дерева — один корень «Информационные базы», группы внутри него.</summary>
     public ObservableCollection<GroupNodeViewModel> Groups { get; }
+
+    /// <summary>Корень: выбрать его — база без группы, в корне списка.</summary>
+    public GroupNodeViewModel Root { get; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedPath), nameof(HasSelection))]
     public partial GroupNodeViewModel? SelectedGroup { get; set; }
 
-    /// <summary>Выделенная группа; ничего не выделено — корень (новая группа создаётся в корне).</summary>
+    /// <summary>Выделенная группа; ничего не выделено — корень.</summary>
     public string SelectedPath => SelectedGroup?.Path ?? FolderPaths.Root;
 
-    /// <summary>«Выбрать» доступна, только если группа выделена; очистить группу — кнопкой ✕ в форме базы.</summary>
+    /// <summary>«Выбрать» доступна, только если что-то выделено (корень тоже).</summary>
     public bool HasSelection => SelectedGroup is not null;
 
     public bool CanCreate => _askName is not null;
@@ -73,15 +79,15 @@ public sealed partial class GroupPickerViewModel : ObservableObject
         }
     }
 
-    /// <summary>Узел группы по пути: найденный или созданный вместе с родительскими; родители раскрываются. Корень — <c>null</c>.</summary>
-    private GroupNodeViewModel? Ensure(string path)
+    /// <summary>Узел группы по пути: найденный или созданный вместе с родительскими; родители раскрываются.</summary>
+    private GroupNodeViewModel Ensure(string path)
     {
-        GroupNodeViewModel? parent = null;
+        var parent = Root;
         var current = FolderPaths.Root;
         foreach (var segment in FolderPaths.Split(path))
         {
             current = FolderPaths.Combine(current, segment);
-            var siblings = parent?.Children ?? Groups;
+            var siblings = parent.Children;
             var node = siblings.FirstOrDefault(g => string.Equals(g.Path, current, StringComparison.OrdinalIgnoreCase));
             if (node is null)
             {
@@ -91,7 +97,7 @@ public sealed partial class GroupPickerViewModel : ObservableObject
                 siblings.Insert(index, node);
             }
 
-            parent?.IsExpanded = true;
+            parent.IsExpanded = true;
             parent = node;
         }
 
@@ -99,12 +105,14 @@ public sealed partial class GroupPickerViewModel : ObservableObject
     }
 }
 
-/// <summary>Группа в окне выбора группы.</summary>
+/// <summary>Группа в окне выбора группы; корень «Информационные базы» — путь «/».</summary>
 public sealed partial class GroupNodeViewModel(string name, string path) : ObservableObject
 {
     public string Name { get; } = name;
 
     public string Path { get; } = path;
+
+    public bool IsRoot => Path == FolderPaths.Root;
 
     public ObservableCollection<GroupNodeViewModel> Children { get; } = [];
 
