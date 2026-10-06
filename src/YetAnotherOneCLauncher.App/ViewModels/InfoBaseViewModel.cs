@@ -76,7 +76,11 @@ public sealed partial class InfoBaseViewModel : ObservableObject
         _ => "Выбирать автоматически",
     };
 
-    public string FolderText => InfoBase.FolderPath;
+    /// <summary>Группа для панели свойств: только та, в которой лежит база («Отчёты», а не «/Рабочие/Отчёты»); в корне — «Не выбрана».</summary>
+    public string FolderText => FolderPaths.Split(InfoBase.FolderPath) is { Length: > 0 } segments ? segments[^1] : GroupPickerViewModel.NoGroupText;
+
+    /// <summary>Полный путь вложенной группы — подсказка к ней в панели свойств («Рабочие / Отчёты»); иначе <c>null</c>.</summary>
+    public string? FolderPathTip => FolderPaths.Split(InfoBase.FolderPath) is { Length: > 1 } segments ? string.Join(" / ", segments) : null;
 
     public string SourceText => InfoBase.Source switch
     {
