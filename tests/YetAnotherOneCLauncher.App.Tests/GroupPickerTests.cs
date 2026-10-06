@@ -3,6 +3,9 @@ using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Editing;
+using YetAnotherOneCLauncher.Core.Model;
+using YetAnotherOneCLauncher.Core.Parsing;
+using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.Tests;
 
@@ -17,6 +20,18 @@ public class GroupPickerTests
         editor.Folder = "/Рабочие/Отчёты";
         Assert.Equal("Рабочие / Отчёты", editor.FolderText);
         Assert.False(editor.ChooseGroupCommand.CanExecute(null)); // окно выбора не задано
+    }
+
+    [Theory]
+    [InlineData("/", "Не выбрана", null)]
+    [InlineData("/Рабочие", "Рабочие", null)]
+    [InlineData("/Рабочие/Отчёты", "Отчёты", "Рабочие / Отчёты")]
+    public void Properties_panel_shows_only_own_group(string folder, string text, string? tip)
+    {
+        var section = V8iDocument.Parse($"[База]\r\nConnect=File=\"C:\\A\";\r\nFolder={folder}\r\n").Sections.Single(s => s.Name.Length > 0);
+        var infoBase = new InfoBaseViewModel(new InfoBase(section, new ListSource(ListSourceKind.Personal, string.Empty)), new LauncherUserData(new LauncherSettings()));
+        Assert.Equal(text, infoBase.FolderText);
+        Assert.Equal(tip, infoBase.FolderPathTip);
     }
 
     [Fact]

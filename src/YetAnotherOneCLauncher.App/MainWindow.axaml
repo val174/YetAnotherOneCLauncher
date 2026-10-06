@@ -717,7 +717,8 @@
               <SelectableTextBlock Grid.Row="7" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.SourceText}"
                                    ToolTip.Tip="{Binding SelectedInfoBase.SourceLocation}" />
               <TextBlock Grid.Row="8" Classes="label" Text="Группа" />
-              <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}" />
+              <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}"
+                                   ToolTip.Tip="{Binding SelectedInfoBase.FolderPathTip}" />
 
               <Border Grid.Row="9" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
               <TextBlock Grid.Row="10" Classes="label" Text="Кэш" />
