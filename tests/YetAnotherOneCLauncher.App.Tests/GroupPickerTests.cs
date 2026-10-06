@@ -18,7 +18,15 @@ public class GroupPickerTests
         var editor = new InfoBaseEditorViewModel(new InfoBaseDraft { FolderPath = "/" }, [], isNew: true, new FakeFiles());
         Assert.Equal("Не выбрана", editor.FolderText);
         editor.Folder = "/Рабочие/Отчёты";
-        Assert.Equal("Рабочие / Отчёты", editor.FolderText);
+        Assert.Equal("Отчёты", editor.FolderText); // только своя группа, путь — в подсказке
+        Assert.Equal("Рабочие / Отчёты", editor.FolderPathTip);
+
+        Assert.True(editor.ClearGroupCommand.CanExecute(null));
+        editor.ClearGroupCommand.Execute(null);
+        Assert.Equal("/", editor.Folder);
+        Assert.Equal("Не выбрана", editor.FolderText);
+        Assert.False(editor.HasGroup);
+        Assert.False(editor.ClearGroupCommand.CanExecute(null));
         Assert.False(editor.ChooseGroupCommand.CanExecute(null)); // окно выбора не задано
     }
 
@@ -98,7 +106,7 @@ public class GroupPickerTests
         {
             Assert.Equal("Рабочие", editor.FolderText);
             editor.ChooseGroupCommand.Execute(null);
-            Assert.Equal("Рабочие / Кадры", editor.FolderText);
+            Assert.Equal("Кадры", editor.FolderText);
             return true;
         };
 
@@ -125,7 +133,7 @@ public class GroupPickerTests
     }
 
     [AvaloniaFact]
-    public void Editor_form_has_group_field_and_picker_window_shows_tree()
+    public void Editor_form_has_group_field_with_clear_button_and_picker_window_shows_tree()
     {
         var editor = new InfoBaseEditorViewModel(new InfoBaseDraft { Name = "База", FilePath = @"C:\Bases\B" }, ["/Рабочие/Отчёты", "/Архив"], isNew: false, new FakeFiles())
         {
@@ -139,6 +147,11 @@ public class GroupPickerTests
         Assert.DoesNotContain("Папка в списке", label);
         Assert.Equal("Не выбрана", form.FindControl<TextBox>("GroupBox")!.Text);
         Assert.True(form.FindControl<Button>("ChooseGroupButton")!.IsEffectivelyEnabled);
+        Assert.False(form.FindControl<Button>("ClearGroupButton")!.IsVisible); // группы нет — очищать нечего
+        editor.Folder = "/Рабочие/Отчёты";
+        MainWindowTests.Render();
+        Assert.Equal("Отчёты", form.FindControl<TextBox>("GroupBox")!.Text);
+        Assert.True(form.FindControl<Button>("ClearGroupButton")!.IsVisible);
         MainWindowTests.Snapshot(form, "42-editor-group-field");
         form.Close();
 

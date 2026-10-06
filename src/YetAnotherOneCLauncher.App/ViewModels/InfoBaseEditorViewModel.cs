@@ -95,12 +95,22 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
 
     /// <summary>Группа (папка списка), например «/Рабочие/Отчёты»; «/» — без группы, в корне списка.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(FolderText))]
+    [NotifyPropertyChangedFor(nameof(FolderText), nameof(FolderPathTip), nameof(HasGroup))]
+    [NotifyCanExecuteChangedFor(nameof(ClearGroupCommand))]
     public partial string Folder { get; set; }
 
-    /// <summary>Группа для показа в форме: «Рабочие / Отчёты» или «Не выбрана».</summary>
+    /// <summary>Группа для показа в форме, как в панели свойств: только своя («Отчёты») или «Не выбрана».</summary>
     public string FolderText =>
-        FolderPaths.Split(Folder) is { Length: > 0 } segments ? string.Join(" / ", segments) : GroupPickerViewModel.NoGroupText;
+        FolderPaths.Split(Folder) is { Length: > 0 } segments ? segments[^1] : GroupPickerViewModel.NoGroupText;
+
+    /// <summary>Полный путь вложенной группы — подсказка к полю («Рабочие / Отчёты»); иначе <c>null</c>.</summary>
+    public string? FolderPathTip => FolderPaths.Split(Folder) is { Length: > 1 } segments ? string.Join(" / ", segments) : null;
+
+    public bool HasGroup => FolderPaths.Normalize(Folder) != FolderPaths.Root;
+
+    /// <summary>Очистить поле «Группа»: база — в корне списка.</summary>
+    [RelayCommand(CanExecute = nameof(HasGroup))]
+    private void ClearGroup() => Folder = FolderPaths.Root;
 
     /// <summary>
     /// Открывает окно выбора группы; <c>true</c> — группа выбрана. Задаёт главное окно;

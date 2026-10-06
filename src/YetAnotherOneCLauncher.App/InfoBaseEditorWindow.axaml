@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:p="using:YetAnotherOneCLauncher.Core.Platforms"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.InfoBaseEditorWindow"
         x:DataType="vm:InfoBaseEditorViewModel"
         Title="{Binding Title}"
@@ -197,8 +198,12 @@
             <DockPanel Grid.Row="1">
               <Button x:Name="ChooseGroupButton" DockPanel.Dock="Right" Content="…" Command="{Binding ChooseGroupCommand}" Margin="6,0,0,0"
                       VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Выбрать группу или создать новую" />
+              <Button x:Name="ClearGroupButton" DockPanel.Dock="Right" Command="{Binding ClearGroupCommand}" IsVisible="{Binding HasGroup}" Margin="6,0,0,0"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Очистить: база будет в корне списка">
+                <c:ToolIcon Width="12" Height="12" StrokeThickness="1.6" Brush="{DynamicResource IconDeleteBrush}" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+              </Button>
               <TextBox x:Name="GroupBox" Text="{Binding FolderText, Mode=OneWay}" IsReadOnly="True" Cursor="Hand"
-                       ToolTip.Tip="Группа в списке баз. Нажмите, чтобы выбрать другую или создать новую." />
+                       ToolTip.Tip="{Binding FolderPathTip}" />
             </DockPanel>
             <TextBlock Grid.Column="2" Text="Клиент" Margin="0,0,0,6" />
             <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
