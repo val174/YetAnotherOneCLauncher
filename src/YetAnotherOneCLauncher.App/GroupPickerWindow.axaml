@@ -15,7 +15,7 @@
       </Border>
       <DockPanel>
         <Button x:Name="CreateGroupButton" DockPanel.Dock="Left" Command="{Binding CreateGroupCommand}"
-                ToolTip.Tip="Новая группа внутри выделенной; если выделено «Не выбрана» — в корне списка">
+                ToolTip.Tip="Новая группа внутри выделенной; если ничего не выделено — в корне списка">
           <StackPanel Orientation="Horizontal" Spacing="6">
             <c:ToolIcon Width="16" Height="16" Brush="{DynamicResource IconFolderBrush}"
                         Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 8,7.5 L 8,12 M 5.75,9.75 L 10.25,9.75" />
@@ -23,14 +23,19 @@
           </StackPanel>
         </Button>
         <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-          <Button x:Name="OkButton" Classes="accent" Content="Выбрать" IsDefault="True" MinWidth="100" />
+          <Button x:Name="OkButton" Classes="accent" Content="Выбрать" IsDefault="True" MinWidth="100" IsEnabled="{Binding HasSelection}" />
           <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
         </StackPanel>
       </DockPanel>
     </StackPanel>
 
     <TextBlock DockPanel.Dock="Top" Text="Группа в списке информационных баз:" Margin="0,0,0,8" />
+    <TextBlock DockPanel.Dock="Bottom" Margin="0,6,0,0" Opacity="0.65" FontSize="{StaticResource SmallFontSize}" TextWrapping="Wrap"
+               Text="Новая группа создаётся внутри выделенной. Чтобы создать её в корне списка, щёлкните по пустому месту." />
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
+      <Panel>
+        <TextBlock x:Name="NoGroupsText" IsVisible="{Binding !Groups.Count}" Margin="10" Opacity="0.65" TextWrapping="Wrap"
+                   Text="Групп пока нет — создайте новую кнопкой «Создать группу…»." />
       <TreeView x:Name="GroupsTree" ItemsSource="{Binding Groups}" SelectedItem="{Binding SelectedGroup}">
         <TreeView.Styles>
           <Style Selector="TreeViewItem" x:DataType="vm:GroupNodeViewModel">
@@ -40,18 +45,14 @@
         <TreeView.DataTemplates>
           <TreeDataTemplate DataType="vm:GroupNodeViewModel" ItemsSource="{Binding Children}">
             <StackPanel Orientation="Horizontal" Spacing="6">
-              <Panel Width="18" Height="18" VerticalAlignment="Center">
-                <c:ToolIcon IsVisible="{Binding !IsNoGroup}" Brush="{DynamicResource IconFolderBrush}"
-                            Data="{StaticResource FolderIconGeometry}" />
-                <c:ToolIcon IsVisible="{Binding IsNoGroup}" Brush="{DynamicResource IconFolderBrush}" Opacity="0.6"
-                            Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z" />
-              </Panel>
+              <c:ToolIcon Width="18" Height="18" VerticalAlignment="Center" Brush="{DynamicResource IconFolderBrush}"
+                          Data="{StaticResource FolderIconGeometry}" />
               <TextBlock Text="{Binding Name}" FontWeight="SemiBold" VerticalAlignment="Center" />
-              <TextBlock IsVisible="{Binding IsNoGroup}" Text="— в корне списка" Opacity="0.6" VerticalAlignment="Center" />
             </StackPanel>
           </TreeDataTemplate>
         </TreeView.DataTemplates>
       </TreeView>
+      </Panel>
     </Border>
   </DockPanel>
 </Window>

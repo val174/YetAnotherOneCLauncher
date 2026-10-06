@@ -1,4 +1,6 @@
+using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
@@ -47,15 +49,17 @@ public class GroupPickerTests
     {
         var picker = new GroupPickerViewModel(["/", "/Рабочие/Отчёты", "/Архив", "/рабочие"], "/Рабочие/Отчёты");
 
-        Assert.Equal(["Не выбрана", "Архив", "Рабочие"], picker.Groups.Select(g => g.Name));
-        var work = picker.Groups[2];
+        Assert.Equal(["Архив", "Рабочие"], picker.Groups.Select(g => g.Name)); // без строки «Не выбрана»
+        var work = picker.Groups[1];
         Assert.Equal("/Рабочие", work.Path);
         Assert.Equal("Отчёты", Assert.Single(work.Children).Name);
         Assert.True(work.IsExpanded); // выбранная группа видна
         Assert.Equal("/Рабочие/Отчёты", picker.SelectedPath);
 
         var atRoot = new GroupPickerViewModel(["/Архив"], "/");
-        Assert.Same(atRoot.NoGroup, atRoot.SelectedGroup);
+        Assert.Null(atRoot.SelectedGroup); // база в корне — ничего не выделено, «Выбрать» недоступна
+        Assert.False(atRoot.HasSelection);
+        Assert.True(picker.HasSelection);
     }
 
     [Fact]
@@ -72,13 +76,13 @@ public class GroupPickerTests
         await picker.CreateGroupCommand.ExecuteAsync(null);
         Assert.Equal(["/Рабочие"], asked);
         Assert.Equal("/Рабочие/Новая", picker.SelectedPath);
-        Assert.Equal("Новая", Assert.Single(picker.Groups[1].Children).Name);
+        Assert.Equal("Новая", Assert.Single(picker.Groups[0].Children).Name);
 
-        // В корне — при выделенном «Не выбрана»; «/» в имени — ошибка, выбор не меняется.
-        picker.SelectedGroup = picker.NoGroup;
+        // В корне — когда ничего не выделено; «/» в имени — ошибка, выбор не меняется.
+        picker.SelectedGroup = null;
         answer = "А";
         await picker.CreateGroupCommand.ExecuteAsync(null);
-        Assert.Equal(["Не выбрана", "А", "Рабочие"], picker.Groups.Select(g => g.Name));
+        Assert.Equal(["А", "Рабочие"], picker.Groups.Select(g => g.Name));
         answer = "a/b";
         await picker.CreateGroupCommand.ExecuteAsync(null);
         Assert.True(picker.HasError);
@@ -112,7 +116,7 @@ public class GroupPickerTests
 
         await vm.EditCommand.ExecuteAsync(null);
 
-        Assert.Equal(["Не выбрана", "Рабочие"], shownPicker!.Groups.Select(g => g.Name));
+        Assert.Equal(["Рабочие"], shownPicker!.Groups.Select(g => g.Name));
         Assert.Equal("/Рабочие/Кадры", fixture.SavedList().Sections.Single(s => s.Name == "Зарплата и управление персоналом").Get("Folder"));
     }
 
@@ -123,7 +127,7 @@ public class GroupPickerTests
         {
             GroupChooser = picker =>
             {
-                picker.SelectedGroup = picker.NoGroup;
+                picker.SelectedGroup = null;
                 return Task.FromResult(false);
             },
         };
@@ -161,10 +165,27 @@ public class GroupPickerTests
         MainWindowTests.Render();
         var tree = window.FindControl<TreeView>("GroupsTree")!;
         var shown = tree.GetVisualDescendants().OfType<TreeViewItem>().Select(i => ((GroupNodeViewModel)i.DataContext!).Name).ToList();
-        Assert.Equal(["Не выбрана", "Архив", "Рабочие", "Отчёты"], shown);
+        Assert.Equal(["Архив", "Рабочие", "Отчёты"], shown);
+        Assert.False(window.FindControl<TextBlock>("NoGroupsText")!.IsVisible);
         Assert.Equal("Отчёты", ((GroupNodeViewModel)tree.SelectedItem!).Name);
         Assert.True(window.FindControl<Button>("CreateGroupButton")!.IsEffectivelyEnabled);
+        Assert.True(window.FindControl<Button>("OkButton")!.IsEffectivelyEnabled);
         MainWindowTests.Snapshot(window, "42-group-picker");
+
+        // Щелчок по пустому месту дерева снимает выделение — новая группа создастся в корне.
+        var bottom = tree.TranslatePoint(new Avalonia.Point(tree.Bounds.Width / 2, tree.Bounds.Height - 10), window)!.Value;
+        window.MouseDown(bottom, Avalonia.Input.MouseButton.Left);
+        window.MouseUp(bottom, Avalonia.Input.MouseButton.Left);
+        MainWindowTests.Render();
+        Assert.Null(picker.SelectedGroup);
+        Assert.False(window.FindControl<Button>("OkButton")!.IsEffectivelyEnabled);
         window.Close();
+
+        var empty = new GroupPickerWindow(new GroupPickerViewModel([], "/", _ => Task.FromResult<string?>(null)));
+        empty.Show();
+        MainWindowTests.Render();
+        Assert.True(empty.FindControl<TextBlock>("NoGroupsText")!.IsVisible);
+        MainWindowTests.Snapshot(empty, "42-group-picker-empty");
+        empty.Close();
     }
 }

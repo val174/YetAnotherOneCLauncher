@@ -22,28 +22,28 @@ public sealed partial class GroupPickerViewModel : ObservableObject
     public GroupPickerViewModel(IEnumerable<string> folders, string? selected, Func<string, Task<string?>>? askName = null)
     {
         _askName = askName;
-        NoGroup = new GroupNodeViewModel(NoGroupText, FolderPaths.Root);
-        Groups = [NoGroup];
+        Groups = [];
         foreach (var path in folders)
         {
             Ensure(path);
         }
 
         var current = FolderPaths.Normalize(selected);
-        SelectedGroup = current == FolderPaths.Root ? NoGroup : Ensure(current);
+        SelectedGroup = current == FolderPaths.Root ? null : Ensure(current);
     }
 
-    /// <summary>Верхний уровень: «Не выбрана» и группы в корне списка.</summary>
+    /// <summary>Группы в корне списка.</summary>
     public ObservableCollection<GroupNodeViewModel> Groups { get; }
 
-    public GroupNodeViewModel NoGroup { get; }
-
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(SelectedPath))]
+    [NotifyPropertyChangedFor(nameof(SelectedPath), nameof(HasSelection))]
     public partial GroupNodeViewModel? SelectedGroup { get; set; }
 
-    /// <summary>Выбранная группа; ничего не выделено — корень.</summary>
+    /// <summary>Выделенная группа; ничего не выделено — корень (новая группа создаётся в корне).</summary>
     public string SelectedPath => SelectedGroup?.Path ?? FolderPaths.Root;
+
+    /// <summary>«Выбрать» доступна, только если группа выделена; очистить группу — кнопкой ✕ в форме базы.</summary>
+    public bool HasSelection => SelectedGroup is not null;
 
     public bool CanCreate => _askName is not null;
 
@@ -73,8 +73,8 @@ public sealed partial class GroupPickerViewModel : ObservableObject
         }
     }
 
-    /// <summary>Узел группы по пути: найденный или созданный вместе с родительскими; родители раскрываются.</summary>
-    private GroupNodeViewModel Ensure(string path)
+    /// <summary>Узел группы по пути: найденный или созданный вместе с родительскими; родители раскрываются. Корень — <c>null</c>.</summary>
+    private GroupNodeViewModel? Ensure(string path)
     {
         GroupNodeViewModel? parent = null;
         var current = FolderPaths.Root;
@@ -82,12 +82,12 @@ public sealed partial class GroupPickerViewModel : ObservableObject
         {
             current = FolderPaths.Combine(current, segment);
             var siblings = parent?.Children ?? Groups;
-            var node = siblings.FirstOrDefault(g => g != NoGroup && string.Equals(g.Path, current, StringComparison.OrdinalIgnoreCase));
+            var node = siblings.FirstOrDefault(g => string.Equals(g.Path, current, StringComparison.OrdinalIgnoreCase));
             if (node is null)
             {
                 node = new GroupNodeViewModel(segment, current);
-                // По имени; «Не выбрана» всегда первая.
-                var index = siblings.TakeWhile(g => g == NoGroup || StringComparer.CurrentCultureIgnoreCase.Compare(g.Name, segment) < 0).Count();
+                // По имени.
+                var index = siblings.TakeWhile(g => StringComparer.CurrentCultureIgnoreCase.Compare(g.Name, segment) < 0).Count();
                 siblings.Insert(index, node);
             }
 
@@ -95,7 +95,7 @@ public sealed partial class GroupPickerViewModel : ObservableObject
             parent = node;
         }
 
-        return parent ?? NoGroup;
+        return parent;
     }
 }
 
@@ -105,8 +105,6 @@ public sealed partial class GroupNodeViewModel(string name, string path) : Obser
     public string Name { get; } = name;
 
     public string Path { get; } = path;
-
-    public bool IsNoGroup => Path == FolderPaths.Root;
 
     public ObservableCollection<GroupNodeViewModel> Children { get; } = [];
 

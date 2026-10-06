@@ -1,5 +1,7 @@
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
@@ -25,14 +27,22 @@ public partial class GroupPickerWindow : Window
         // Двойной щелчок по группе — выбрать её.
         GroupsTree.DoubleTapped += (_, e) =>
         {
-            if (e.Source is Control { DataContext: GroupNodeViewModel } && picker.SelectedGroup is not null)
+            if (e.Source is Control { DataContext: GroupNodeViewModel } && picker.HasSelection)
             {
                 Close(true);
             }
         };
+        // Щелчок по пустому месту снимает выделение: новая группа тогда создаётся в корне списка.
+        GroupsTree.AddHandler(PointerPressedEvent, (_, e) =>
+        {
+            if (e.Source is not Visual source || source.FindAncestorOfType<TreeViewItem>(includeSelf: true) is null)
+            {
+                picker.SelectedGroup = null;
+            }
+        }, handledEventsToo: true);
         Opened += (_, _) =>
         {
-            if (GroupsTree.TreeContainerFromItem(picker.SelectedGroup!) is { } item)
+            if (picker.SelectedGroup is { } selected && GroupsTree.TreeContainerFromItem(selected) is { } item)
             {
                 item.Focus(NavigationMethod.Directional);
             }
