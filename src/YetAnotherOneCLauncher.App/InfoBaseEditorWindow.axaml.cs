@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Interactivity;
 using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
@@ -41,6 +42,8 @@ public partial class InfoBaseEditorWindow : Window
             FocusPage(viewModel);
         };
         CancelButton.Click += (_, _) => Close(false);
+        // Поле группы только для чтения: щелчок по нему — то же, что кнопка «…».
+        GroupBox.AddHandler(PointerReleasedEvent, (_, _) => viewModel.ChooseGroupCommand.Execute(null), RoutingStrategies.Tunnel, handledEventsToo: true);
         // Пока платформа создаёт базу, окно не закрывается: результат нужно дождаться.
         Closing += (_, e) => e.Cancel |= viewModel.IsBusy;
         Opened += (_, _) => FocusPage(viewModel);

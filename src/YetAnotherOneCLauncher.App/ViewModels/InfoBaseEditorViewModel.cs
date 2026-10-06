@@ -93,8 +93,35 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     [ObservableProperty]
     public partial string WebUrl { get; set; }
 
+    /// <summary>Группа (папка списка), например «/Рабочие/Отчёты»; «/» — без группы, в корне списка.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FolderText))]
     public partial string Folder { get; set; }
+
+    /// <summary>Группа для показа в форме: «Рабочие / Отчёты» или «Не выбрана».</summary>
+    public string FolderText =>
+        FolderPaths.Split(Folder) is { Length: > 0 } segments ? string.Join(" / ", segments) : GroupPickerViewModel.NoGroupText;
+
+    /// <summary>
+    /// Открывает окно выбора группы; <c>true</c> — группа выбрана. Задаёт главное окно;
+    /// <c>null</c> — кнопка выбора недоступна.
+    /// </summary>
+    public Func<GroupPickerViewModel, Task<bool>>? GroupChooser { get; init; }
+
+    /// <summary>Запрос имени новой группы в окне выбора (получает путь родительской); <c>null</c> — создавать нельзя.</summary>
+    public Func<string, Task<string?>>? GroupNamePrompt { get; init; }
+
+    public bool CanChooseGroup => GroupChooser is not null;
+
+    [RelayCommand(CanExecute = nameof(CanChooseGroup))]
+    private async Task ChooseGroupAsync()
+    {
+        var picker = new GroupPickerViewModel(Folders, Folder, GroupNamePrompt);
+        if (await GroupChooser!(picker))
+        {
+            Folder = picker.SelectedPath;
+        }
+    }
 
     [ObservableProperty]
     public partial int AppIndex { get; set; }

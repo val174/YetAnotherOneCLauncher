@@ -192,8 +192,14 @@
           </StackPanel>
 
           <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
-            <TextBlock Text="Папка в списке" Margin="0,0,0,6" />
-            <AutoCompleteBox Grid.Row="1" Text="{Binding Folder}" ItemsSource="{Binding Folders}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0" />
+            <TextBlock Text="Группа" Margin="0,0,0,6" />
+            <!-- Группа выбирается в отдельном окне: дерево групп и создание новой. -->
+            <DockPanel Grid.Row="1">
+              <Button x:Name="ChooseGroupButton" DockPanel.Dock="Right" Content="…" Command="{Binding ChooseGroupCommand}" Margin="6,0,0,0"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Выбрать группу или создать новую" />
+              <TextBox x:Name="GroupBox" Text="{Binding FolderText, Mode=OneWay}" IsReadOnly="True" Cursor="Hand"
+                       ToolTip.Tip="Группа в списке баз. Нажмите, чтобы выбрать другую или создать новую." />
+            </DockPanel>
             <TextBlock Grid.Column="2" Text="Клиент" Margin="0,0,0,6" />
             <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
 

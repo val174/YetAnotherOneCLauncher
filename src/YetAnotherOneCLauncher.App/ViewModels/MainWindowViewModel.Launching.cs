@@ -207,6 +207,9 @@ public sealed partial class MainWindowViewModel
         {
             PlatformVersions = PlatformVersionChoices(),
             LaunchParametersEditor = editor => EditListEntryParametersAsync(editor, existing),
+            GroupChooser = _dialogs.ChooseGroupAsync,
+            GroupNamePrompt = parent => _dialogs.PromptAsync(
+                "Новая группа", parent == FolderPaths.Root ? "Имя группы:" : $"Имя группы внутри «{parent.TrimStart('/')}»:", string.Empty),
             Creator = isNew && templates is not null ? CreateInfoBaseAsync : null,
             ExistingNames = isNew ? [.. _bases.Select(b => b.Name)] : [],
             CreationPlatforms = isNew ? CreationPlatforms() : [],

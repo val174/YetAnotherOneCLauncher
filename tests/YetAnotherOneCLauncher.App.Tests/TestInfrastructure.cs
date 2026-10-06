@@ -87,6 +87,11 @@ internal sealed class FakeDialogs : IDialogService
         // Новая база создаётся в самой форме (TryCreateAsync): тогда результат уже есть, повторная проверка не нужна.
         Task.FromResult(InfoBaseEditor(editor) && (editor.IsCreateMode ? editor.Result is not null : editor.TryAccept()));
 
+    /// <summary>Что «пользователь» сделает в окне выбора группы; <c>false</c> — отмена.</summary>
+    public Func<GroupPickerViewModel, Task<bool>> GroupChooser { get; set; } = _ => Task.FromResult(false);
+
+    public Task<bool> ChooseGroupAsync(GroupPickerViewModel picker) => GroupChooser(picker);
+
     /// <summary>Что «пользователь» сделает в форме параметров запуска: режим разового запуска или <c>null</c> для сохранения; <c>false</c> в ответе — отмена.</summary>
     public Func<LaunchParametersViewModel, (bool Accept, LaunchMode? Mode)> LaunchParameters { get; set; } = _ => (false, null);
 

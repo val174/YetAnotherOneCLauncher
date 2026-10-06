@@ -31,6 +31,9 @@ public interface IDialogService
     /// <summary>Форма базы; <c>true</c> — пользователь нажал «Сохранить» и данные прошли проверку.</summary>
     Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor);
 
+    /// <summary>Окно «Выбор группы» из формы базы; <c>true</c> — группа выбрана.</summary>
+    Task<bool> ChooseGroupAsync(GroupPickerViewModel picker);
+
     /// <summary>Параметры запуска; <c>true</c> — пользователь подтвердил, данные прошли проверку.</summary>
     Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters);
 
@@ -118,6 +121,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
         Owner is { } owner ? new InfoBaseEditorWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> ChooseGroupAsync(GroupPickerViewModel picker) =>
+        Owner is { } owner ? new GroupPickerWindow(picker).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public Task<bool> EditLaunchParametersAsync(LaunchParametersViewModel parameters) =>
         Owner is { } owner ? new LaunchParametersWindow(parameters).ShowDialog<bool>(owner) : Task.FromResult(false);
