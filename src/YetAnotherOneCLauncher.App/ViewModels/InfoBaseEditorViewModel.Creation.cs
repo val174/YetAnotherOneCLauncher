@@ -30,11 +30,11 @@ public sealed partial class InfoBaseEditorViewModel
         }
     }
 
-    /// <summary>Названия баз, уже есть в списках: новую базу с таким же названием не создаём.</summary>
+    /// <summary>Названия других баз во всех списках: базу с таким же названием не добавляем и в него не переименовываем.</summary>
     public IReadOnlyCollection<string> ExistingNames
     {
         get;
-        init => field = new HashSet<string>(value.Select(n => n.Trim()), StringComparer.CurrentCultureIgnoreCase);
+        init => field = new HashSet<string>(value.Select(n => n.Trim()), PersonalListEditor.NameComparer);
     } = [];
 
     /// <summary>Можно ли создать новую базу (новая запись и задан <see cref="Creator"/>).</summary>
@@ -288,10 +288,6 @@ public sealed partial class InfoBaseEditorViewModel
         var draft = Result!;
         var creation = BuildCreation();
         var errors = creation.Validate().ToList();
-        if (ExistingNames.Contains(draft.Name))
-        {
-            errors.Insert(0, $"В списке уже есть база «{draft.Name}». Укажите другое название.");
-        }
         if (SelectedCreationPlatform is null)
         {
             errors.Add("Не найдена платформа 1С с конфигуратором (1cv8) — создать базу нечем.");

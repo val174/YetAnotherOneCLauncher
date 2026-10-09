@@ -133,7 +133,7 @@ public sealed partial class MainWindowViewModel
         }
 
         await EditListAsync(
-            document => PersonalListEditor.ReplaceText(document, target, text),
+            document => PersonalListEditor.ReplaceText(document, target, text, OtherBaseNames(SelectedInfoBase)),
             "Запись сохранена.",
             CurrentSelectionKey);
     }
@@ -245,11 +245,21 @@ public sealed partial class MainWindowViewModel
         }
 
         string? key = null;
+        var copyName = string.Empty;
         await EditListAsync(
-            document => key = SelectionKeyOf(PersonalListEditor.CopyBase(document, source.InfoBase)),
-            $"Копия «{source.Name}» добавлена в личный список.",
+            document =>
+            {
+                // Название копии — свободное во всех списках: «Имя (копия)», «Имя (копия 2)»…
+                var copy = PersonalListEditor.CopyBase(document, source.InfoBase, OtherBaseNames(null));
+                copyName = copy.Name;
+                key = SelectionKeyOf(copy);
+            },
+            () => $"Копия «{source.Name}» добавлена в личный список: «{copyName}».",
             () => key);
     }
+
+    /// <summary>Названия баз во всех списках, кроме <paramref name="except"/>: новое название с ними совпадать не должно.</summary>
+    private List<string> OtherBaseNames(InfoBaseViewModel? except) => [.. _bases.Where(b => b != except).Select(b => b.Name)];
 
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task ImportAsync()
@@ -273,8 +283,9 @@ public sealed partial class MainWindowViewModel
 
         ImportResult? result = null;
         await EditListAsync(
-            document => result = PersonalListEditor.Import(document, source),
-            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}.",
+            document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
+            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
+                  + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
             CurrentSelectionKey);
     }
 
