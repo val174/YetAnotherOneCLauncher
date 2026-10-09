@@ -163,6 +163,23 @@ public sealed partial class InfoBaseEditorViewModel
 
     public IReadOnlyList<string> CreationKindNames { get; } = ["На данном компьютере или в локальной сети", "На сервере 1С:Предприятия"];
 
+    /// <summary>
+    /// Расположение новой базы — у списка «Создать» свой индекс: в нём нет пункта «На веб-сервере», и общий
+    /// <see cref="KindIndex"/> он сбрасывал бы в -1 (скрытый список тоже пишет в привязку), из-за чего у
+    /// существующей базы на веб-сервере пропадало поле адреса.
+    /// </summary>
+    public int CreationKindIndex
+    {
+        get => KindIndex < CreationKindNames.Count ? KindIndex : -1;
+        set
+        {
+            if (value >= 0 && value < CreationKindNames.Count)
+            {
+                KindIndex = value;
+            }
+        }
+    }
+
     public IReadOnlyList<string> SecureConnectionNames { get; } = ["Выключено", "Только соединение", "Постоянно"];
 
     public IReadOnlyList<string> DbmsNames { get; } = ["MS SQL Server", "PostgreSQL", "IBM DB2", "Oracle Database"];
@@ -217,6 +234,7 @@ public sealed partial class InfoBaseEditorViewModel
 
     partial void OnKindIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(CreationKindIndex));
         OnPropertyChanged(nameof(ShowCreateServerFields));
         OnPropertyChanged(nameof(ShowExistingServerFields));
     }

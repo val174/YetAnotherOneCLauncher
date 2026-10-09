@@ -133,7 +133,7 @@
           <TextBlock Text="Расположение" Margin="0,4,0,0" />
           <ComboBox x:Name="KindBox" ItemsSource="{Binding KindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
                     IsVisible="{Binding ShowExistingFields}" />
-          <ComboBox x:Name="CreationKindBox" ItemsSource="{Binding CreationKindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
+          <ComboBox x:Name="CreationKindBox" ItemsSource="{Binding CreationKindNames}" SelectedIndex="{Binding CreationKindIndex}" HorizontalAlignment="Stretch"
                     IsVisible="{Binding IsCreateMode}" />
 
           <StackPanel Spacing="6" IsVisible="{Binding IsFile}">
@@ -189,7 +189,7 @@
 
           <StackPanel Spacing="6" IsVisible="{Binding IsWeb}">
             <TextBlock Text="Адрес базы на веб-сервере" />
-            <TextBox Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
+            <TextBox x:Name="WebUrlBox" Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
           </StackPanel>
 
           <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
