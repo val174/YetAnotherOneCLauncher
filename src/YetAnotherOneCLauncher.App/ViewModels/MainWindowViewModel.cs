@@ -147,6 +147,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
         IsSortedByName = ui.SortMode != CatalogSortMode.Custom;
         ThemeIndex = (int)ui.Theme;
+        DarkShadeIndex = (int)ui.DarkShade;
         AfterLaunchIndex = (int)ui.AfterLaunch;
         SingleInstance = ui.SingleInstance;
         MinimizeToTray = ui.MinimizeToTray;
@@ -451,6 +452,23 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _ => "Тема: как в системе. Нажмите — светлая",
     };
 
+    /// <summary>Оттенок тёмной темы («Внешний вид»): в порядке <see cref="DarkShade"/>.</summary>
+    [ObservableProperty]
+    public partial int DarkShadeIndex { get; set; }
+
+    partial void OnDarkShadeIndexChanged(int value)
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        var shade = Enum.IsDefined((DarkShade)value) ? (DarkShade)value : DarkShade.Graphite;
+        _settings.Settings.Ui.DarkShade = shade;
+        _theme.ApplyDarkShade(shade);
+        _settings.RequestSave();
+    }
+
     /// <summary>Кнопка темы: как в системе → светлая → тёмная → как в системе.</summary>
     [RelayCommand]
     private void CycleTheme() => ThemeIndex = (ThemeIndex + 1) % ThemeNames.Count;
@@ -517,6 +535,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         _theme.Apply((ThemeMode)ThemeIndex);
+        _theme.ApplyDarkShade((DarkShade)DarkShadeIndex);
         await ReloadAsync();
 
         if (_watcher is not null && _paths is not null && !_watching)

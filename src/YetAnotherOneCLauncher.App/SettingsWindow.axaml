@@ -3,6 +3,7 @@
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         xmlns:app="using:YetAnotherOneCLauncher.App"
+        xmlns:svc="using:YetAnotherOneCLauncher.App.Services"
         x:Class="YetAnotherOneCLauncher.App.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Title}"
@@ -97,11 +98,66 @@
       <TabItem x:Name="AppearanceTab" Header="{Binding AppearanceHeader}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,12,8">
-          <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
-          <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
-          <TextBlock Classes="fieldLabel" Text="Стиль значков" />
-          <ComboBox x:Name="IconStyleBox" ItemsSource="{Binding IconStyleNames}" SelectedIndex="{Binding IconStyleIndex}"
-                    HorizontalAlignment="Stretch" />
+          <!-- Тема, оттенок тёмной темы и стиль значков — слева; справа — как выглядит выбранный оттенок. -->
+          <Grid ColumnDefinitions="*,16,250">
+            <StackPanel>
+              <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
+              <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
+              <TextBlock Classes="fieldLabel" Text="Оттенок тёмной темы" />
+              <ComboBox x:Name="DarkShadeBox" ItemsSource="{Binding DarkShadeChoices}" SelectedIndex="{Binding DarkShadeIndex}" HorizontalAlignment="Stretch"
+                        ToolTip.Tip="Фон окон и полей в тёмной теме. Справа — как это выглядит; применяется сразу после «Сохранить».">
+                <ComboBox.ItemTemplate>
+                  <DataTemplate x:DataType="svc:DarkShadePalette">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                      <Border Width="16" Height="16" CornerRadius="3" Background="{Binding RegionBrush}" BorderBrush="#80808080" BorderThickness="1"
+                              VerticalAlignment="Center" />
+                      <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+                    </StackPanel>
+                  </DataTemplate>
+                </ComboBox.ItemTemplate>
+              </ComboBox>
+              <TextBlock Classes="fieldLabel" Text="Стиль значков" />
+              <ComboBox x:Name="IconStyleBox" ItemsSource="{Binding IconStyleNames}" SelectedIndex="{Binding IconStyleIndex}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <!-- Превью: окно лаунчера в выбранном оттенке тёмной темы (всегда тёмное — независимо от текущей темы). -->
+            <Border x:Name="DarkShadePreview" Grid.Column="2" Margin="0,8,0,0" CornerRadius="6" BorderThickness="1" ClipToBounds="True"
+                    Background="{Binding DarkShadePreview.RegionBrush}" BorderBrush="{Binding DarkShadePreview.BorderBrush}" TextElement.Foreground="#EDEDED"
+                    TextElement.FontSize="11">
+              <StackPanel>
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="8,6">
+                  <Border Width="44" Height="18" CornerRadius="9" Background="{Binding DarkShadePreview.ButtonBrush}" />
+                  <Border Width="92" Height="18" CornerRadius="4" BorderThickness="1" BorderBrush="{Binding DarkShadePreview.BorderBrush}">
+                    <TextBlock Text="Поиск" Opacity="0.5" Margin="6,0" VerticalAlignment="Center" />
+                  </Border>
+                </StackPanel>
+                <Grid ColumnDefinitions="*,Auto" Background="{Binding DarkShadePreview.HeaderBrush}">
+                  <TextBlock Text="Наименование" Opacity="0.65" Margin="8,3" />
+                  <TextBlock Grid.Column="1" Text="Платформа" Opacity="0.65" Margin="8,3" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto">
+                  <TextBlock Text="Бухгалтерия" Margin="8,4" />
+                  <TextBlock Grid.Column="1" Text="8.3.27" Margin="8,4" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" Background="{Binding DarkShadePreview.StripeBrush}">
+                  <TextBlock Text="Зарплата и кадры" Margin="8,4" />
+                  <TextBlock Grid.Column="1" Text="8.5.1" Margin="8,4" />
+                </Grid>
+                <Grid ColumnDefinitions="*,Auto" Background="#1F5A99">
+                  <TextBlock Text="Розница" Margin="8,4" />
+                  <TextBlock Grid.Column="1" Text="8.3.27" Margin="8,4" />
+                </Grid>
+                <StackPanel Orientation="Horizontal" Spacing="6" Margin="8,8,8,8">
+                  <Border CornerRadius="4" Background="#0078D4" Padding="8,3">
+                    <TextBlock Text="▶ 1С: Предприятие" Foreground="White" />
+                  </Border>
+                  <Border CornerRadius="4" Background="{Binding DarkShadePreview.ButtonBrush}" Padding="8,3">
+                    <TextBlock Text="Конфигуратор" />
+                  </Border>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </Grid>
           <CheckBox x:Name="ShowDetailsBox" IsChecked="{Binding ShowDetails}" Content="Показывать свойства информационной базы"
                     Margin="0,12,0,0" />
           <CheckBox x:Name="ShowSideLaunchButtonsBox" IsChecked="{Binding ShowSideLaunchButtons}"

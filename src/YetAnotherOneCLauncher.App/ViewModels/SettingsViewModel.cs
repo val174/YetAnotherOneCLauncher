@@ -33,6 +33,9 @@ public sealed record SettingsValues
     // Внешний вид.
     public int ThemeIndex { get; init; }
 
+    /// <summary>Оттенок тёмной темы в порядке <see cref="DarkShade"/>.</summary>
+    public int DarkShadeIndex { get; init; } = (int)DarkShade.Graphite;
+
     public int IconStyleIndex { get; init; }
 
     public bool ShowDetails { get; init; }
@@ -117,6 +120,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateModeIndex = original.UpdateModeIndex;
         ShowEdtProjects = original.ShowEdtProjects;
         ThemeIndex = original.ThemeIndex;
+        DarkShadeIndex = original.DarkShadeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
         ShowRowLaunchButtons = original.ShowRowLaunchButtons;
@@ -198,6 +202,17 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial int ThemeIndex { get; set; }
 
+    /// <summary>Оттенок тёмной темы; превью — <see cref="DarkShadePreview"/>.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DarkShadePreview))]
+    public partial int DarkShadeIndex { get; set; }
+
+    /// <summary>Оттенки тёмной темы для выбора — с цветами для образца в списке.</summary>
+    public IReadOnlyList<DarkShadePalette> DarkShadeChoices { get; } = DarkShades.All;
+
+    /// <summary>Выбранный оттенок — для превью окна в настройках.</summary>
+    public DarkShadePalette DarkShadePreview => DarkShades.Of((DarkShade)DarkShadeIndex);
+
     [ObservableProperty]
     public partial int IconStyleIndex { get; set; }
 
@@ -255,6 +270,7 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
+        || DarkShadeIndex != _original.DarkShadeIndex
         || IconStyleIndex != _original.IconStyleIndex
         || ShowDetails != _original.ShowDetails
         || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
@@ -298,6 +314,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UpdateModeIndex = UpdateModeIndex,
         ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
+        DarkShadeIndex = DarkShadeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,

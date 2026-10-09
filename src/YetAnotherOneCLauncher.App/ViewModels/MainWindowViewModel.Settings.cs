@@ -22,6 +22,7 @@ public sealed partial class MainWindowViewModel
         UpdateModeIndex = UpdateModeIndex,
         ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
+        DarkShadeIndex = DarkShadeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
@@ -65,6 +66,7 @@ public sealed partial class MainWindowViewModel
         UpdateModeIndex = values.UpdateModeIndex;
         ShowEdtProjects = values.ShowEdtProjects;
         ThemeIndex = values.ThemeIndex;
+        DarkShadeIndex = values.DarkShadeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;
         ShowRowLaunchButtons = values.ShowRowLaunchButtons;

@@ -93,6 +93,15 @@ public sealed record FolderLaunchProfile
     public string? Parameters { get; init; }
 }
 
+/// <summary>Оттенок тёмной темы: фон окон и полей. «Чёрный» — стандартная тёмная тема Fluent (как в прежних версиях).</summary>
+public enum DarkShade
+{
+    Black,
+    Graphite,
+    Neutral,
+    Slate,
+}
+
 public enum ThemeMode
 {
     System,
@@ -183,6 +192,9 @@ public sealed record WindowPlacement
 public sealed class UiSettings
 {
     public ThemeMode Theme { get; set; } = ThemeMode.System;
+
+    /// <summary>Оттенок тёмной темы; по умолчанию — «Графит» (тёмно-серый вместо чёрного).</summary>
+    public DarkShade DarkShade { get; set; } = DarkShade.Graphite;
 
     public IconStyle IconStyle { get; set; } = IconStyle.Flat;
 

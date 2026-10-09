@@ -85,6 +85,11 @@ public sealed class SettingsStore
             settings.Ui.SortMode = CatalogSortMode.Name;
         }
 
+        if (!Enum.IsDefined(settings.Ui.DarkShade))
+        {
+            settings.Ui.DarkShade = DarkShade.Graphite;
+        }
+
         if (!Enum.IsDefined(settings.Ui.RowStripes))
         {
             settings.Ui.RowStripes = RowStripes.Moderate;

@@ -171,6 +171,10 @@ internal sealed class FakeShell : IClipboardService, IWindowService, IThemeServi
     public void Close() => CloseCount++;
 
     public void Apply(ThemeMode mode) => AppliedTheme = mode;
+
+    public DarkShade? AppliedDarkShade { get; private set; }
+
+    public void ApplyDarkShade(DarkShade shade) => AppliedDarkShade = shade;
 }
 
 internal sealed class FakePaths : IPlatformPaths
