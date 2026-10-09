@@ -25,6 +25,9 @@ public static class PersonalListEditor
 
     private const string CopySuffix = " (копия)";
 
+    /// <summary>Суффикс названия дубликата базы: «Имя_копия».</summary>
+    public const string DuplicateSuffix = "_копия";
+
     /// <summary>Сравнение названий баз: две базы с одним названием в списках не допускаются (регистр и пробелы по краям не важны).</summary>
     public static readonly StringComparer NameComparer = StringComparer.CurrentCultureIgnoreCase;
 
@@ -43,6 +46,68 @@ public static class PersonalListEditor
         }
 
         return candidate;
+    }
+
+    /// <summary>Свободное название дубликата: «Имя_копия», «Имя_копия_2»…</summary>
+    public static string UniqueDuplicateName(string name, IEnumerable<string> takenNames)
+    {
+        var taken = takenNames.Select(n => n.Trim()).ToHashSet(NameComparer);
+        var candidate = name.Trim() + DuplicateSuffix;
+        for (var i = 2; taken.Contains(candidate); i++)
+        {
+            candidate = $"{name.Trim()}{DuplicateSuffix}_{i.ToString(CultureInfo.InvariantCulture)}";
+        }
+
+        return candidate;
+    }
+
+    /// <summary>
+    /// Дубликат базы — новая строка личного списка с теми же настройками, новым ID и названием «Имя_копия».
+    /// Источник может быть и из общего списка.
+    /// </summary>
+    /// <param name="targetFolder">Папка дубликата.</param>
+    /// <param name="before">Поставить перед этой записью (перетаскивание на базу).</param>
+    /// <param name="afterSource">Поставить сразу после источника, если он в той же папке личного списка («Дублировать» в меню).</param>
+    /// <param name="takenNames">Названия баз в других списках; названия личного списка учитываются сами.</param>
+    /// <param name="sortByNameFirst">Сначала записать порядок по наименованию — см. <see cref="Move"/>.</param>
+    public static V8iSection DuplicateBase(
+        V8iDocument document,
+        InfoBase source,
+        string targetFolder,
+        EntryRef? before = null,
+        bool afterSource = false,
+        IEnumerable<string>? takenNames = null,
+        bool sortByNameFirst = false)
+    {
+        ArgumentNullException.ThrowIfNull(document);
+        ArgumentNullException.ThrowIfNull(source);
+        var destination = FolderPaths.Normalize(targetFolder);
+        if (sortByNameFirst)
+        {
+            SortByName(document);
+        }
+
+        var copy = Clone(source.Section);
+        copy.Name = UniqueDuplicateName(source.Name, BaseNames(document).Concat(takenNames ?? []));
+        copy.Set(V8iKeys.Id, NewId());
+        copy.Set(V8iKeys.OrderInList, Format(NextOrderInList(document)));
+        copy.Set(V8iKeys.Folder, destination);
+        copy.Set(V8iKeys.OrderInTree, Format(NextOrderInTree(document, destination)));
+        document.Sections.Add(copy);
+
+        // Место в папке: перед базой, на которую бросили, или сразу за источником; иначе — в конце.
+        var siblings = SiblingsInOrder(document, destination).Where(s => !ReferenceEquals(s, copy)).ToList();
+        var sourceRef = source.IsReadOnly ? null : EntryRef.Of(source);
+        var index = before is not null ? siblings.FindIndex(s => Matches(s, before))
+            : afterSource && sourceRef is not null && siblings.FindIndex(s => Matches(s, sourceRef)) is var at and >= 0 ? at + 1
+            : -1;
+        if (index >= 0)
+        {
+            siblings.Insert(index, copy);
+            Renumber(siblings);
+        }
+
+        return copy;
     }
 
     public static V8iSection AddBase(V8iDocument document, InfoBaseDraft draft)

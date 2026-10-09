@@ -296,7 +296,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode),
         nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
-        nameof(AddBaseCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
+        nameof(AddBaseCommand), nameof(DuplicateCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
         nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
     public partial BaseListFilter ListFilter { get; set; }
 
@@ -373,6 +373,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(MoveDownCommand),
         nameof(SortFolderByNameCommand),
         nameof(CopyToPersonalCommand),
+        nameof(DuplicateCommand),
         nameof(ExportCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 

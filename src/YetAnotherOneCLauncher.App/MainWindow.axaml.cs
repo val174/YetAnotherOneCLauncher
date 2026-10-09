@@ -390,15 +390,16 @@ public partial class MainWindow : Window
         _dragStart = null;
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(TreeNodeFormat, node));
-        await DragDrop.DoDragDropAsync(start, data, DragDropEffects.Move);
+        await DragDrop.DoDragDropAsync(start, data, DragDropEffects.Move | DragDropEffects.Copy);
     }
 
     private void OnTreeDragOver(object? sender, DragEventArgs e)
     {
         var source = e.DataTransfer.TryGetValue(TreeNodeFormat);
         var target = NodeFrom(e.Source);
-        e.DragEffects = source is not null && target is not null && !ReferenceEquals(source, target) && CanDropOn(source, target)
-            ? DragDropEffects.Move
+        e.DragEffects = source is null || target is null || ReferenceEquals(source, target) ? DragDropEffects.None
+            : IsDuplicateDrag(e, source) ? (CanDuplicateOn(target) ? DragDropEffects.Copy : DragDropEffects.None)
+            : CanDropOn(source, target) ? DragDropEffects.Move
             : DragDropEffects.None;
         e.Handled = true;
     }
@@ -413,8 +414,23 @@ public partial class MainWindow : Window
         }
 
         e.Handled = true;
-        await vm.MoveNodeAsync(source, target);
+        if (IsDuplicateDrag(e, source))
+        {
+            await vm.DuplicateNodeAsync(source, target);
+        }
+        else
+        {
+            await vm.MoveNodeAsync(source, target);
+        }
     }
+
+    /// <summary>База, перетаскиваемая с зажатым Ctrl, дублируется, а не перемещается.</summary>
+    private static bool IsDuplicateDrag(DragEventArgs e, TreeNodeViewModel source) =>
+        source is BaseNodeViewModel && e.KeyModifiers.HasFlag(KeyModifiers.Control);
+
+    /// <summary>Дубликат ложится в личный список: в обычную папку или рядом с базой в ней (базу из общего списка тоже можно дублировать).</summary>
+    private static bool CanDuplicateOn(TreeNodeViewModel target) =>
+        target is FolderNodeViewModel { Kind: FolderKind.Regular } or BaseNodeViewModel;
 
     private static TreeNodeViewModel? NodeFrom(object? source) =>
         (source as Visual)?.FindAncestorOfType<TreeViewItem>(includeSelf: true)?.DataContext as TreeNodeViewModel;

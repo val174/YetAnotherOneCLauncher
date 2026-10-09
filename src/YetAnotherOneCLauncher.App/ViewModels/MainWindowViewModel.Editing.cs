@@ -409,6 +409,66 @@ public sealed partial class MainWindowViewModel
         }
     }
 
+    /// <summary>«Дублировать»: строка-копия выделенной базы сразу за ней, название «Имя_копия».</summary>
+    [RelayCommand(CanExecute = nameof(CanDuplicate))]
+    private async Task DuplicateAsync()
+    {
+        if (SelectedInfoBase is { } source)
+        {
+            await DuplicateBaseAsync(source, source.InfoBase.FolderPath, before: null, afterSource: true);
+        }
+    }
+
+    private bool CanDuplicate() => CanEditList && SelectedInfoBase is not null;
+
+    /// <summary>
+    /// Перетаскивание базы с зажатым Ctrl: дубликат — в папку, на которую бросили, или перед базой, на которую бросили.
+    /// </summary>
+    public async Task DuplicateNodeAsync(TreeNodeViewModel source, TreeNodeViewModel target)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+        if (source is not BaseNodeViewModel { Base: var infoBase } || !CanEditList)
+        {
+            return;
+        }
+
+        (string Folder, EntryRef? Before)? destination = target switch
+        {
+            FolderNodeViewModel { Kind: FolderKind.Regular } folder => (folder.Path, null),
+            BaseNodeViewModel b when IsInRegularFolder(b) => (b.Base.InfoBase.FolderPath, b.Base.InfoBase.IsReadOnly ? null : EntryRef.Of(b.Base.InfoBase)),
+            _ => null,
+        };
+        if (destination is { } place)
+        {
+            await DuplicateBaseAsync(infoBase, place.Folder, place.Before, afterSource: false);
+        }
+    }
+
+    /// <summary>Спрашивает «Добавить новую строку в список?» и добавляет дубликат базы в личный список.</summary>
+    private async Task DuplicateBaseAsync(InfoBaseViewModel source, string folder, EntryRef? before, bool afterSource)
+    {
+        if (!await _dialogs.ConfirmAsync($"Дублирование «{source.Name}»", "Добавить новую строку в список?", "Добавить"))
+        {
+            return;
+        }
+
+        string? key = null;
+        var copyName = string.Empty;
+        var byName = IsSortedByName;
+        var added = await EditListAsync(
+            document =>
+            {
+                var copy = PersonalListEditor.DuplicateBase(
+                    document, source.InfoBase, folder, before, afterSource, OtherBaseNames(null), sortByNameFirst: byName && (before is not null || afterSource));
+                copyName = copy.Name;
+                key = SelectionKeyOf(copy);
+            },
+            () => $"Добавлена копия «{source.Name}»: «{copyName}».",
+            () => key);
+        KeepCustomOrderAfterMove(added && byName && (before is not null || afterSource));
+    }
+
     private bool HasEditableSelection() =>
         _store is not null && (SelectedInfoBase is not null || SelectedFolder is { IsEditable: true });
 
