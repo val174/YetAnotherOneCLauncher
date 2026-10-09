@@ -47,7 +47,8 @@ public static class AdminToolIcon
     /// <summary>Имя файла своего значка; <c>null</c> — значок не свой. Только имя: путь в каталог не выпускается.</summary>
     public static string? FileName(string? icon) =>
         icon is not null && icon.StartsWith(FilePrefix, StringComparison.Ordinal)
-        && icon[FilePrefix.Length..] is { Length: > 0 } name && Path.GetFileName(name) == name
+        // Разделители обоих видов: в Linux «\» — обычный символ имени, но путь из настроек Windows всё равно не имя файла.
+        && icon[FilePrefix.Length..] is { Length: > 0 } name && name.IndexOfAny(['/', '\\']) < 0 && name is not ("." or "..")
             ? name
             : null;
 }
