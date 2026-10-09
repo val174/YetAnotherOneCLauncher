@@ -85,6 +85,16 @@ public sealed class SettingsStore
             settings.Ui.SortMode = CatalogSortMode.Name;
         }
 
+        if (!Enum.IsDefined(settings.Ui.LightShade))
+        {
+            settings.Ui.LightShade = LightShade.White;
+        }
+
+        if (!Enum.IsDefined(settings.Ui.DarkShade))
+        {
+            settings.Ui.DarkShade = DarkShade.Graphite;
+        }
+
         if (!Enum.IsDefined(settings.Ui.RowStripes))
         {
             settings.Ui.RowStripes = RowStripes.Moderate;
@@ -94,6 +104,8 @@ public sealed class SettingsStore
         settings.Cache ??= new CacheSettings();
         settings.Network ??= new NetworkSettings();
         settings.Updates ??= new UpdateSettings();
+        settings.Edt ??= new EdtSettings();
+        settings.Edt.ProjectInstallations ??= [];
         if (!Enum.IsDefined(settings.Updates.Mode))
         {
             settings.Updates.Mode = UpdateMode.CheckOnly;

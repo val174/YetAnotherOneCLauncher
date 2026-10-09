@@ -36,6 +36,9 @@ public enum BaseListFilter
     All,
     Recent,
     Favorites,
+
+    /// <summary>Только проекты 1C:EDT (из EDT Start).</summary>
+    EdtProjects,
 }
 
 /// <summary>
@@ -110,10 +113,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IClusterConsole? clusterConsole = null,
         StartupCatalog? startupCatalog = null,
         IAdminToolIconSource? toolIcons = null,
-        IUpdateService? updates = null)
+        IUpdateService? updates = null,
+        IEdtProjects? edt = null)
     {
         _toolIcons = toolIcons;
         _updates = updates;
+        _edt = edt;
         _files = files;
         _store = store;
         _watcher = watcher;
@@ -142,6 +147,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
         IsSortedByName = ui.SortMode != CatalogSortMode.Custom;
         ThemeIndex = (int)ui.Theme;
+        DarkShadeIndex = (int)ui.DarkShade;
+        LightShadeIndex = (int)ui.LightShade;
         AfterLaunchIndex = (int)ui.AfterLaunch;
         SingleInstance = ui.SingleInstance;
         MinimizeToTray = ui.MinimizeToTray;
@@ -167,7 +174,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<TreeNodeViewModel> TreeItems { get; } = [];
 
-    public ObservableCollection<BaseListItemViewModel> ListItems { get; } = [];
+    public ObservableCollection<CatalogListItemViewModel> ListItems { get; } = [];
 
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
@@ -295,7 +302,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(
-        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode),
+        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode), nameof(IsEdtProjectsMode), nameof(ListFilterPosition),
         nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
         nameof(AddBaseCommand), nameof(DuplicateCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
@@ -319,6 +326,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => ListFilter == BaseListFilter.Favorites;
         set => SelectFilter(BaseListFilter.Favorites, value);
+    }
+
+    public bool IsEdtProjectsMode
+    {
+        get => ListFilter == BaseListFilter.EdtProjects;
+        set => SelectFilter(BaseListFilter.EdtProjects, value);
     }
 
     private void SelectFilter(BaseListFilter filter, bool selected)
@@ -350,10 +363,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial TreeNodeViewModel? SelectedTreeItem { get; set; }
 
     [ObservableProperty]
-    public partial BaseListItemViewModel? SelectedListItem { get; set; }
+    public partial CatalogListItemViewModel? SelectedListItem { get; set; }
 
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(HasSelection))]
+    [NotifyPropertyChangedFor(nameof(HasSelection), nameof(ShowNoSelectionHint), nameof(SelectedBaseEdtProject), nameof(HasSelectedBaseEdtProject),
+        nameof(SelectedBaseEdtButtonText), nameof(SelectedBaseEdtProjectText), nameof(ShowOpenInEdtMenu))]
     [NotifyCanExecuteChangedFor(
         nameof(LaunchEnterpriseCommand),
         nameof(LaunchDesignerCommand),
@@ -376,6 +390,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(SortFolderByNameCommand),
         nameof(CopyToPersonalCommand),
         nameof(DuplicateCommand),
+        nameof(OpenInEdtCommand),
         nameof(ExportCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 
@@ -437,6 +452,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ThemeMode.Dark => "Тема: тёмная. Нажмите — как в системе",
         _ => "Тема: как в системе. Нажмите — светлая",
     };
+
+    /// <summary>Оттенок светлой темы («Внешний вид»): в порядке <see cref="LightShade"/>.</summary>
+    [ObservableProperty]
+    public partial int LightShadeIndex { get; set; }
+
+    /// <summary>Оттенок тёмной темы («Внешний вид»): в порядке <see cref="DarkShade"/>.</summary>
+    [ObservableProperty]
+    public partial int DarkShadeIndex { get; set; }
+
+    partial void OnLightShadeIndexChanged(int value) => OnShadeChanged();
+
+    partial void OnDarkShadeIndexChanged(int value) => OnShadeChanged();
+
+    private void OnShadeChanged()
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        var light = Enum.IsDefined((LightShade)LightShadeIndex) ? (LightShade)LightShadeIndex : LightShade.White;
+        var dark = Enum.IsDefined((DarkShade)DarkShadeIndex) ? (DarkShade)DarkShadeIndex : DarkShade.Graphite;
+        _settings.Settings.Ui.LightShade = light;
+        _settings.Settings.Ui.DarkShade = dark;
+        _theme.ApplyShades(light, dark);
+        _settings.RequestSave();
+    }
+
 
     /// <summary>Кнопка темы: как в системе → светлая → тёмная → как в системе.</summary>
     [RelayCommand]
@@ -504,6 +547,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         _theme.Apply((ThemeMode)ThemeIndex);
+        _theme.ApplyShades((LightShade)LightShadeIndex, (DarkShade)DarkShadeIndex);
         await ReloadAsync();
 
         if (_watcher is not null && _paths is not null && !_watching)
@@ -556,8 +600,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Показать загруженный каталог и платформы. Отдельно от загрузки — для тестов.</summary>
     internal void Apply(InfoBaseCatalog catalog, PlatformScanResult platforms)
     {
+        LoadEdtCatalog();
         ApplyPlatforms(platforms, catalog.StarterConfig.DefaultVersion);
         ShowCatalog(catalog, CurrentSelectionKey());
+        UpdateBaseEdtLinks();
         StartCacheScan();
         StartAvailabilityCheck();
         _ = OnCatalogLoadedAsync();
@@ -757,6 +803,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             BaseListFilter.Recent => "Показаны недавние базы.",
             BaseListFilter.Favorites => "Показаны избранные базы.",
+            BaseListFilter.EdtProjects => "Показаны проекты 1C:EDT.",
             _ => string.Empty,
         };
     }
@@ -819,14 +866,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             SelectedInfoBase = (value as BaseNodeViewModel)?.Base;
             SelectedFolder = value as FolderNodeViewModel is { Kind: FolderKind.Regular } folder ? folder : null;
+            SelectedEdtProject = value as EdtProjectNodeViewModel;
         }
     }
 
-    partial void OnSelectedListItemChanged(BaseListItemViewModel? value)
+    partial void OnSelectedListItemChanged(CatalogListItemViewModel? value)
     {
         if (ShowList)
         {
-            SelectedInfoBase = value?.Base;
+            SelectedInfoBase = (value as BaseListItemViewModel)?.Base;
+            SelectedEdtProject = (value as EdtListItemViewModel)?.Project;
         }
     }
 
@@ -1056,6 +1105,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             TreeItems.Add(SpecialFolder("Избранное", FavoritesFolderKey, FolderKind.Favorites, favorites, collapsed));
         }
 
+        // Проекты 1C:EDT — под «Избранным», над папками списка.
+        if (BuildEdtGroup(collapsed) is { } edtGroup)
+        {
+            TreeItems.Add(edtGroup);
+        }
+
         // Недавние — не папкой в дереве, а отдельным режимом (IsRecentMode).
         foreach (var item in _catalog.BuildTree(IsSortedByName ? CatalogSortMode.Name : CatalogSortMode.Custom).Items)
         {
@@ -1154,6 +1209,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Режим «Проекты 1C:EDT» — только проекты (с поиском по ним).
+        if (IsEdtProjectsMode)
+        {
+            AddEdtListItems();
+            ShowNothingFound = ListItems.Count == 0;
+            return;
+        }
+
         var byInfoBase = _bases.ToDictionary(b => b.InfoBase);
         // Недавние: последние запуски, свежие сверху; избранное — по наименованию; поиск — только среди них.
         IReadOnlyList<InfoBase>? subset = ListFilter switch
@@ -1183,6 +1246,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
         }
 
+        // Поиск во «Всех базах» находит и проекты 1C:EDT — после баз.
+        if (HasSearch && IsAllBasesMode)
+        {
+            AddEdtListItems();
+        }
+
         ShowNothingFound = ListItems.Count == 0 && (HasSearch || !IsAllBasesMode);
     }
 
@@ -1193,6 +1262,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             BaseListFilter.Recent => "Недавних запусков пока нет",
             BaseListFilter.Favorites => "Избранных баз пока нет: добавьте базу в избранное из контекстного меню или звездой",
+            BaseListFilter.EdtProjects => "Проектов 1C:EDT нет: их создают и добавляют в 1C:EDT Start",
             _ => "Ничего не найдено",
         };
 
@@ -1201,7 +1271,9 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     /// <summary>Ключ выделенной записи: <see cref="InfoBase.IdentityKey"/> базы или «folder:путь» папки.</summary>
     private string? CurrentSelectionKey() =>
-        SelectedInfoBase?.InfoBase.IdentityKey ?? (SelectedFolder is { } folder ? FolderSelectionKey(folder.Path) : null);
+        SelectedInfoBase?.InfoBase.IdentityKey
+        ?? (SelectedFolder is { } folder ? FolderSelectionKey(folder.Path)
+            : SelectedEdtProject is { } project ? EdtProjectKeyPrefix + project.Project.Id : null);
 
     private static string FolderSelectionKey(string path) => FolderKeyPrefix + path;
 
@@ -1214,20 +1286,26 @@ public sealed partial class MainWindowViewModel : ObservableObject
             SelectedTreeItem = identityKey switch
             {
                 null => null,
+                _ when identityKey.StartsWith(EdtProjectKeyPrefix, StringComparison.Ordinal) =>
+                    FindEdtNode(TreeItems, identityKey[EdtProjectKeyPrefix.Length..]),
                 _ when identityKey.StartsWith(FolderKeyPrefix, StringComparison.Ordinal) =>
                     FindFolder(TreeItems, identityKey[FolderKeyPrefix.Length..]),
                 _ => FindNode(TreeItems, identityKey),
             };
             SelectedInfoBase = (SelectedTreeItem as BaseNodeViewModel)?.Base;
-            SelectedFolder = SelectedTreeItem as FolderNodeViewModel;
+            // Группа «Проекты 1C:EDT» — не папка списка: в неё не добавить базу и не переименовать.
+            SelectedFolder = SelectedTreeItem as FolderNodeViewModel is { Kind: not FolderKind.EdtProjects } selectedFolder ? selectedFolder : null;
+            SelectedEdtProject = SelectedTreeItem as EdtProjectNodeViewModel;
             return;
         }
 
         SelectedTreeItem = null;
+        SelectedEdtProject = null;
         SelectedFolder = null;
-        SelectedListItem = (identityKey is null ? null : ListItems.FirstOrDefault(i => i.Base.InfoBase.IdentityKey == identityKey))
+        SelectedListItem = (identityKey is null ? null : ListItems.FirstOrDefault(i => ListItemKey(i) == identityKey))
                            ?? ListItems.FirstOrDefault();
-        SelectedInfoBase = SelectedListItem?.Base;
+        SelectedInfoBase = (SelectedListItem as BaseListItemViewModel)?.Base;
+        SelectedEdtProject = (SelectedListItem as EdtListItemViewModel)?.Project;
     }
 
     private static FolderNodeViewModel? FindFolder(IEnumerable<TreeNodeViewModel> nodes, string path)

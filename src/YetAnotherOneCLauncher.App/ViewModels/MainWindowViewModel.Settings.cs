@@ -20,7 +20,10 @@ public sealed partial class MainWindowViewModel
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
+        ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
+        DarkShadeIndex = DarkShadeIndex,
+        LightShadeIndex = LightShadeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
@@ -62,7 +65,10 @@ public sealed partial class MainWindowViewModel
         UseThickClientForFileBases = values.UseThickClientForFileBases;
         CheckAvailability = values.CheckAvailability;
         UpdateModeIndex = values.UpdateModeIndex;
+        ShowEdtProjects = values.ShowEdtProjects;
         ThemeIndex = values.ThemeIndex;
+        DarkShadeIndex = values.DarkShadeIndex;
+        LightShadeIndex = values.LightShadeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;
         ShowRowLaunchButtons = values.ShowRowLaunchButtons;

@@ -2,6 +2,7 @@ using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Microsoft.Extensions.DependencyInjection;
+using YetAnotherOneCLauncher.App.Services;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -26,6 +27,12 @@ public partial class LauncherApplication : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // Оттенки тем — до первого окна, чтобы при запуске не мелькал прежний фон.
+            if (_services?.GetService<UserSettingsService>() is { } settings)
+            {
+                ThemeShades.Apply(this, settings.Settings.Ui.LightShade, settings.Settings.Ui.DarkShade);
+            }
+
             desktop.MainWindow = _services?.GetRequiredService<MainWindow>() ?? new MainWindow();
         }
 

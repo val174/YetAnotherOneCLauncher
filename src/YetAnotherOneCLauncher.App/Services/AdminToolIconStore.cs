@@ -241,7 +241,7 @@ public sealed partial class AdminToolIconStore : IAdminToolIconSource
         }
     }
 
-    private static Bitmap ToBitmap(IconPixels pixels)
+    internal static Bitmap ToBitmap(IconPixels pixels)
     {
         var handle = GCHandle.Alloc(pixels.Bgra, GCHandleType.Pinned);
         try

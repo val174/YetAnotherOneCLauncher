@@ -72,9 +72,16 @@ public sealed record InfoBaseLaunchProfile
     /// </summary>
     public string? PasswordKey { get; init; }
 
+    /// <summary>Проект 1C:EDT базы: идентификатор проекта в EDT Start; <c>null</c> — не привязан.</summary>
+    public string? EdtProjectId { get; init; }
+
+    /// <summary>Рабочая область проекта — чтобы найти его, если в EDT Start проект пересоздали с другим идентификатором.</summary>
+    public string? EdtWorkspace { get; init; }
+
     [System.Text.Json.Serialization.JsonIgnore]
     public bool IsEmpty =>
-        string.IsNullOrWhiteSpace(Parameters) && string.IsNullOrWhiteSpace(UserName) && PasswordKey is null;
+        string.IsNullOrWhiteSpace(Parameters) && string.IsNullOrWhiteSpace(UserName) && PasswordKey is null
+        && EdtProjectId is null && EdtWorkspace is null;
 }
 
 /// <summary>Параметры запуска папки: действуют на все базы в ней и во вложенных папках.</summary>
@@ -84,6 +91,24 @@ public sealed record FolderLaunchProfile
     public string FolderPath { get; init; } = string.Empty;
 
     public string? Parameters { get; init; }
+}
+
+/// <summary>Оттенок светлой темы: фон окон и панелей (поля остаются белыми). «Белый» — стандартная светлая тема Fluent.</summary>
+public enum LightShade
+{
+    White,
+    Warm,
+    Gray,
+    Cool,
+}
+
+/// <summary>Оттенок тёмной темы: фон окон и полей. «Чёрный» — стандартная тёмная тема Fluent (как в прежних версиях).</summary>
+public enum DarkShade
+{
+    Black,
+    Graphite,
+    Neutral,
+    Slate,
 }
 
 public enum ThemeMode
@@ -176,6 +201,12 @@ public sealed record WindowPlacement
 public sealed class UiSettings
 {
     public ThemeMode Theme { get; set; } = ThemeMode.System;
+
+    /// <summary>Оттенок тёмной темы; по умолчанию — «Графит» (тёмно-серый вместо чёрного).</summary>
+    public DarkShade DarkShade { get; set; } = DarkShade.Graphite;
+
+    /// <summary>Оттенок светлой темы; по умолчанию — «Белый» (как в прежних версиях).</summary>
+    public LightShade LightShade { get; set; } = LightShade.White;
 
     public IconStyle IconStyle { get; set; } = IconStyle.Flat;
 
@@ -312,6 +343,9 @@ public sealed class LauncherSettings
 
     /// <summary>Обновление лаунчера из релизов GitHub.</summary>
     public UpdateSettings Updates { get; set; } = new();
+
+    /// <summary>Проекты 1C:EDT в списке баз.</summary>
+    public EdtSettings Edt { get; set; } = new();
 
     /// <summary>Название инструмента, в который переносится прежний адрес «ПУСК».</summary>
     public const string PuskToolName = "Панель управления сервисами и компонентами";

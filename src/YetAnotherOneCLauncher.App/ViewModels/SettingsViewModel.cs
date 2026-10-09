@@ -27,8 +27,17 @@ public sealed record SettingsValues
     /// <summary>Режим обновления в порядке «Не использовать», «Только проверка», «Автообновление».</summary>
     public int UpdateModeIndex { get; init; } = (int)UpdateMode.CheckOnly;
 
+    /// <summary>Группа «Проекты 1C:EDT» в дереве баз.</summary>
+    public bool ShowEdtProjects { get; init; } = true;
+
     // Внешний вид.
     public int ThemeIndex { get; init; }
+
+    /// <summary>Оттенок тёмной темы в порядке <see cref="DarkShade"/>.</summary>
+    public int DarkShadeIndex { get; init; } = (int)DarkShade.Graphite;
+
+    /// <summary>Оттенок светлой темы в порядке <see cref="LightShade"/>.</summary>
+    public int LightShadeIndex { get; init; } = (int)LightShade.White;
 
     public int IconStyleIndex { get; init; }
 
@@ -112,7 +121,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         UseThickClientForFileBases = original.UseThickClientForFileBases;
         CheckAvailability = original.CheckAvailability;
         UpdateModeIndex = original.UpdateModeIndex;
+        ShowEdtProjects = original.ShowEdtProjects;
         ThemeIndex = original.ThemeIndex;
+        DarkShadeIndex = original.DarkShadeIndex;
+        LightShadeIndex = original.LightShadeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
         ShowRowLaunchButtons = original.ShowRowLaunchButtons;
@@ -165,6 +177,10 @@ public sealed partial class SettingsViewModel : ObservableObject
     [ObservableProperty]
     public partial bool CheckAvailability { get; set; }
 
+    /// <summary>Показывать группу «Проекты 1C:EDT» (проекты из 1C:EDT Start).</summary>
+    [ObservableProperty]
+    public partial bool ShowEdtProjects { get; set; }
+
     /// <summary>Режим обновления лаунчера из релизов GitHub.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(UpdateModeHint))]
@@ -189,6 +205,26 @@ public sealed partial class SettingsViewModel : ObservableObject
     // --- Внешний вид ---
     [ObservableProperty]
     public partial int ThemeIndex { get; set; }
+
+    /// <summary>Оттенок тёмной темы; превью — <see cref="DarkShadePreview"/>.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DarkShadePreview))]
+    public partial int DarkShadeIndex { get; set; }
+
+    /// <summary>Оттенки тёмной темы для выбора — с цветами для образца в списке.</summary>
+    public IReadOnlyList<ShadePalette> DarkShadeChoices { get; } = ThemeShades.Dark;
+
+    /// <summary>Выбранный оттенок — для превью окна в настройках.</summary>
+    public ShadePalette DarkShadePreview => ThemeShades.Of((DarkShade)DarkShadeIndex);
+
+    /// <summary>Оттенок светлой темы; превью — <see cref="LightShadePreview"/>.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(LightShadePreview))]
+    public partial int LightShadeIndex { get; set; }
+
+    public IReadOnlyList<ShadePalette> LightShadeChoices { get; } = ThemeShades.Light;
+
+    public ShadePalette LightShadePreview => ThemeShades.Of((LightShade)LightShadeIndex);
 
     [ObservableProperty]
     public partial int IconStyleIndex { get; set; }
@@ -242,10 +278,13 @@ public sealed partial class SettingsViewModel : ObservableObject
         || SingleInstance != _original.SingleInstance
         || UseThickClientForFileBases != _original.UseThickClientForFileBases
         || CheckAvailability != _original.CheckAvailability
-        || UpdateModeIndex != _original.UpdateModeIndex;
+        || UpdateModeIndex != _original.UpdateModeIndex
+        || ShowEdtProjects != _original.ShowEdtProjects;
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
+        || DarkShadeIndex != _original.DarkShadeIndex
+        || LightShadeIndex != _original.LightShadeIndex
         || IconStyleIndex != _original.IconStyleIndex
         || ShowDetails != _original.ShowDetails
         || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
@@ -287,7 +326,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
+        ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
+        DarkShadeIndex = DarkShadeIndex,
+        LightShadeIndex = LightShadeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,

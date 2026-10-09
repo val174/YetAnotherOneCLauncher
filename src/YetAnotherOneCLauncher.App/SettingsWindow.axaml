@@ -3,12 +3,55 @@
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         xmlns:app="using:YetAnotherOneCLauncher.App"
+        xmlns:svc="using:YetAnotherOneCLauncher.App.Services"
         x:Class="YetAnotherOneCLauncher.App.SettingsWindow"
         x:DataType="vm:SettingsViewModel"
         Title="{Binding Title}"
-        Width="1040" Height="680" MinWidth="800" MinHeight="440"
+        Width="1040" Height="740" MinWidth="800" MinHeight="440"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
+  <Window.Resources>
+    <!-- Оттенок в списке: образец цвета фона и название. -->
+    <DataTemplate x:Key="ShadeItemTemplate" x:DataType="svc:ShadePalette">
+      <StackPanel Orientation="Horizontal" Spacing="8">
+        <Border Width="16" Height="16" CornerRadius="3" Background="{Binding RegionBrush}" BorderBrush="#80808080" BorderThickness="1"
+                VerticalAlignment="Center" />
+        <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+      </StackPanel>
+    </DataTemplate>
+    <!-- Превью: окно лаунчера в оттенке — его цветами, независимо от текущей темы. -->
+    <DataTemplate x:Key="ShadePreviewTemplate" x:DataType="svc:ShadePalette">
+      <Border Classes="shadePreview" CornerRadius="6" BorderThickness="1" ClipToBounds="True"
+              Background="{Binding RegionBrush}" BorderBrush="{Binding BorderBrush}" TextElement.Foreground="{Binding TextBrush}" TextElement.FontSize="11">
+        <StackPanel>
+          <Grid ColumnDefinitions="*,Auto" Background="{Binding HeaderBrush}">
+            <TextBlock Text="Наименование" Opacity="0.65" Margin="8,3" />
+            <TextBlock Grid.Column="1" Text="Платформа" Opacity="0.65" Margin="8,3" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="Бухгалтерия" Margin="8,4" />
+            <TextBlock Grid.Column="1" Text="8.3.27" Margin="8,4" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto" Background="{Binding StripeBrush}">
+            <TextBlock Text="Зарплата и кадры" Margin="8,4" />
+            <TextBlock Grid.Column="1" Text="8.5.1" Margin="8,4" />
+          </Grid>
+          <Grid ColumnDefinitions="*,Auto" Background="{Binding SelectionBrush}">
+            <TextBlock Text="Розница" Margin="8,4" />
+            <TextBlock Grid.Column="1" Text="8.3.27" Margin="8,4" />
+          </Grid>
+          <StackPanel Orientation="Horizontal" Spacing="6" Margin="8">
+            <Border CornerRadius="4" Background="#0078D4" Padding="8,3">
+              <TextBlock Text="▶ 1С: Предприятие" Foreground="White" />
+            </Border>
+            <Border CornerRadius="4" Background="{Binding ButtonBrush}" Padding="8,3">
+              <TextBlock Text="Конфигуратор" />
+            </Border>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </DataTemplate>
+  </Window.Resources>
   <Window.Styles>
     <Style Selector="TextBlock.secondary">
       <Setter Property="Opacity" Value="0.65" />
@@ -76,6 +119,9 @@
             <CheckBox x:Name="CheckAvailabilityBox" IsChecked="{Binding CheckAvailability}">
               <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
             </CheckBox>
+            <CheckBox x:Name="ShowEdtProjectsBox" IsChecked="{Binding ShowEdtProjects}">
+              <TextBlock TextWrapping="Wrap" Text="Использовать проекты 1C:EDT (из 1C:EDT Start): группа в списке, поиск, режим «Проекты 1C:EDT», кнопки 1C:EDT у баз" />
+            </CheckBox>
 
             <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
             <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
@@ -94,11 +140,37 @@
       <TabItem x:Name="AppearanceTab" Header="{Binding AppearanceHeader}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,12,8">
-          <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
-          <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
-          <TextBlock Classes="fieldLabel" Text="Стиль значков" />
-          <ComboBox x:Name="IconStyleBox" ItemsSource="{Binding IconStyleNames}" SelectedIndex="{Binding IconStyleIndex}"
-                    HorizontalAlignment="Stretch" />
+          <!-- Тема и стиль значков — в одну строку. -->
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
+              <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="fieldLabel" Text="Стиль значков" Margin="0,4,0,4" />
+              <ComboBox x:Name="IconStyleBox" ItemsSource="{Binding IconStyleNames}" SelectedIndex="{Binding IconStyleIndex}"
+                        HorizontalAlignment="Stretch" />
+            </StackPanel>
+          </Grid>
+          <!-- Оттенки тем: слева — светлой, справа — тёмной; под каждым — как выглядит окно. -->
+          <Grid ColumnDefinitions="*,16,*">
+            <StackPanel>
+              <TextBlock Classes="fieldLabel" Text="Оттенок светлой темы" />
+              <ComboBox x:Name="LightShadeBox" ItemsSource="{Binding LightShadeChoices}" SelectedIndex="{Binding LightShadeIndex}"
+                        HorizontalAlignment="Stretch" ItemTemplate="{StaticResource ShadeItemTemplate}"
+                        ToolTip.Tip="Фон окон и панелей в светлой теме (поля остаются белыми). Применяется сразу после «Сохранить»." />
+              <ContentControl x:Name="LightShadePreview" Content="{Binding LightShadePreview}" ContentTemplate="{StaticResource ShadePreviewTemplate}"
+                              Margin="0,8,0,0" />
+            </StackPanel>
+            <StackPanel Grid.Column="2">
+              <TextBlock Classes="fieldLabel" Text="Оттенок тёмной темы" />
+              <ComboBox x:Name="DarkShadeBox" ItemsSource="{Binding DarkShadeChoices}" SelectedIndex="{Binding DarkShadeIndex}"
+                        HorizontalAlignment="Stretch" ItemTemplate="{StaticResource ShadeItemTemplate}"
+                        ToolTip.Tip="Фон окон и полей в тёмной теме. Применяется сразу после «Сохранить»." />
+              <ContentControl x:Name="DarkShadePreview" Content="{Binding DarkShadePreview}" ContentTemplate="{StaticResource ShadePreviewTemplate}"
+                              Margin="0,8,0,0" />
+            </StackPanel>
+          </Grid>
           <CheckBox x:Name="ShowDetailsBox" IsChecked="{Binding ShowDetails}" Content="Показывать свойства информационной базы"
                     Margin="0,12,0,0" />
           <CheckBox x:Name="ShowSideLaunchButtonsBox" IsChecked="{Binding ShowSideLaunchButtons}"
