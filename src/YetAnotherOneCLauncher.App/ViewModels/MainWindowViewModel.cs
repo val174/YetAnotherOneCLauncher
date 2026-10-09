@@ -300,7 +300,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(
-        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode), nameof(IsEdtProjectsMode),
+        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode), nameof(IsEdtProjectsMode), nameof(ListFilterPosition),
         nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
         nameof(AddBaseCommand), nameof(DuplicateCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
@@ -762,10 +762,6 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// <summary>Вернуться к общему списку баз.</summary>
     [RelayCommand]
     private void ShowAllBases() => ListFilter = BaseListFilter.All;
-
-    /// <summary>Показать только проекты 1C:EDT.</summary>
-    [RelayCommand]
-    private void ShowEdtProjectsMode() => ListFilter = BaseListFilter.EdtProjects;
 
     partial void OnListFilterChanged(BaseListFilter value)
     {

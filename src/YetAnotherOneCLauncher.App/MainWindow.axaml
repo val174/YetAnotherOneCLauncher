@@ -504,12 +504,20 @@
           </Border.Resources>
           <Panel>
             <!-- Плашка под выбранным режимом — переезжает при переключении (тумблер). -->
-            <Border x:Name="ListFilterThumb" Classes="switchThumb" Margin="{Binding ListFilter, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
+            <Border x:Name="ListFilterThumb" Classes="switchThumb" Margin="{Binding ListFilterPosition, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
           <StackPanel Orientation="Horizontal">
             <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
                          ToolTip.Tip="Все базы">
               <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
                           Data="M 2.5,3.5 A 5.5,2 0 1 0 13.5,3.5 A 5.5,2 0 1 0 2.5,3.5 M 2.5,3.5 L 2.5,12.5 A 5.5,2 0 0 0 13.5,12.5 L 13.5,3.5 M 2.5,8 A 5.5,2 0 0 0 13.5,8" />
+            </RadioButton>
+            <!-- Только проекты 1C:EDT: есть, если проекты включены в настройках и найдены в EDT Start. -->
+            <RadioButton x:Name="EdtProjectsButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter"
+                         IsChecked="{Binding IsEdtProjectsMode}" IsVisible="{Binding IsEdtModeAvailable}" ToolTip.Tip="{Binding HotKeys.ShowEdtProjectsSuffix, StringFormat='Проекты 1C:EDT{0}'}">
+              <Panel>
+                <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DesignerIconGeometry}" />
+                <Image Source="{Binding EdtIcon}" Width="22" Height="22" RenderOptions.BitmapInterpolationMode="HighQuality" />
+              </Panel>
             </RadioButton>
             <RadioButton x:Name="RecentButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsRecentMode}"
                          ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
@@ -519,14 +527,6 @@
             <RadioButton x:Name="FavoritesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsFavoritesMode}"
                          ToolTip.Tip="Избранные базы">
               <c:ToolIcon Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" />
-            </RadioButton>
-            <!-- Только проекты 1C:EDT: есть, если проекты включены в настройках и найдены в EDT Start. -->
-            <RadioButton x:Name="EdtProjectsButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter"
-                         IsChecked="{Binding IsEdtProjectsMode}" IsVisible="{Binding IsEdtModeAvailable}" ToolTip.Tip="Проекты 1C:EDT">
-              <Panel>
-                <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DesignerIconGeometry}" />
-                <Image Source="{Binding EdtIcon}" Width="22" Height="22" RenderOptions.BitmapInterpolationMode="HighQuality" />
-              </Panel>
             </RadioButton>
           </StackPanel>
           </Panel>
@@ -1016,13 +1016,10 @@
                 <!-- Кнопка «Открыть в 1C:EDT» — там же, где кнопки запуска у баз. -->
                 <Panel Classes="rowLaunchCell" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
                   <StackPanel Classes="rowLaunch" Orientation="Horizontal">
-                    <Button Classes="rowLaunch edt" ToolTip.Tip="Открыть в 1C:EDT"
+                    <Button Classes="rowLaunch enterprise edt" ToolTip.Tip="Открыть в 1C:EDT"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding}">
-                      <Panel Classes="edtIcon">
-                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
-                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
-                               RenderOptions.BitmapInterpolationMode="HighQuality" />
-                      </Panel>
+                      <!-- Как «1С: Предприятие» у баз: зелёный треугольник. -->
+                      <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                     </Button>
                   </StackPanel>
                 </Panel>
@@ -1183,13 +1180,10 @@
               <DockPanel VerticalAlignment="Center">
                 <Panel Classes="rowLaunchCell" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
                   <StackPanel Classes="rowLaunch" Orientation="Horizontal">
-                    <Button Classes="rowLaunch edt" ToolTip.Tip="Открыть в 1C:EDT"
+                    <Button Classes="rowLaunch enterprise edt" ToolTip.Tip="Открыть в 1C:EDT"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding Project}">
-                      <Panel Classes="edtIcon">
-                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
-                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
-                               RenderOptions.BitmapInterpolationMode="HighQuality" />
-                      </Panel>
+                      <!-- Как «1С: Предприятие» у баз: зелёный треугольник. -->
+                      <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                     </Button>
                   </StackPanel>
                 </Panel>

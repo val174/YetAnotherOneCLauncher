@@ -18,6 +18,7 @@ public enum HotKeyCommand
     Delete,
     MoveUp,
     MoveDown,
+    ShowEdtProjects,
 }
 
 /// <summary>Где действует сочетание: во всём окне или когда фокус в дереве или списке баз.</summary>
@@ -55,6 +56,7 @@ public sealed class HotKeyMap
         new(HotKeyCommand.Delete, "Удалить из списка", new KeyGesture(Key.Delete), HotKeyScope.List),
         new(HotKeyCommand.MoveUp, "Выше в папке", new KeyGesture(Key.Up, KeyModifiers.Alt), HotKeyScope.List),
         new(HotKeyCommand.MoveDown, "Ниже в папке", new KeyGesture(Key.Down, KeyModifiers.Alt), HotKeyScope.List),
+        new(HotKeyCommand.ShowEdtProjects, "Проекты 1C:EDT (режим списка; повторно — все базы)", new KeyGesture(Key.E, KeyModifiers.Control | KeyModifiers.Shift), HotKeyScope.Window),
     ];
 
     private readonly Dictionary<HotKeyCommand, KeyGesture?> _gestures;
@@ -101,6 +103,8 @@ public sealed class HotKeyMap
     public string DeleteSuffix => Suffix(HotKeyCommand.Delete);
 
     public string EditSuffix => Suffix(HotKeyCommand.Edit);
+
+    public string ShowEdtProjectsSuffix => Suffix(HotKeyCommand.ShowEdtProjects);
 
     /// <summary>Сочетания из настроек; нераспознанные записи пропускаются (работает сочетание по умолчанию).</summary>
     public static HotKeyMap FromSettings(IReadOnlyDictionary<string, string>? overrides)

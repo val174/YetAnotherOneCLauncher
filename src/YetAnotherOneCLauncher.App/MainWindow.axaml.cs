@@ -328,6 +328,7 @@ public partial class MainWindow : Window
                     HotKeyCommand.Delete => vm.DeleteCommand,
                     HotKeyCommand.MoveUp => vm.MoveUpCommand,
                     HotKeyCommand.MoveDown => vm.MoveDownCommand,
+                    HotKeyCommand.ShowEdtProjects => vm.ShowEdtProjectsModeCommand,
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
                 });
                 break;

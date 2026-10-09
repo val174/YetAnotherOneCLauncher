@@ -42,6 +42,8 @@ public sealed partial class MainWindowViewModel
             _settings.RequestSave();
             OnPropertyChanged();
             OnPropertyChanged(nameof(IsEdtModeAvailable));
+            OnPropertyChanged(nameof(ListFilterPosition));
+            ShowEdtProjectsModeCommand.NotifyCanExecuteChanged();
             OnPropertyChanged(nameof(IsEdtEnabled));
             UpdateBaseEdtLinks();
             var key = CurrentSelectionKey();
@@ -64,8 +66,23 @@ public sealed partial class MainWindowViewModel
     /// <summary>Для разметки: строка «Проект 1C:EDT» в свойствах базы и прочее, что есть только при включённых проектах.</summary>
     public bool IsEdtEnabled => EdtEnabled;
 
+    /// <summary>
+    /// «Проекты 1C:EDT» (горячая клавиша, по умолчанию Ctrl+Shift+E): включить режим; если он уже включён — вернуться ко всем базам.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(IsEdtModeAvailable))]
+    private void ShowEdtProjectsMode() => ListFilter = IsEdtProjectsMode ? BaseListFilter.All : BaseListFilter.EdtProjects;
+
     /// <summary>Положение «Проекты 1C:EDT» в переключателе режимов: проекты включены и есть.</summary>
     public bool IsEdtModeAvailable => EdtEnabled && HasEdtProjects;
+
+    /// <summary>Место выбранного режима в переключателе «Все базы / Проекты 1C:EDT / Недавние / Избранное» — для плашки.</summary>
+    public int ListFilterPosition => ListFilter switch
+    {
+        BaseListFilter.All => 0,
+        BaseListFilter.EdtProjects => 1,
+        BaseListFilter.Recent => IsEdtModeAvailable ? 2 : 1,
+        _ => IsEdtModeAvailable ? 3 : 2,
+    };
 
     /// <summary>Есть ли проекты EDT на компьютере — для настройки «Показывать проекты 1C:EDT».</summary>
     public bool HasEdtProjects => !_edtCatalog.IsEmpty;
@@ -134,6 +151,8 @@ public sealed partial class MainWindowViewModel
         _edtCatalog = _edt?.Load() ?? EdtCatalog.Empty;
         OnPropertyChanged(nameof(HasEdtProjects));
         OnPropertyChanged(nameof(IsEdtModeAvailable));
+        OnPropertyChanged(nameof(ListFilterPosition));
+        ShowEdtProjectsModeCommand.NotifyCanExecuteChanged();
         OnPropertyChanged(nameof(EdtIcon));
         OnPropertyChanged(nameof(HasEdtIcon));
         NotifyBaseEdtLink();

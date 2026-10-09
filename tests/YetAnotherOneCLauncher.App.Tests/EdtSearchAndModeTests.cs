@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
+using YetAnotherOneCLauncher.App.Services;
 
 namespace YetAnotherOneCLauncher.App.Tests;
 
@@ -112,6 +113,53 @@ public class EdtSearchAndModeTests
         // Связь не потеряна: включили — снова есть.
         vm.ShowEdtProjects = true;
         Assert.Equal("Торговля", zup.EdtProjectName);
+    }
+
+    [Fact]
+    public async Task Hotkey_command_toggles_edt_mode_and_thumb_follows_visible_order()
+    {
+        using var fixture = await LoadedAsync();
+        var vm = fixture.ViewModel;
+        Assert.Equal(new Avalonia.Input.KeyGesture(Avalonia.Input.Key.E, Avalonia.Input.KeyModifiers.Control | Avalonia.Input.KeyModifiers.Shift), vm.HotKeys[HotKeyCommand.ShowEdtProjects]);
+        Assert.Contains(HotKeyMap.Definitions, d => d.Command == HotKeyCommand.ShowEdtProjects && d.Title.StartsWith("Проекты 1C:EDT", StringComparison.Ordinal));
+
+        // «Все базы / Проекты 1C:EDT / Недавние / Избранное».
+        Assert.Equal(0, vm.ListFilterPosition);
+        vm.ShowEdtProjectsModeCommand.Execute(null);
+        Assert.True(vm.IsEdtProjectsMode);
+        Assert.Equal(1, vm.ListFilterPosition);
+        vm.ShowEdtProjectsModeCommand.Execute(null); // повторно — все базы
+        Assert.True(vm.IsAllBasesMode);
+        vm.IsRecentMode = true;
+        Assert.Equal(2, vm.ListFilterPosition);
+        vm.IsFavoritesMode = true;
+        Assert.Equal(3, vm.ListFilterPosition);
+
+        // Без проектов EDT положения нет — «Недавние» и «Избранное» сдвигаются, команда недоступна.
+        vm.ShowEdtProjects = false;
+        Assert.Equal(2, vm.ListFilterPosition);
+        Assert.False(vm.ShowEdtProjectsModeCommand.CanExecute(null));
+    }
+
+    [AvaloniaFact]
+    public async Task Edt_segment_is_second_and_project_row_has_green_triangle()
+    {
+        using var fixture = new ViewModelFixture();
+        fixture.Edt.Catalog = FakeEdt.Sample();
+        var window = await MainWindowTests.OpenAsync(fixture);
+        var segments = window.FindControl<RadioButton>("AllBasesButton")!.GetVisualParent<StackPanel>()!.Children.OfType<RadioButton>().Select(r => r.Name);
+        Assert.Equal(["AllBasesButton", "EdtProjectsButton", "RecentButton", "FavoritesButton"], segments);
+
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = vm.TreeItems.OfType<FolderNodeViewModel>().Single(f => f.IsEdtProjects).Children[0];
+        MainWindowTests.Render();
+        var button = window.FindControl<TreeView>("CatalogTree")!.GetVisualDescendants().OfType<Button>()
+            .Single(b => b.Classes.Contains("edt") && b.IsEffectivelyVisible);
+        Assert.Contains("enterprise", button.Classes); // тот же зелёный треугольник, что у «1С: Предприятие»
+        var icon = Assert.IsType<Controls.ToolIcon>(button.Content);
+        Assert.Same(window.FindResource("EnterpriseIconGeometry"), icon.Data);
+        MainWindowTests.Snapshot(window, "50-edt-project-row-triangle");
+        window.Close();
     }
 
     [AvaloniaFact]
