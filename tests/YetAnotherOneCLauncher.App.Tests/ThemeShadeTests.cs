@@ -14,7 +14,9 @@ namespace YetAnotherOneCLauncher.App.Tests;
 /// <summary>Оттенки светлой и тёмной темы: настройки с превью, применение к окнам.</summary>
 public class ThemeShadeTests
 {
-    [Fact]
+    // Палитры Fluent — объекты Avalonia: создавать их можно только в потоке Avalonia, иначе обычный тест привяжет
+    // к своему потоку диспетчер, и следующие тесты окон упадут (как было на CI в Linux).
+    [AvaloniaFact]
     public void Shades_with_current_ones_first_and_defaults()
     {
         Assert.Equal(["Белый", "Тёплый", "Светло-серый", "Голубоватый"], ThemeShades.Light.Select(s => s.Name));
