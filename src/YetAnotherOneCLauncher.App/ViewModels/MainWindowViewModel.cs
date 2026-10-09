@@ -147,6 +147,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         IsTreeMode = ui.ViewMode == CatalogViewMode.Tree;
         IsSortedByName = ui.SortMode != CatalogSortMode.Custom;
         ThemeIndex = (int)ui.Theme;
+        DarkShadeIndex = (int)ui.DarkShade;
+        LightShadeIndex = (int)ui.LightShade;
         AfterLaunchIndex = (int)ui.AfterLaunch;
         SingleInstance = ui.SingleInstance;
         MinimizeToTray = ui.MinimizeToTray;
@@ -451,6 +453,34 @@ public sealed partial class MainWindowViewModel : ObservableObject
         _ => "Тема: как в системе. Нажмите — светлая",
     };
 
+    /// <summary>Оттенок светлой темы («Внешний вид»): в порядке <see cref="LightShade"/>.</summary>
+    [ObservableProperty]
+    public partial int LightShadeIndex { get; set; }
+
+    /// <summary>Оттенок тёмной темы («Внешний вид»): в порядке <see cref="DarkShade"/>.</summary>
+    [ObservableProperty]
+    public partial int DarkShadeIndex { get; set; }
+
+    partial void OnLightShadeIndexChanged(int value) => OnShadeChanged();
+
+    partial void OnDarkShadeIndexChanged(int value) => OnShadeChanged();
+
+    private void OnShadeChanged()
+    {
+        if (_suppressSettingsSync)
+        {
+            return;
+        }
+
+        var light = Enum.IsDefined((LightShade)LightShadeIndex) ? (LightShade)LightShadeIndex : LightShade.White;
+        var dark = Enum.IsDefined((DarkShade)DarkShadeIndex) ? (DarkShade)DarkShadeIndex : DarkShade.Graphite;
+        _settings.Settings.Ui.LightShade = light;
+        _settings.Settings.Ui.DarkShade = dark;
+        _theme.ApplyShades(light, dark);
+        _settings.RequestSave();
+    }
+
+
     /// <summary>Кнопка темы: как в системе → светлая → тёмная → как в системе.</summary>
     [RelayCommand]
     private void CycleTheme() => ThemeIndex = (ThemeIndex + 1) % ThemeNames.Count;
@@ -517,6 +547,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public async Task InitializeAsync()
     {
         _theme.Apply((ThemeMode)ThemeIndex);
+        _theme.ApplyShades((LightShade)LightShadeIndex, (DarkShade)DarkShadeIndex);
         await ReloadAsync();
 
         if (_watcher is not null && _paths is not null && !_watching)

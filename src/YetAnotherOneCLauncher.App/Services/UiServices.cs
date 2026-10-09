@@ -81,6 +81,9 @@ public interface IWindowService
 public interface IThemeService
 {
     void Apply(ThemeMode mode);
+
+    /// <summary>Оттенки светлой и тёмной темы (фон окон и полей); действуют сразу и на открытые окна.</summary>
+    void ApplyShades(LightShade light, DarkShade dark);
 }
 
 /// <summary>Реализации для настольного приложения Avalonia: работают с текущим главным окном.</summary>
@@ -220,6 +223,14 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
     public void BringToFront() => (MainWindow as MainWindow)?.BringToFront();
 
     public void Close() => MainWindow?.Close();
+
+    public void ApplyShades(LightShade light, DarkShade dark)
+    {
+        if (Application.Current is { } app)
+        {
+            ThemeShades.Apply(app, light, dark);
+        }
+    }
 
     public void Apply(ThemeMode mode)
     {
