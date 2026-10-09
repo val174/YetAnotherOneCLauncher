@@ -71,7 +71,7 @@ public sealed partial class InfoBaseEditorViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(
         nameof(IsExistingMode), nameof(IsTemplateMode), nameof(IsEmptyMode), nameof(IsCreateMode), nameof(Title), nameof(AcceptText),
-        nameof(ShowExistingFields), nameof(ShowCreateServerFields), nameof(ShowExistingServerFields))]
+        nameof(ShowExistingFields), nameof(ShowCreateServerFields), nameof(ShowExistingServerFields), nameof(ShowConnectionStringField))]
     public partial InfoBaseAddMode AddMode { get; set; }
 
     // Положения переключателя на первой странице: установка в true выбирает вариант.

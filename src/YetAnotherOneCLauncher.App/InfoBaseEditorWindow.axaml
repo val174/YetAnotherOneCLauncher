@@ -15,6 +15,11 @@
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
       <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <!-- Строку подключения разобрать не удалось — подсказка заметнее. -->
+    <Style Selector="TextBlock.hint.warning">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Foreground" Value="#C57C00" />
+    </Style>
     <!-- Подписи полей новой серверной базы — слева, как в штатном стартере. -->
     <Style Selector="Grid#CreateServerGrid > TextBlock">
       <Setter Property="VerticalAlignment" Value="Center" />
@@ -122,6 +127,16 @@
         <StackPanel x:Name="FormPage" Spacing="10" Margin="0,0,14,0" IsEnabled="{Binding IsIdle}">
           <TextBlock Text="Название" />
           <TextBox x:Name="NameBox" Text="{Binding Name}" />
+
+          <!-- Существующая база: вставленная строка подключения заполняет поля ниже. -->
+          <StackPanel Spacing="6" IsVisible="{Binding ShowConnectionStringField}">
+            <TextBlock Text="Строка подключения" />
+            <TextBox x:Name="ConnectionStringBox" Text="{Binding ConnectionText}"
+                     PlaceholderText="File=&quot;C:\Bases\Buh&quot;;  Srvr=&quot;srv:1541&quot;;Ref=&quot;buh&quot;;  https://server/buh"
+                     ToolTip.Tip="Строка подключения 1С, путь к каталогу базы, адрес веб-публикации или «сервер\база» — расположение и остальные поля заполнятся сами" />
+            <TextBlock x:Name="ConnectionHintText" Classes="hint" Text="{Binding ConnectionHint}" IsVisible="{Binding HasConnectionHint}"
+                       Classes.warning="{Binding IsConnectionHintWarning}" />
+          </StackPanel>
 
           <!-- Выбранный на предыдущем шаге шаблон; сменить — «< Назад». -->
           <StackPanel Spacing="4" IsVisible="{Binding IsTemplateMode}">

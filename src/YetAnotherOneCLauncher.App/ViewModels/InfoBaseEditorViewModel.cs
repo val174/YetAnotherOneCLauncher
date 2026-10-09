@@ -176,6 +176,8 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
             // Ключа не было и флажок не меняли — ключ не добавляем, чтобы не изменить поведение запуска.
             WindowsAuthentication = _original.WindowsAuthentication is null && WindowsAuthentication ? null : WindowsAuthentication,
             AdditionalParameters = string.IsNullOrWhiteSpace(AdditionalParameters) ? null : AdditionalParameters.Trim(),
+            // Дополнительные ключи вставленной строки подключения (wsn и т. п.) — в запись базы.
+            OriginalConnection = _pastedConnection ?? _original.OriginalConnection,
         };
 
         var errors = draft.Validate();
