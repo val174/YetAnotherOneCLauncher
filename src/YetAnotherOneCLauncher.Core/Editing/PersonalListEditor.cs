@@ -48,14 +48,14 @@ public static class PersonalListEditor
         return candidate;
     }
 
-    /// <summary>Свободное название дубликата: «Имя_копия», «Имя_копия_2»…</summary>
+    /// <summary>Свободное название дубликата: «Имя_копия», «Имя_копия 2», «Имя_копия 3»…</summary>
     public static string UniqueDuplicateName(string name, IEnumerable<string> takenNames)
     {
         var taken = takenNames.Select(n => n.Trim()).ToHashSet(NameComparer);
         var candidate = name.Trim() + DuplicateSuffix;
         for (var i = 2; taken.Contains(candidate); i++)
         {
-            candidate = $"{name.Trim()}{DuplicateSuffix}_{i.ToString(CultureInfo.InvariantCulture)}";
+            candidate = $"{name.Trim()}{DuplicateSuffix} {i.ToString(CultureInfo.InvariantCulture)}";
         }
 
         return candidate;

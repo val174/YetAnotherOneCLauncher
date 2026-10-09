@@ -79,7 +79,7 @@ public class DuplicateBaseTests
 
         // Повторный дубликат — следующее свободное название.
         await vm.DuplicateNodeAsync(Root("Копия бухгалтерии"), Work());
-        Assert.Contains(Work().Children, c => c.Name == "Копия бухгалтерии_копия_2");
+        Assert.Contains(Work().Children, c => c.Name == "Копия бухгалтерии_копия 2");
     }
 
     [Fact]

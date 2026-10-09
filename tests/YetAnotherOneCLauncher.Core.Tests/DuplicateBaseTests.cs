@@ -63,10 +63,23 @@ public class DuplicateBaseTests
         var source = Base(document, "Склад");
 
         PersonalListEditor.DuplicateBase(document, source, "/", afterSource: true);
-        var second = PersonalListEditor.DuplicateBase(document, source, "/", afterSource: true, takenNames: ["Склад_копия_2"]);
+        var second = PersonalListEditor.DuplicateBase(document, source, "/", afterSource: true, takenNames: ["Склад_копия 2"]);
 
-        Assert.Equal("Склад_копия_3", second.Name);
+        Assert.Equal("Склад_копия 3", second.Name);
         Assert.Equal("Склад_копия", PersonalListEditor.UniqueDuplicateName("Склад", ["Склад"]));
+    }
+
+    [Fact]
+    public void Repeated_duplicates_are_numbered_with_space()
+    {
+        var document = Document();
+        var source = Base(document, "Бухгалтерия");
+
+        var names = Enumerable.Range(0, 3)
+            .Select(_ => PersonalListEditor.DuplicateBase(document, source, "/Рабочие", afterSource: true).Name)
+            .ToList();
+
+        Assert.Equal(["Бухгалтерия_копия", "Бухгалтерия_копия 2", "Бухгалтерия_копия 3"], names);
     }
 
     [Fact]
