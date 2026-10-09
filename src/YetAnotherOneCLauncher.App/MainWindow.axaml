@@ -132,6 +132,23 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="Fill" Value="#2EA043" />
     </Style>
+    <!-- Полоса обновления: синеватая — новая версия, зеленоватая — установлена; полупрозрачно, подходит обеим темам. -->
+    <Style Selector="Border.updateBanner">
+      <Setter Property="Background" Value="#26378ADD" />
+      <Setter Property="BorderBrush" Value="#66378ADD" />
+    </Style>
+    <Style Selector="Border.updateBanner c|ToolIcon.updateIcon">
+      <Setter Property="Brush" Value="{DynamicResource IconViewBrush}" />
+      <Setter Property="Data" Value="M 8,2 L 8,11 M 4.5,7.5 L 8,11 L 11.5,7.5 M 2.5,13.5 L 13.5,13.5" />
+    </Style>
+    <Style Selector="Border.updateBanner.installed">
+      <Setter Property="Background" Value="#26639922" />
+      <Setter Property="BorderBrush" Value="#66639922" />
+    </Style>
+    <Style Selector="Border.updateBanner.installed c|ToolIcon.updateIcon">
+      <Setter Property="Brush" Value="{DynamicResource IconAddBrush}" />
+      <Setter Property="Data" Value="M 2.5,8.5 L 6.5,12.5 L 13.5,4" />
+    </Style>
     <Style Selector="TextBlock.missing">
       <Setter Property="Foreground" Value="#C57C00" />
     </Style>
@@ -590,6 +607,28 @@
           </Button>
         </StackPanel>
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
+    </Border>
+
+    <!-- Обновление лаунчера: «Доступна новая версия» (синяя) или «Обновлён — перезапустить» (зелёная). -->
+    <Border x:Name="UpdateBanner" DockPanel.Dock="Bottom" Classes="updateBanner" Classes.installed="{Binding IsUpdateInstalled}"
+            Padding="12,6" BorderThickness="0,1,0,0" IsVisible="{Binding ShowUpdateBanner}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="12,0,0,0">
+          <Button x:Name="UpdateNotesButton" Content="Что нового" Command="{Binding ShowUpdateReleaseNotesCommand}"
+                  ToolTip.Tip="Страница релиза на GitHub" />
+          <Button x:Name="InstallUpdateButton" Classes="accent" Content="Обновить" Command="{Binding InstallUpdateCommand}"
+                  IsVisible="{Binding IsUpdateOffered}" />
+          <Button x:Name="RestartToUpdateButton" Classes="accent" Content="Перезапустить" Command="{Binding RestartToUpdateCommand}"
+                  IsVisible="{Binding IsUpdateInstalled}" />
+          <Button x:Name="SkipUpdateButton" Content="Пропустить эту версию" Command="{Binding SkipUpdateVersionCommand}"
+                  IsVisible="{Binding IsUpdateOffered}" ToolTip.Tip="Не напоминать об этой версии; о следующей — напомнить" />
+          <Button x:Name="DismissUpdateButton" Classes="statusIcon" Command="{Binding DismissUpdateBannerCommand}" ToolTip.Tip="Скрыть">
+            <c:ToolIcon Width="12" Height="12" StrokeThickness="1.6" Brush="{DynamicResource IconViewBrush}" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+          </Button>
+        </StackPanel>
+        <c:ToolIcon DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,10,0" VerticalAlignment="Center" Classes="updateIcon" />
+        <TextBlock x:Name="UpdateBannerText" Text="{Binding UpdateBannerText}" VerticalAlignment="Center" TextWrapping="Wrap" />
       </DockPanel>
     </Border>
 

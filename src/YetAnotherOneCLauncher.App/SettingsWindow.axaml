@@ -76,6 +76,16 @@
             <CheckBox x:Name="CheckAvailabilityBox" IsChecked="{Binding CheckAvailability}">
               <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
             </CheckBox>
+
+            <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
+            <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
+            <ComboBox x:Name="UpdateModeBox" ItemsSource="{Binding UpdateModeNames}" SelectedIndex="{Binding UpdateModeIndex}"
+                      HorizontalAlignment="Stretch" />
+            <TextBlock Classes="secondary" Text="{Binding UpdateModeHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0" IsVisible="{Binding CheckForUpdatesCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <Button x:Name="CheckForUpdatesButton" Content="Проверить обновления" Command="{Binding CheckForUpdatesCommand}" />
+              <TextBlock Classes="secondary" Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
+            </StackPanel>
           </StackPanel>
         </ScrollViewer>
       </TabItem>

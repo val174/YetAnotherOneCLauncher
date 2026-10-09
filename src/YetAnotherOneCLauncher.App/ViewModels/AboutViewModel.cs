@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows.Input;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
@@ -49,6 +50,11 @@ public sealed class AboutViewModel
     public string Author { get; }
 
     public string AuthorText => "Автор: " + Author;
+
+    /// <summary>«Проверить обновления» — задаёт главное окно; <c>null</c> — кнопки нет.</summary>
+    public ICommand? CheckForUpdatesCommand { get; init; }
+
+    public bool CanCheckForUpdates => CheckForUpdatesCommand is not null;
 
     /// <summary>Среда выполнения: .NET, Avalonia, ОС — пригодится в сообщении об ошибке.</summary>
     public string Environment { get; }
