@@ -237,6 +237,27 @@
             <CheckBox Grid.Row="4" IsChecked="{Binding WindowsAuthentication}" Content="Аутентификация Windows" Margin="0,8,0,0" />
           </Grid>
 
+          <!-- Связь с проектом 1C:EDT (из 1C:EDT Start): у базы появится кнопка «1C:EDT». -->
+          <StackPanel x:Name="EdtProjectField" Spacing="6" IsVisible="{Binding ShowEdtProjectField}">
+            <TextBlock Text="Проект 1C:EDT" />
+            <DockPanel>
+              <Button x:Name="ChooseEdtProjectButton" DockPanel.Dock="Right" Content="…" Command="{Binding ChooseEdtProjectCommand}" Margin="6,0,0,0"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Выбрать проект из 1C:EDT Start" />
+              <Button x:Name="ClearEdtProjectButton" DockPanel.Dock="Right" Command="{Binding ClearEdtProjectCommand}" IsVisible="{Binding HasEdtProject}"
+                      Margin="6,0,0,0" VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Отвязать проект">
+                <c:ToolIcon Width="12" Height="12" StrokeThickness="1.6" Brush="{DynamicResource IconDeleteBrush}" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+              </Button>
+              <TextBox x:Name="EdtProjectBox" Text="{Binding EdtProjectText, Mode=OneWay}" IsReadOnly="True" Cursor="Hand"
+                       ToolTip.Tip="{Binding EdtProject.Workspace, FallbackValue={x:Null}}" />
+            </DockPanel>
+            <Border x:Name="EdtSuggestion" IsVisible="{Binding ShowEdtSuggestion}" Padding="8,4" CornerRadius="4" Background="#26378ADD">
+              <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Привязать" Command="{Binding AcceptEdtSuggestionCommand}" Padding="10,2" />
+                <TextBlock Text="{Binding EdtSuggestionText}" TextWrapping="Wrap" VerticalAlignment="Center" />
+              </DockPanel>
+            </Border>
+          </StackPanel>
+
           <TextBlock Text="Дополнительные параметры запуска" Margin="0,4,0,0" />
           <DockPanel>
             <Button DockPanel.Dock="Right" Content="…" Command="{Binding EditLaunchParametersCommand}" Margin="6,0,0,0"

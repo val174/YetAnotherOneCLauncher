@@ -94,6 +94,8 @@ public sealed class SettingsStore
         settings.Cache ??= new CacheSettings();
         settings.Network ??= new NetworkSettings();
         settings.Updates ??= new UpdateSettings();
+        settings.Edt ??= new EdtSettings();
+        settings.Edt.ProjectInstallations ??= [];
         if (!Enum.IsDefined(settings.Updates.Mode))
         {
             settings.Updates.Mode = UpdateMode.CheckOnly;

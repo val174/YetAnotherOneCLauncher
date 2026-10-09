@@ -144,10 +144,10 @@ public class MainWindowTests
         var grid = window.FindControl<Grid>("PropertiesGrid")!;
         var labels = grid.Children.OfType<TextBlock>().Where(t => t.Classes.Contains("label")).OrderBy(Grid.GetRow).Select(t => t.Text);
         Assert.Equal(
-            ["Тип", "Клиент", "Платформа", "Параметры", "Пользователь", "Подключение", "Источник", "Группа", "Кэш", "Доступность", "Последний запуск", "Запусков"],
+            ["Тип", "Клиент", "Платформа", "Параметры", "Пользователь", "Подключение", "Источник", "Группа", "Проект 1C:EDT", "Кэш", "Доступность", "Последний запуск", "Запусков"],
             labels);
         var separators = grid.Children.OfType<Border>().Where(b => b.Classes.Contains("propertiesSeparator")).Select(Grid.GetRow);
-        Assert.Equal([6, 9], separators); // после «Подключения» и после «Группы»
+        Assert.Equal([6, 10], separators); // после «Подключения» и после «Группы» с «Проектом 1C:EDT»
 
         // Звезда на кнопке: контур — не в избранном, закрашенная — в избранном.
         var favorite = window.FindControl<Button>("FavoriteButton")!;

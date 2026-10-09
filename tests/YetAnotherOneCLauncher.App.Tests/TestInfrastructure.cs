@@ -422,7 +422,8 @@ internal sealed class ViewModelFixture : IDisposable
             jumpList: JumpList,
             startup: new StartupOptions(startupLaunchKey),
             clusterConsole: ClusterConsole,
-            updates: Updates);
+            updates: Updates,
+            edt: Edt);
     }
 
     public string ListPath { get; }
@@ -442,6 +443,8 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeClusterConsole ClusterConsole { get; } = new();
 
     public FakeUpdates Updates { get; } = new();
+
+    public FakeEdt Edt { get; } = new();
 
     /// <summary>Стандартные каталоги установки 1С (как «Program Files» и «Program Files (x86)») — здесь ищется стартер 1cestart; пустые.</summary>
     public string InstallRoot => Path.Combine(_directory, "Program Files", "1cv8");
@@ -580,4 +583,42 @@ internal sealed class FakeUpdates : IUpdateService
         RestartCount++;
         return true;
     }
+}
+
+/// <summary>Проекты 1C:EDT: каталог, открытые рабочие области и привязки баз задаёт тест.</summary>
+internal sealed class FakeEdt : IEdtProjects
+{
+    public static readonly Core.Edt.EdtInstallation Edt2025 = new("p-2025", "2025.1", @"C:\EDT\2025.1\1cedt\1cedt.exe");
+    public static readonly Core.Edt.EdtInstallation Edt2025b = new("p-2025b", "2025.2", @"C:\EDT\2025.2\1cedt\1cedt.exe");
+
+    /// <summary>Каталог; по умолчанию пустой — группы «Проекты 1C:EDT» нет (как без EDT Start).</summary>
+    public Core.Edt.EdtCatalog Catalog { get; set; } = Core.Edt.EdtCatalog.Empty;
+
+    public HashSet<string> OpenWorkspaces { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Рабочая область → ID баз, с которыми EDT связал её проекты.</summary>
+    public Dictionary<string, HashSet<string>> Bindings { get; } = new(StringComparer.OrdinalIgnoreCase);
+
+    public string? StarterPath { get; set; }
+
+    public Avalonia.Media.Imaging.Bitmap? Icon { get; set; }
+
+    /// <summary>Каталог с тремя проектами: два с установленными версиями и один — с удалённой.</summary>
+    public static Core.Edt.EdtCatalog Sample() => new(
+        [
+            new Core.Edt.EdtProject("pr-trade", "Торговля", @"D:\edt\trade", "p-2025"),
+            new Core.Edt.EdtProject("pr-old", "Архив", @"D:\edt\old", "removed"),
+            new Core.Edt.EdtProject("pr-tools", "Инструменты", @"D:\edt\tools", "p-2025b"),
+        ],
+        [Edt2025, Edt2025b]);
+
+    public Core.Edt.EdtCatalog Load() => Catalog;
+
+    public string? JavaFor(Core.Edt.EdtInstallation installation) =>
+        installation.Version.StartsWith("2025.2", StringComparison.Ordinal) ? @"C:\jdk\axiom-jdk-full-25.0.2+12-x86_64\bin\javaw.exe" : @"C:\jdk\axiom-jdk-full-17.0.16+12-x86_64\bin\javaw.exe";
+
+    public bool IsOpen(Core.Edt.EdtProject project) => OpenWorkspaces.Contains(project.Workspace);
+
+    public IReadOnlySet<string> InfobaseIds(Core.Edt.EdtProject project) =>
+        Bindings.TryGetValue(project.Workspace, out var ids) ? ids : new HashSet<string>();
 }

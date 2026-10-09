@@ -81,6 +81,8 @@ internal static class AppServices
             paths is null ? null : Path.Combine(paths.AppDataDirectory, "tool-icons"),
             sp.GetRequiredService<ILogger<AdminToolIconStore>>()));
         // Обновления из релизов GitHub — свой HttpClient: без учётной записи Windows (она нужна только веб-сервисам списков).
+        // Проекты 1C:EDT из EDT Start; значок EDT — из EDT Start или 1cedt.exe.
+        services.AddSingleton<IEdtProjects>(_ => new EdtProjects(PlatformServices.CreateFileIconReader()));
         services.AddSingleton<IUpdateService>(sp => new UpdateService(
             new HttpClient(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(10) })
             {

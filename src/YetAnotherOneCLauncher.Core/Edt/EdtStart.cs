@@ -45,6 +45,40 @@ public static class EdtStartReader
     public static string DefaultDataDirectory =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "1C", "1cedtstart");
 
+    /// <summary>
+    /// Программа 1C:EDT Start — самая новая из каталогов компонентов 1С
+    /// (<c>components\1c-edt-start-0.10.0+448-x86_64\1cedtstart.exe</c>); <c>null</c> — не установлена.
+    /// </summary>
+    public static string? FindStarter(IEnumerable<string> componentRoots)
+    {
+        var executable = OperatingSystem.IsWindows() ? "1cedtstart.exe" : "1cedtstart";
+        var found = new List<(string Path, Version Version)>();
+        foreach (var root in componentRoots)
+        {
+            try
+            {
+                if (!Directory.Exists(root))
+                {
+                    continue;
+                }
+
+                foreach (var directory in Directory.GetDirectories(root, "1c-edt-start-*"))
+                {
+                    var path = Path.Combine(directory, executable);
+                    if (File.Exists(path))
+                    {
+                        found.Add((path, EdtVersions.SortKey(Path.GetFileName(directory)["1c-edt-start-".Length..])));
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+            }
+        }
+
+        return found.OrderByDescending(f => f.Version).Select(f => f.Path).FirstOrDefault();
+    }
+
     public static EdtCatalog Load(string dataDirectory)
     {
         try

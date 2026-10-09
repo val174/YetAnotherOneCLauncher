@@ -27,6 +27,9 @@ public sealed record SettingsValues
     /// <summary>Режим обновления в порядке «Не использовать», «Только проверка», «Автообновление».</summary>
     public int UpdateModeIndex { get; init; } = (int)UpdateMode.CheckOnly;
 
+    /// <summary>Группа «Проекты 1C:EDT» в дереве баз.</summary>
+    public bool ShowEdtProjects { get; init; } = true;
+
     // Внешний вид.
     public int ThemeIndex { get; init; }
 
@@ -112,6 +115,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UseThickClientForFileBases = original.UseThickClientForFileBases;
         CheckAvailability = original.CheckAvailability;
         UpdateModeIndex = original.UpdateModeIndex;
+        ShowEdtProjects = original.ShowEdtProjects;
         ThemeIndex = original.ThemeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
@@ -164,6 +168,10 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool CheckAvailability { get; set; }
+
+    /// <summary>Показывать группу «Проекты 1C:EDT» (проекты из 1C:EDT Start).</summary>
+    [ObservableProperty]
+    public partial bool ShowEdtProjects { get; set; }
 
     /// <summary>Режим обновления лаунчера из релизов GitHub.</summary>
     [ObservableProperty]
@@ -242,7 +250,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         || SingleInstance != _original.SingleInstance
         || UseThickClientForFileBases != _original.UseThickClientForFileBases
         || CheckAvailability != _original.CheckAvailability
-        || UpdateModeIndex != _original.UpdateModeIndex;
+        || UpdateModeIndex != _original.UpdateModeIndex
+        || ShowEdtProjects != _original.ShowEdtProjects;
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
@@ -287,6 +296,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
+        ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,

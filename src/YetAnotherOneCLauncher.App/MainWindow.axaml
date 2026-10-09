@@ -660,7 +660,7 @@
                Ширина постоянная, прижаты к левой границе панели: при расширении панели кнопки не растут. -->
           <StackPanel x:Name="LaunchButtons" DockPanel.Dock="Top" Spacing="6" Margin="0,4,0,12" Width="220" HorizontalAlignment="Left"
                       IsVisible="{Binding ShowSideLaunchButtons}">
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsBaseOrNothingSelected}">
               <Button x:Name="LaunchEnterpriseButton" Classes="accent launchMain" Command="{Binding LaunchEnterpriseCommand}"
                       ToolTip.Tip="F3, Enter или двойной щелчок">
                 <StackPanel Orientation="Horizontal" Spacing="8">
@@ -673,7 +673,7 @@
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
               </Button>
             </Grid>
-            <Grid ColumnDefinitions="*,Auto">
+            <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding IsBaseOrNothingSelected}">
               <Button x:Name="LaunchDesignerButton" Classes="launchMain" Command="{Binding LaunchDesignerCommand}" ToolTip.Tip="F4">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                   <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
@@ -685,8 +685,40 @@
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource ParametersIconGeometry}" SolidData="{StaticResource ParametersKnobsIconGeometry}" />
               </Button>
             </Grid>
+            <!-- База связана с проектом 1C:EDT (поле «Проект 1C:EDT» в форме базы): открыть проект. -->
+            <Button x:Name="BaseEdtButton" Classes="launchMain single" Command="{Binding OpenInEdtCommand}"
+                    IsVisible="{Binding HasSelectedBaseEdtProject}" ToolTip.Tip="Открыть связанный проект в 1C:EDT">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel Classes="edtIcon">
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
+                  <Image Source="{Binding EdtIcon}" Width="18" Height="18" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                </Panel>
+                <TextBlock Text="{Binding SelectedBaseEdtButtonText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Button>
+            <!-- Выделен проект 1C:EDT: открыть его и EDT Start вместо кнопок запуска базы. -->
+            <Button x:Name="OpenInEdtButton" Classes="accent launchMain single" Command="{Binding OpenInEdtCommand}"
+                    IsVisible="{Binding IsEdtProjectSelected}" ToolTip.Tip="Enter или двойной щелчок">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel Classes="edtIcon">
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource DesignerIconGeometry}" />
+                  <Image Source="{Binding EdtIcon}" Width="18" Height="18" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                </Panel>
+                <TextBlock Text="Открыть в 1C:EDT" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
+            <Button x:Name="EdtStartButton" Classes="launchMain single" Command="{Binding OpenEdtStartCommand}"
+                    IsVisible="{Binding IsEdtProjectSelected}" ToolTip.Tip="Открыть 1C:EDT Start — проекты и версии EDT">
+              <StackPanel Orientation="Horizontal" Spacing="8">
+                <Panel Classes="edtIcon">
+                  <c:ToolIcon Classes="buttonIcon" Data="{StaticResource StarterIconGeometry}" />
+                  <Image Source="{Binding EdtIcon}" Width="18" Height="18" RenderOptions.BitmapInterpolationMode="HighQuality" />
+                </Panel>
+                <TextBlock Text="1C:EDT Start" VerticalAlignment="Center" />
+              </StackPanel>
+            </Button>
             <!-- Стандартный стартер 1С (1cestart) — со своим списком баз; не зависит от выбранной базы. -->
-            <Button x:Name="LaunchStarterButton" Classes="launchMain single" Command="{Binding LaunchStarterCommand}"
+            <Button x:Name="LaunchStarterButton" Classes="launchMain single" Command="{Binding LaunchStarterCommand}" IsVisible="{Binding IsBaseOrNothingSelected}"
                     ToolTip.Tip="Запустить стандартный стартер 1С (1cestart)">
               <StackPanel Orientation="Horizontal" Spacing="8">
                 <c:ToolIcon Classes="buttonIcon" Data="{StaticResource StarterIconGeometry}" />
@@ -694,10 +726,10 @@
               </StackPanel>
             </Button>
           </StackPanel>
-          <TextBlock x:Name="PropertiesHeader" DockPanel.Dock="Top" Classes="sectionHeader" Text="Свойства информационной базы"
+          <TextBlock x:Name="PropertiesHeader" DockPanel.Dock="Top" Classes="sectionHeader" Text="{Binding PropertiesHeaderText}"
                      IsVisible="{Binding ShowDetails}" />
         <Panel x:Name="PropertiesPanel" IsVisible="{Binding ShowDetails}">
-        <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding !HasSelection}"
+        <TextBlock Text="Выберите базу" Opacity="0.6" IsVisible="{Binding ShowNoSelectionHint}"
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
         <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
           <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
@@ -722,7 +754,7 @@
             </DockPanel>
 
             <!-- Свойства тремя группами: как запускается; откуда база в списке; состояние и история. -->
-            <Grid x:Name="PropertiesGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid x:Name="PropertiesGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
               <TextBlock Grid.Row="0" Classes="label" Text="Тип" />
               <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionKindText}" />
               <TextBlock Grid.Row="1" Classes="label" Text="Клиент" />
@@ -759,16 +791,19 @@
               <TextBlock Grid.Row="8" Classes="label" Text="Группа" />
               <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}"
                                    ToolTip.Tip="{Binding SelectedInfoBase.FolderPathTip}" />
+              <TextBlock Grid.Row="9" Classes="label" Text="Проект 1C:EDT" />
+              <SelectableTextBlock x:Name="BaseEdtProjectText" Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedBaseEdtProjectText}"
+                                   ToolTip.Tip="Связь задаётся в форме базы (поле «Проект 1C:EDT»)" />
 
-              <Border Grid.Row="9" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
-              <TextBlock Grid.Row="10" Classes="label" Text="Кэш" />
-              <SelectableTextBlock Grid.Row="10" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
-              <TextBlock Grid.Row="11" Classes="label" Text="Доступность" />
-              <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
-              <TextBlock Grid.Row="12" Classes="label" Text="Последний запуск" />
-              <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
-              <TextBlock Grid.Row="13" Classes="label" Text="Запусков" />
-              <SelectableTextBlock Grid.Row="13" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
+              <Border Grid.Row="10" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
+              <TextBlock Grid.Row="11" Classes="label" Text="Кэш" />
+              <SelectableTextBlock Grid.Row="11" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.CacheText}" />
+              <TextBlock Grid.Row="12" Classes="label" Text="Доступность" />
+              <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
+              <TextBlock Grid.Row="13" Classes="label" Text="Последний запуск" />
+              <SelectableTextBlock Grid.Row="13" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
+              <TextBlock Grid.Row="14" Classes="label" Text="Запусков" />
+              <SelectableTextBlock Grid.Row="14" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
             </Grid>
 
             <WrapPanel>
@@ -777,6 +812,44 @@
               <Button Content="Очистить кэш" Command="{Binding ClearCacheCommand}" Margin="0,0,6,6"
                       ToolTip.Tip="Удалить кэш базы; 1С заполнит его заново при запуске" />
             </WrapPanel>
+          </StackPanel>
+        </ScrollViewer>
+        <!-- Свойства проекта 1C:EDT. -->
+        <ScrollViewer x:Name="EdtProjectPanel" IsVisible="{Binding IsEdtProjectSelected}" HorizontalScrollBarVisibility="Disabled">
+          <StackPanel Spacing="10" Margin="0,0,12,0">
+            <SelectableTextBlock Text="{Binding SelectedEdtProject.Name, FallbackValue=''}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" TextWrapping="Wrap" />
+            <Grid x:Name="EdtPropertiesGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
+              <TextBlock Grid.Row="0" Classes="label" Text="Рабочая область" />
+              <DockPanel Grid.Row="0" Grid.Column="1" Margin="0,0,0,6">
+                <Button DockPanel.Dock="Right" Classes="icon" Command="{Binding OpenEdtWorkspaceFolderCommand}" VerticalAlignment="Top" Margin="2,-3,0,0"
+                        ToolTip.Tip="Открыть каталог рабочей области">
+                  <c:ToolIcon Brush="{DynamicResource IconFolderBrush}" Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5" />
+                </Button>
+                <SelectableTextBlock Text="{Binding SelectedEdtProject.Project.Workspace, FallbackValue=''}" TextWrapping="Wrap" />
+              </DockPanel>
+              <TextBlock Grid.Row="1" Classes="label" Text="Версия EDT" />
+              <SelectableTextBlock Grid.Row="1" Grid.Column="1" Classes="value" Text="{Binding SelectedEdtProject.VersionText, FallbackValue=''}"
+                                   ToolTip.Tip="{Binding SelectedEdtProject.VersionToolTip, FallbackValue=''}" />
+              <TextBlock Grid.Row="2" Classes="label" Text="Java" />
+              <SelectableTextBlock Grid.Row="2" Grid.Column="1" Classes="value" Text="{Binding SelectedEdtProject.JavaDisplay, FallbackValue=''}" TextWrapping="Wrap"
+                                   ToolTip.Tip="{Binding SelectedEdtProject.JavaPath, FallbackValue={x:Null}}" />
+              <TextBlock Grid.Row="3" Classes="label" Text="Состояние" />
+              <Panel Grid.Row="3" Grid.Column="1">
+                <TextBlock Classes="value" Text="открыт в 1C:EDT" IsVisible="{Binding SelectedEdtProject.IsOpen, FallbackValue=False}" />
+                <TextBlock Classes="value" Text="не открыт" IsVisible="{Binding !SelectedEdtProject.IsOpen, FallbackValue=False}" />
+              </Panel>
+              <TextBlock Grid.Row="4" Classes="label" Text="Базы" />
+              <SelectableTextBlock Grid.Row="4" Grid.Column="1" Classes="value" Text="{Binding SelectedEdtProjectBases}" TextWrapping="Wrap"
+                                   ToolTip.Tip="Связанные в лаунчере (поле «Проект 1C:EDT» в форме базы) и те, с которыми проект связал сам EDT" />
+              <TextBlock Grid.Row="5" Classes="label" Text="Строка запуска" />
+              <DockPanel Grid.Row="5" Grid.Column="1">
+                <Button DockPanel.Dock="Right" Classes="icon" Command="{Binding CopyEdtCommandLineCommand}" VerticalAlignment="Top" Margin="2,-3,0,0"
+                        ToolTip.Tip="Копировать строку запуска — например, для «Средств администрирования»">
+                  <c:ToolIcon Brush="{DynamicResource IconCopyBrush}" Data="M 5,1.5 L 13.5,1.5 L 13.5,11 L 5,11 Z M 2.5,4.5 L 2.5,14 L 10.5,14" />
+                </Button>
+                <SelectableTextBlock Text="{Binding SelectedEdtCommandLine}" TextWrapping="Wrap" Opacity="0.75" FontSize="{StaticResource SmallFontSize}" />
+              </DockPanel>
+            </Grid>
           </StackPanel>
         </ScrollViewer>
         </Panel>
@@ -817,6 +890,15 @@
     <Panel>
       <Panel.ContextMenu>
         <ContextMenu>
+          <!-- Проект 1C:EDT или база, связанная с проектом. -->
+          <MenuItem x:Name="OpenInEdtMenuItem" Header="Открыть в 1C:EDT" Command="{Binding OpenInEdtCommand}" IsVisible="{Binding ShowOpenInEdtMenu}">
+            <MenuItem.Icon>
+              <Image Source="{Binding EdtIcon}" Width="16" Height="16" RenderOptions.BitmapInterpolationMode="HighQuality" />
+            </MenuItem.Icon>
+          </MenuItem>
+          <MenuItem Header="Открыть каталог проекта" Command="{Binding OpenEdtWorkspaceFolderCommand}" IsVisible="{Binding IsEdtProjectSelected}" />
+          <MenuItem Header="Копировать строку запуска 1C:EDT" Command="{Binding CopyEdtCommandLineCommand}" IsVisible="{Binding IsEdtProjectSelected}" />
+          <Separator IsVisible="{Binding ShowOpenInEdtMenu}" />
           <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="{Binding HotKeys.LaunchEnterprise}">
             <MenuItem.Icon><c:ToolIcon Classes="buttonIcon" Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
@@ -904,10 +986,33 @@
                 <c:ToolIcon IsVisible="{Binding IsRegularFolder}" Brush="{DynamicResource IconFolderBrush}"
                             Data="M 1.5,3 L 6,3 L 7.5,4.5 L 14.5,4.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,6.5 L 14.5,6.5" />
                 <c:ToolIcon IsVisible="{Binding IsFavorites}" Classes="favStar" Width="18" Height="18" />
+                <!-- «Проекты 1C:EDT»: значок EDT с компьютера; поверх своего значка — если EDT не нашли, виден свой. -->
+                <c:ToolIcon IsVisible="{Binding IsEdtProjects}" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DesignerIconGeometry}" />
+                <Image x:Name="EdtGroupIcon" IsVisible="{Binding IsEdtProjects}" Width="18" Height="18" RenderOptions.BitmapInterpolationMode="HighQuality"
+                       Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" />
               </Panel>
               <TextBlock Text="{Binding Name}" FontWeight="SemiBold" />
             </StackPanel>
           </TreeDataTemplate>
+          <!-- Проект 1C:EDT: без значка; в колонках — версия EDT и Java, открытый — с зелёной точкой. -->
+          <DataTemplate DataType="vm:EdtProjectNodeViewModel">
+            <Grid Classes="baseRow edtRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
+                  ToolTip.Tip="{Binding Project.Workspace}">
+              <Grid Classes="nameWithDot" ColumnDefinitions="*,Auto" HorizontalAlignment="Left">
+                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding IsOpen}" ToolTip.Tip="Открыт в 1C:EDT" />
+              </Grid>
+              <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding VersionText}" ToolTip.Tip="{Binding VersionToolTip}"
+                         Classes.missing="{Binding IsVersionMissing}" />
+              <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding JavaText}" ToolTip.Tip="{Binding JavaPath}" />
+              <TextBlock Grid.Column="3" Classes="cell date" />
+              <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
+                <TextBlock Classes="secondary" Text="{Binding VersionText}" Classes.missing="{Binding IsVersionMissing}" />
+                <TextBlock Classes="secondary" Text="{Binding JavaText, StringFormat='·  {0}'}" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
           <DataTemplate DataType="vm:BaseNodeViewModel">
             <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
                   Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"

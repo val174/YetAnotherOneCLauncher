@@ -480,7 +480,7 @@ public partial class MainWindow : Window
         // Двойной щелчок по папке раскрывает её, по базе — запускает.
         var item = (e.Source as Visual)?.FindAncestorOfType<TreeViewItem>(includeSelf: true)?.DataContext
                    ?? (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext;
-        if (item is BaseNodeViewModel or BaseListItemViewModel)
+        if (item is BaseNodeViewModel or BaseListItemViewModel or EdtProjectNodeViewModel)
         {
             LaunchEnterprise();
             e.Handled = true;
@@ -500,12 +500,12 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    /// <summary>Enter и двойной щелчок — 1С: Предприятие (как F3).</summary>
+    /// <summary>Enter и двойной щелчок — 1С: Предприятие (как F3); у проекта 1C:EDT — открыть его в EDT.</summary>
     private void LaunchEnterprise()
     {
         if (ViewModel is { } vm)
         {
-            Execute(vm.LaunchEnterpriseCommand);
+            Execute(vm.IsEdtProjectSelected ? vm.OpenInEdtCommand : vm.LaunchEnterpriseCommand);
         }
     }
 

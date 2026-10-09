@@ -76,6 +76,9 @@
             <CheckBox x:Name="CheckAvailabilityBox" IsChecked="{Binding CheckAvailability}">
               <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
             </CheckBox>
+            <CheckBox x:Name="ShowEdtProjectsBox" IsChecked="{Binding ShowEdtProjects}">
+              <TextBlock TextWrapping="Wrap" Text="Показывать проекты 1C:EDT (из 1C:EDT Start) в списке баз" />
+            </CheckBox>
 
             <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
             <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
