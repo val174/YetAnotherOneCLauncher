@@ -19,6 +19,7 @@ public sealed partial class MainWindowViewModel
         SingleInstance = SingleInstance,
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
+        UpdateModeIndex = UpdateModeIndex,
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
@@ -37,7 +38,11 @@ public sealed partial class MainWindowViewModel
     [RelayCommand]
     private async Task OpenSettingsAsync()
     {
-        var settings = new SettingsViewModel(CurrentSettings, ShowAboutCommand, _toolIcons, _files);
+        var settings = new SettingsViewModel(CurrentSettings, ShowAboutCommand, _toolIcons, _files)
+        {
+            CheckForUpdatesCommand = CanCheckForUpdates ? CheckForUpdatesCommand : null,
+            UpdateStatusText = UpdateStatusText,
+        };
         if (await _dialogs.EditSettingsAsync(settings))
         {
             ApplySettings(settings.Result);
@@ -56,6 +61,7 @@ public sealed partial class MainWindowViewModel
         SingleInstance = values.SingleInstance;
         UseThickClientForFileBases = values.UseThickClientForFileBases;
         CheckAvailability = values.CheckAvailability;
+        UpdateModeIndex = values.UpdateModeIndex;
         ThemeIndex = values.ThemeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;

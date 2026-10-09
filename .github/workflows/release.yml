@@ -1,0 +1,77 @@
+name: Release
+
+# Релиз по тегу версии (0.2.0 или v0.2.0) на коммите из main: тесты, сборка одним файлом для Windows и Linux
+# с версией из тега, релиз на GitHub с обоими файлами. Из этих релизов лаунчер берёт обновления
+# (только релизы ветки main, не черновики и не предварительные).
+on:
+  push:
+    tags: ['[0-9]*', 'v[0-9]*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Тег релиза, например 0.2.0 (если тега нет — он будет создан на последнем коммите main)'
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-${{ github.event.inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Сборка и публикация релиза
+    # Сборка для Linux (в том числе ReadyToRun) делается и на Windows — как в scripts/publish.ps1.
+    runs-on: windows-latest
+    env:
+      DOTNET_NOLOGO: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
+      GH_TOKEN: ${{ github.token }}
+    defaults:
+      run:
+        shell: pwsh
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Тег — версия на коммите из main
+        run: |
+          if ($env:TAG -notmatch '^v?\d+\.\d+(\.\d+){0,2}$') { throw "Тег «$env:TAG» — не версия (ожидается 0.2.0 или v0.2.0)." }
+          $version = $env:TAG -replace '^v', ''
+          "VERSION=$version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          git fetch origin main
+          if (git rev-parse -q --verify "refs/tags/$env:TAG") {
+            $commit = git rev-list -n 1 "refs/tags/$env:TAG"
+            git merge-base --is-ancestor $commit origin/main
+            if ($LASTEXITCODE -ne 0) { throw "Коммит тега $env:TAG не входит в ветку main — обновления берутся только из релизов main." }
+            git checkout -q $commit
+          } else {
+            git checkout -q origin/main
+          }
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Тесты
+        run: dotnet test --configuration Release
+
+      - name: Сборка одним файлом (win-x64, linux-x64)
+        run: ./scripts/publish.ps1 -Version $env:VERSION
+
+      - name: Релиз на GitHub
+        run: |
+          $files = 'artifacts/publish/win-x64/YetAnotherOneCLauncher.exe', 'artifacts/publish/linux-x64/YetAnotherOneCLauncher'
+          gh release view $env:TAG *> $null
+          if ($LASTEXITCODE -eq 0) {
+            # Релиз уже создан вручную (например, с описанием) — заменить файлы.
+            gh release upload $env:TAG @files --clobber
+          } else {
+            gh release create $env:TAG @files --target main --title "YAOL v $env:VERSION" --generate-notes
+          }
+          if ($LASTEXITCODE -ne 0) { throw "Не удалось опубликовать релиз $env:TAG." }

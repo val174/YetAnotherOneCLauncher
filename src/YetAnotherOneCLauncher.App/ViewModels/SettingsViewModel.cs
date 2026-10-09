@@ -24,6 +24,9 @@ public sealed record SettingsValues
 
     public bool CheckAvailability { get; init; }
 
+    /// <summary>Режим обновления в порядке «Не использовать», «Только проверка», «Автообновление».</summary>
+    public int UpdateModeIndex { get; init; } = (int)UpdateMode.CheckOnly;
+
     // Внешний вид.
     public int ThemeIndex { get; init; }
 
@@ -108,6 +111,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SingleInstance = original.SingleInstance;
         UseThickClientForFileBases = original.UseThickClientForFileBases;
         CheckAvailability = original.CheckAvailability;
+        UpdateModeIndex = original.UpdateModeIndex;
         ThemeIndex = original.ThemeIndex;
         IconStyleIndex = original.IconStyleIndex;
         ShowDetails = original.ShowDetails;
@@ -160,6 +164,27 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     [ObservableProperty]
     public partial bool CheckAvailability { get; set; }
+
+    /// <summary>Режим обновления лаунчера из релизов GitHub.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(UpdateModeHint))]
+    public partial int UpdateModeIndex { get; set; }
+
+    /// <summary>В порядке <see cref="UpdateMode"/>.</summary>
+    public IReadOnlyList<string> UpdateModeNames { get; } = ["Не использовать", "Только проверка", "Автообновление"];
+
+    public string UpdateModeHint => UpdateModeIndex switch
+    {
+        0 => "Обновления не проверяются. Проверить можно кнопкой ниже.",
+        2 => "Новая версия скачивается и ставится сама, после установки лаунчер предложит перезапуститься.",
+        _ => "О новой версии появится оповещение, скачать и поставить — по кнопке «Обновить».",
+    };
+
+    /// <summary>«Проверить обновления» — задаёт главное окно; <c>null</c> — кнопки нет.</summary>
+    public ICommand? CheckForUpdatesCommand { get; init; }
+
+    /// <summary>«Версия 0.1.0 · проверено …» под кнопкой.</summary>
+    public string UpdateStatusText { get; init; } = string.Empty;
 
     // --- Внешний вид ---
     [ObservableProperty]
@@ -216,7 +241,8 @@ public sealed partial class SettingsViewModel : ObservableObject
         || MinimizeToTray != _original.MinimizeToTray
         || SingleInstance != _original.SingleInstance
         || UseThickClientForFileBases != _original.UseThickClientForFileBases
-        || CheckAvailability != _original.CheckAvailability;
+        || CheckAvailability != _original.CheckAvailability
+        || UpdateModeIndex != _original.UpdateModeIndex;
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
@@ -260,6 +286,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         SingleInstance = SingleInstance,
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
+        UpdateModeIndex = UpdateModeIndex,
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
