@@ -141,7 +141,7 @@ public sealed partial class EdtProjectNodeViewModel : TreeNodeViewModel
         : $"Открывается в 1C:EDT {Installation?.Version}";
 
     /// <summary>Java в свойствах проекта: каталог JDK («axiom-jdk-full-17.0.16+12-x86_64»), полный путь — в подсказке.</summary>
-    public string JavaDisplay => JavaPath is null ? "EDT найдёт сам" : System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(JavaPath)) ?? JavaPath);
+    public string JavaDisplay => JavaPath is null ? "EDT найдёт сам" : JdkDirectory(JavaPath);
 
     /// <summary>Колонка «Режим»: «Java 17» — какая Java передаётся EDT.</summary>
     public string JavaText => JavaPath is null ? "Java —" : "Java " + JavaMajor(JavaPath);
@@ -153,8 +153,17 @@ public sealed partial class EdtProjectNodeViewModel : TreeNodeViewModel
     private static string JavaMajor(string javaPath)
     {
         // …\axiom-jdk-full-17.0.16+12-x86_64\bin\javaw.exe → 17
-        var directory = System.IO.Path.GetFileName(System.IO.Path.GetDirectoryName(System.IO.Path.GetDirectoryName(javaPath)) ?? string.Empty);
-        var match = System.Text.RegularExpressions.Regex.Match(directory, @"jdk(-full)?-(\d+)");
+        var match = System.Text.RegularExpressions.Regex.Match(JdkDirectory(javaPath), @"jdk(-full)?-(\d+)");
         return match.Success ? match.Groups[2].Value : "?";
+    }
+
+    /// <summary>
+    /// Каталог JDK — на два уровня выше <c>bin\javaw.exe</c>. Разделители обоих видов: путь мог прийти из Windows,
+    /// а Path.GetDirectoryName в Linux «\» за разделитель не считает.
+    /// </summary>
+    private static string JdkDirectory(string javaPath)
+    {
+        var parts = javaPath.Split(['\\', '/'], StringSplitOptions.RemoveEmptyEntries);
+        return parts.Length >= 3 ? parts[^3] : javaPath;
     }
 }
