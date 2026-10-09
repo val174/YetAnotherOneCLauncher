@@ -109,9 +109,11 @@ public sealed partial class MainWindowViewModel : ObservableObject
         StartupOptions? startup = null,
         IClusterConsole? clusterConsole = null,
         StartupCatalog? startupCatalog = null,
-        IAdminToolIconSource? toolIcons = null)
+        IAdminToolIconSource? toolIcons = null,
+        IUpdateService? updates = null)
     {
         _toolIcons = toolIcons;
+        _updates = updates;
         _files = files;
         _store = store;
         _watcher = watcher;
@@ -296,7 +298,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode),
         nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
-        nameof(AddBaseCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
+        nameof(AddBaseCommand), nameof(DuplicateCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
         nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ToggleViewModeCommand), nameof(ToggleSortCommand))]
     public partial BaseListFilter ListFilter { get; set; }
 
@@ -373,6 +375,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(MoveDownCommand),
         nameof(SortFolderByNameCommand),
         nameof(CopyToPersonalCommand),
+        nameof(DuplicateCommand),
         nameof(ExportCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 
@@ -440,7 +443,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
     private void CycleTheme() => ThemeIndex = (ThemeIndex + 1) % ThemeNames.Count;
 
     [RelayCommand]
-    private Task ShowAboutAsync() => _dialogs.ShowAboutAsync(new AboutViewModel());
+    private Task ShowAboutAsync() =>
+        _dialogs.ShowAboutAsync(new AboutViewModel { CheckForUpdatesCommand = CanCheckForUpdates ? CheckForUpdatesCommand : null });
 
     [ObservableProperty]
     public partial int AfterLaunchIndex { get; set; }
@@ -512,12 +516,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
         // Щелчок по базе в списке переходов Windows, когда лаунчер уже открыт.
         _launchChannel?.Start(OnLaunchRequest);
         StartRunningWatch();
+        StartUpdateChecks();
     }
 
     /// <summary>Сохранить всё при закрытии окна.</summary>
     public Task ShutdownAsync()
     {
         StopRunningWatch();
+        StopUpdateChecks();
         return _settings.FlushAsync();
     }
 

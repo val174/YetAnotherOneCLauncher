@@ -88,6 +88,13 @@ public class ClusterConsoleTests
     [Fact]
     public void Registered_console_of_platform_outside_standard_folders_is_listed()
     {
+        // Пути регистрации консоли — пути Windows (реестр, radmin.dll); в Linux консоли кластера нет.
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Только Windows.");
+            return;
+        }
+
         var console = Console(registered: null);
         console.Available.Add("8.3.23.1865");
         console.Registrations[PlatformArchitecture.X86] =
@@ -314,6 +321,13 @@ public class ClusterConsoleTests
     [Fact]
     public void Stale_registration_of_older_platform_is_not_taken_for_registered()
     {
+        // Пути регистрации консоли — пути Windows (реестр, radmin.dll); в Linux консоли кластера нет.
+        if (!OperatingSystem.IsWindows())
+        {
+            Assert.Skip("Только Windows.");
+            return;
+        }
+
         // Как на ПК: 32-разрядная консоль зарегистрирована от 8.3.27.1936, в реестре осталась и прежняя — от 8.3.22.
         var console = Console(registered: null);
         console.Available.Add("8.3.27.1936");

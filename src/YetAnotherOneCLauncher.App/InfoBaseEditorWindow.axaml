@@ -2,6 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
         xmlns:p="using:YetAnotherOneCLauncher.Core.Platforms"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.InfoBaseEditorWindow"
         x:DataType="vm:InfoBaseEditorViewModel"
         Title="{Binding Title}"
@@ -13,6 +14,11 @@
       <Setter Property="Opacity" Value="0.65" />
       <Setter Property="FontSize" Value="{StaticResource SmallFontSize}" />
       <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!-- Строку подключения разобрать не удалось — подсказка заметнее. -->
+    <Style Selector="TextBlock.hint.warning">
+      <Setter Property="Opacity" Value="1" />
+      <Setter Property="Foreground" Value="#C57C00" />
     </Style>
     <!-- Подписи полей новой серверной базы — слева, как в штатном стартере. -->
     <Style Selector="Grid#CreateServerGrid > TextBlock">
@@ -121,6 +127,19 @@
         <StackPanel x:Name="FormPage" Spacing="10" Margin="0,0,14,0" IsEnabled="{Binding IsIdle}">
           <TextBlock Text="Название" />
           <TextBox x:Name="NameBox" Text="{Binding Name}" />
+          <!-- Две базы с одним названием не допускаются: занятое — видно сразу, сохранить не даст проверка. -->
+          <TextBlock x:Name="NameTakenText" Classes="hint warning" Text="{Binding NameTakenHint}" IsVisible="{Binding IsNameTakenHintVisible}"
+                     Margin="0,-4,0,0" />
+
+          <!-- Существующая база: вставленная строка подключения заполняет поля ниже. -->
+          <StackPanel Spacing="6" IsVisible="{Binding ShowConnectionStringField}">
+            <TextBlock Text="Строка подключения" />
+            <TextBox x:Name="ConnectionStringBox" Text="{Binding ConnectionText}"
+                     PlaceholderText="File=&quot;C:\Bases\Buh&quot;;  Srvr=&quot;srv:1541&quot;;Ref=&quot;buh&quot;;  https://server/buh"
+                     ToolTip.Tip="Строка подключения 1С, путь к каталогу базы, адрес веб-публикации или «сервер\база» — расположение и остальные поля заполнятся сами" />
+            <TextBlock x:Name="ConnectionHintText" Classes="hint" Text="{Binding ConnectionHint}" IsVisible="{Binding HasConnectionHint}"
+                       Classes.warning="{Binding IsConnectionHintWarning}" />
+          </StackPanel>
 
           <!-- Выбранный на предыдущем шаге шаблон; сменить — «< Назад». -->
           <StackPanel Spacing="4" IsVisible="{Binding IsTemplateMode}">
@@ -132,7 +151,7 @@
           <TextBlock Text="Расположение" Margin="0,4,0,0" />
           <ComboBox x:Name="KindBox" ItemsSource="{Binding KindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
                     IsVisible="{Binding ShowExistingFields}" />
-          <ComboBox x:Name="CreationKindBox" ItemsSource="{Binding CreationKindNames}" SelectedIndex="{Binding KindIndex}" HorizontalAlignment="Stretch"
+          <ComboBox x:Name="CreationKindBox" ItemsSource="{Binding CreationKindNames}" SelectedIndex="{Binding CreationKindIndex}" HorizontalAlignment="Stretch"
                     IsVisible="{Binding IsCreateMode}" />
 
           <StackPanel Spacing="6" IsVisible="{Binding IsFile}">
@@ -188,12 +207,22 @@
 
           <StackPanel Spacing="6" IsVisible="{Binding IsWeb}">
             <TextBlock Text="Адрес базы на веб-сервере" />
-            <TextBox Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
+            <TextBox x:Name="WebUrlBox" Text="{Binding WebUrl}" PlaceholderText="https://server/buh" />
           </StackPanel>
 
           <Grid ColumnDefinitions="*,12,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,4,0,0">
-            <TextBlock Text="Папка в списке" Margin="0,0,0,6" />
-            <AutoCompleteBox Grid.Row="1" Text="{Binding Folder}" ItemsSource="{Binding Folders}" FilterMode="ContainsOrdinal" MinimumPrefixLength="0" />
+            <TextBlock Text="Группа" Margin="0,0,0,6" />
+            <!-- Группа выбирается в отдельном окне: дерево групп и создание новой. -->
+            <DockPanel Grid.Row="1">
+              <Button x:Name="ChooseGroupButton" DockPanel.Dock="Right" Content="…" Command="{Binding ChooseGroupCommand}" Margin="6,0,0,0"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Выбрать группу или создать новую" />
+              <Button x:Name="ClearGroupButton" DockPanel.Dock="Right" Command="{Binding ClearGroupCommand}" IsVisible="{Binding HasGroup}" Margin="6,0,0,0"
+                      VerticalAlignment="Stretch" VerticalContentAlignment="Center" ToolTip.Tip="Очистить: база будет в корне списка">
+                <c:ToolIcon Width="12" Height="12" StrokeThickness="1.6" Brush="{DynamicResource IconDeleteBrush}" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+              </Button>
+              <TextBox x:Name="GroupBox" Text="{Binding FolderText, Mode=OneWay}" IsReadOnly="True" Cursor="Hand"
+                       ToolTip.Tip="{Binding FolderPathTip}" />
+            </DockPanel>
             <TextBlock Grid.Column="2" Text="Клиент" Margin="0,0,0,6" />
             <ComboBox Grid.Row="1" Grid.Column="2" ItemsSource="{Binding AppNames}" SelectedIndex="{Binding AppIndex}" HorizontalAlignment="Stretch" />
 

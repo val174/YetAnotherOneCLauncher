@@ -310,6 +310,9 @@ public sealed class LauncherSettings
 
     public NetworkSettings Network { get; set; } = new();
 
+    /// <summary>Обновление лаунчера из релизов GitHub.</summary>
+    public UpdateSettings Updates { get; set; } = new();
+
     /// <summary>Название инструмента, в который переносится прежний адрес «ПУСК».</summary>
     public const string PuskToolName = "Панель управления сервисами и компонентами";
 

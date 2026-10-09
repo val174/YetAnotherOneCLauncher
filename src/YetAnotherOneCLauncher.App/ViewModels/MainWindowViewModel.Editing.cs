@@ -133,7 +133,7 @@ public sealed partial class MainWindowViewModel
         }
 
         await EditListAsync(
-            document => PersonalListEditor.ReplaceText(document, target, text),
+            document => PersonalListEditor.ReplaceText(document, target, text, OtherBaseNames(SelectedInfoBase)),
             "Запись сохранена.",
             CurrentSelectionKey);
     }
@@ -245,11 +245,21 @@ public sealed partial class MainWindowViewModel
         }
 
         string? key = null;
+        var copyName = string.Empty;
         await EditListAsync(
-            document => key = SelectionKeyOf(PersonalListEditor.CopyBase(document, source.InfoBase)),
-            $"Копия «{source.Name}» добавлена в личный список.",
+            document =>
+            {
+                // Название копии — свободное во всех списках: «Имя (копия)», «Имя (копия 2)»…
+                var copy = PersonalListEditor.CopyBase(document, source.InfoBase, OtherBaseNames(null));
+                copyName = copy.Name;
+                key = SelectionKeyOf(copy);
+            },
+            () => $"Копия «{source.Name}» добавлена в личный список: «{copyName}».",
             () => key);
     }
+
+    /// <summary>Названия баз во всех списках, кроме <paramref name="except"/>: новое название с ними совпадать не должно.</summary>
+    private List<string> OtherBaseNames(InfoBaseViewModel? except) => [.. _bases.Where(b => b != except).Select(b => b.Name)];
 
     [RelayCommand(CanExecute = nameof(CanEditList))]
     private async Task ImportAsync()
@@ -273,8 +283,9 @@ public sealed partial class MainWindowViewModel
 
         ImportResult? result = null;
         await EditListAsync(
-            document => result = PersonalListEditor.Import(document, source),
-            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}.",
+            document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
+            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
+                  + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
             CurrentSelectionKey);
     }
 
@@ -396,6 +407,66 @@ public sealed partial class MainWindowViewModel
         {
             MoveFolderParameters(folderSource.Path, FolderPaths.Combine(place.Folder, folderSource.Name));
         }
+    }
+
+    /// <summary>«Дублировать»: строка-копия выделенной базы сразу за ней, название «Имя_копия».</summary>
+    [RelayCommand(CanExecute = nameof(CanDuplicate))]
+    private async Task DuplicateAsync()
+    {
+        if (SelectedInfoBase is { } source)
+        {
+            await DuplicateBaseAsync(source, source.InfoBase.FolderPath, before: null, afterSource: true);
+        }
+    }
+
+    private bool CanDuplicate() => CanEditList && SelectedInfoBase is not null;
+
+    /// <summary>
+    /// Перетаскивание базы с зажатым Ctrl: дубликат — в папку, на которую бросили, или перед базой, на которую бросили.
+    /// </summary>
+    public async Task DuplicateNodeAsync(TreeNodeViewModel source, TreeNodeViewModel target)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(target);
+        if (source is not BaseNodeViewModel { Base: var infoBase } || !CanEditList)
+        {
+            return;
+        }
+
+        (string Folder, EntryRef? Before)? destination = target switch
+        {
+            FolderNodeViewModel { Kind: FolderKind.Regular } folder => (folder.Path, null),
+            BaseNodeViewModel b when IsInRegularFolder(b) => (b.Base.InfoBase.FolderPath, b.Base.InfoBase.IsReadOnly ? null : EntryRef.Of(b.Base.InfoBase)),
+            _ => null,
+        };
+        if (destination is { } place)
+        {
+            await DuplicateBaseAsync(infoBase, place.Folder, place.Before, afterSource: false);
+        }
+    }
+
+    /// <summary>Спрашивает «Добавить новую строку в список?» и добавляет дубликат базы в личный список.</summary>
+    private async Task DuplicateBaseAsync(InfoBaseViewModel source, string folder, EntryRef? before, bool afterSource)
+    {
+        if (!await _dialogs.ConfirmAsync($"Дублирование «{source.Name}»", "Добавить новую строку в список?", "Добавить"))
+        {
+            return;
+        }
+
+        string? key = null;
+        var copyName = string.Empty;
+        var byName = IsSortedByName;
+        var added = await EditListAsync(
+            document =>
+            {
+                var copy = PersonalListEditor.DuplicateBase(
+                    document, source.InfoBase, folder, before, afterSource, OtherBaseNames(null), sortByNameFirst: byName && (before is not null || afterSource));
+                copyName = copy.Name;
+                key = SelectionKeyOf(copy);
+            },
+            () => $"Добавлена копия «{source.Name}»: «{copyName}».",
+            () => key);
+        KeepCustomOrderAfterMove(added && byName && (before is not null || afterSource));
     }
 
     private bool HasEditableSelection() =>

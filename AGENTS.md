@@ -67,8 +67,12 @@ dotnet publish src/YetAnotherOneCLauncher.App -p:PublishProfile=linux-x64  # art
 
 Файл около 63 МБ: внутри .NET, библиотеки отрисовки и заранее скомпилированный код (`PublishReadyToRun`), сборки сжаты (`EnableCompressionInSingleFile`). Замер на Windows: окно через ~1,5 с (без ReadyToRun ~2,1 с; вариант без сжатия, ~144 МБ, открывался за ~0,9 с — убран по решению пользователя). Библиотеки отрисовки лаунчер при первом запуске распаковывает в `%TEMP%\.net\YetAnotherOneCLauncher` (Linux: `~/.net`), поэтому первый старт новой версии дольше (~7–8 с со сжатием). Настройки и логи — в каталоге настроек пользователя, не рядом с файлом. Время открытия пишется в лог: «Окно открыто через …», «Список баз показан через …», «Платформы найдены …».
 
+`scripts/publish.ps1 -Version 0.2.0` задаёт версию программы (иначе — `<Version>` из `Directory.Build.props`).
+
+**Релиз и обновления.** Лаунчер обновляется из релизов GitHub (`Core/Updates`: `GitHubReleaseClient`, `UpdateChecker`; установка — `App/Services/UpdateService`): берётся самый новый опубликованный (не черновик, не prerelease) релиз с `target_commitish == main`, версия из тега, файл `YetAnotherOneCLauncher.exe` (Windows) или `YetAnotherOneCLauncher` (Linux), проверка SHA-256 по полю `digest`. Выпуск: поднять `<Version>` в `Directory.Build.props`, влить в `main`, поставить на коммит из `main` тег версии (`0.2.0` или `v0.2.0`) и отправить его — `.github/workflows/release.yml` прогонит тесты, соберёт оба файла с версией из тега и создаст релиз (`--target main`) с обоими файлами. Релиз можно запустить и вручную (`workflow_dispatch` с тегом).
+
 Предупреждения компилятора и анализаторов считаются ошибками (`TreatWarningsAsErrors`, `AnalysisLevel=latest-recommended`).
-CI (GitHub Actions, `.github/workflows/ci.yml`) собирает решение и запускает тесты на Windows и Linux.
+CI (GitHub Actions, `.github/workflows/ci.yml`) собирает решение и запускает тесты на Windows и Linux. Релизы — `.github/workflows/release.yml` (см. «Релиз и обновления»).
 
 Лог приложения: `<каталог настроек>/logs/launcher-<дата>.log`, то есть `%APPDATA%\YetAnotherOneCLauncher\logs` в Windows и `~/.config/YetAnotherOneCLauncher/logs` в Linux. В отладочной сборке пишутся и сообщения уровня Debug.
 

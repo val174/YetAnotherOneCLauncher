@@ -11,6 +11,11 @@ internal static partial class Program
     [STAThread]
     public static int Main(string[] args)
     {
+        // Запуск после установки обновления: сначала дождаться выхода прежней версии (иначе сработает запрет
+        // повторного запуска), затем убрать её файл (*.old) и недокачанное (*.download).
+        UpdateService.WaitForPreviousInstance(args, TimeSpan.FromSeconds(15));
+        UpdateService.CleanupLeftovers();
+
         // Щелчок по базе в списке переходов Windows: если лаунчер уже открыт, база запускается в нём.
         var launchKey = LaunchArgument.Parse(args);
         if (launchKey is not null && Forward(launchKey))

@@ -380,7 +380,8 @@ public class EditingTests
 
         // Выгрузка поверх общего списка отклоняется.
         SelectCommon();
-        fixture.Files.SaveAnswer = commonPath.ToUpperInvariant();
+        // В Windows регистр в пути не важен — тот же файл и в другом регистре; в Linux это был бы другой файл.
+        fixture.Files.SaveAnswer = OperatingSystem.IsWindows() ? commonPath.ToUpperInvariant() : commonPath;
         await vm.ExportCommand.ExecuteAsync(null);
         Assert.Contains("общий список", fixture.Dialogs.Messages[^1], StringComparison.Ordinal);
 

@@ -93,6 +93,12 @@ public sealed class SettingsStore
         settings.Launch ??= new LaunchSettings();
         settings.Cache ??= new CacheSettings();
         settings.Network ??= new NetworkSettings();
+        settings.Updates ??= new UpdateSettings();
+        if (!Enum.IsDefined(settings.Updates.Mode))
+        {
+            settings.Updates.Mode = UpdateMode.CheckOnly;
+        }
+
         return settings;
     }
 

@@ -69,7 +69,13 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     public IReadOnlyList<string> PlatformVersions { get; init; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NameTakenHint), nameof(IsNameTakenHintVisible))]
     public partial string Name { get; set; }
+
+    /// <summary>Подсказка под названием, если оно занято другой базой: сохранить такую базу нельзя.</summary>
+    public string NameTakenHint => IsNameTaken(Name.Trim()) ? $"База «{Name.Trim()}» уже есть в списке — укажите другое название." : string.Empty;
+
+    public bool IsNameTakenHintVisible => NameTakenHint.Length > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFile), nameof(IsServer), nameof(IsWeb))]
@@ -93,8 +99,45 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     [ObservableProperty]
     public partial string WebUrl { get; set; }
 
+    /// <summary>Группа (папка списка), например «/Рабочие/Отчёты»; «/» — без группы, в корне списка.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FolderText), nameof(FolderPathTip), nameof(HasGroup))]
+    [NotifyCanExecuteChangedFor(nameof(ClearGroupCommand))]
     public partial string Folder { get; set; }
+
+    /// <summary>Группа для показа в форме, как в панели свойств: только своя («Отчёты») или «Не выбрана».</summary>
+    public string FolderText =>
+        FolderPaths.Split(Folder) is { Length: > 0 } segments ? segments[^1] : GroupPickerViewModel.NoGroupText;
+
+    /// <summary>Полный путь вложенной группы — подсказка к полю («Рабочие / Отчёты»); иначе <c>null</c>.</summary>
+    public string? FolderPathTip => FolderPaths.Split(Folder) is { Length: > 1 } segments ? string.Join(" / ", segments) : null;
+
+    public bool HasGroup => FolderPaths.Normalize(Folder) != FolderPaths.Root;
+
+    /// <summary>Очистить поле «Группа»: база — в корне списка.</summary>
+    [RelayCommand(CanExecute = nameof(HasGroup))]
+    private void ClearGroup() => Folder = FolderPaths.Root;
+
+    /// <summary>
+    /// Открывает окно выбора группы; <c>true</c> — группа выбрана. Задаёт главное окно;
+    /// <c>null</c> — кнопка выбора недоступна.
+    /// </summary>
+    public Func<GroupPickerViewModel, Task<bool>>? GroupChooser { get; init; }
+
+    /// <summary>Запрос имени новой группы в окне выбора (получает путь родительской); <c>null</c> — создавать нельзя.</summary>
+    public Func<string, Task<string?>>? GroupNamePrompt { get; init; }
+
+    public bool CanChooseGroup => GroupChooser is not null;
+
+    [RelayCommand(CanExecute = nameof(CanChooseGroup))]
+    private async Task ChooseGroupAsync()
+    {
+        var picker = new GroupPickerViewModel(Folders, Folder, GroupNamePrompt);
+        if (await GroupChooser!(picker))
+        {
+            Folder = picker.SelectedPath;
+        }
+    }
 
     [ObservableProperty]
     public partial int AppIndex { get; set; }
@@ -121,6 +164,12 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     /// <summary>Данные формы; заполняется в <see cref="TryAccept"/>.</summary>
     public InfoBaseDraft? Result { get; private set; }
 
+    /// <summary>
+    /// Название занято другой базой. У изменяемой базы прежнее название (даже если оно уже повторяется) оставить можно.
+    /// </summary>
+    private bool IsNameTaken(string name) =>
+        name.Length > 0 && !PersonalListEditor.NameComparer.Equals(name, _original.Name.Trim()) && ExistingNames.Contains(name);
+
     /// <summary>Проверяет данные; при успехе заполняет <see cref="Result"/>.</summary>
     public bool TryAccept()
     {
@@ -139,9 +188,16 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
             // Ключа не было и флажок не меняли — ключ не добавляем, чтобы не изменить поведение запуска.
             WindowsAuthentication = _original.WindowsAuthentication is null && WindowsAuthentication ? null : WindowsAuthentication,
             AdditionalParameters = string.IsNullOrWhiteSpace(AdditionalParameters) ? null : AdditionalParameters.Trim(),
+            // Дополнительные ключи вставленной строки подключения (wsn и т. п.) — в запись базы.
+            OriginalConnection = _pastedConnection ?? _original.OriginalConnection,
         };
 
-        var errors = draft.Validate();
+        var errors = draft.Validate().ToList();
+        if (IsNameTaken(draft.Name))
+        {
+            errors.Insert(0, $"В списке уже есть база «{draft.Name}». Укажите другое название.");
+        }
+
         Errors = string.Join(Environment.NewLine, errors);
         Result = errors.Count == 0 ? draft : null;
         return Result is not null;

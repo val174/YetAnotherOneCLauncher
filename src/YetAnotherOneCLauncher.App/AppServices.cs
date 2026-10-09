@@ -80,6 +80,14 @@ internal static class AppServices
             PlatformServices.CreateFileIconReader(),
             paths is null ? null : Path.Combine(paths.AppDataDirectory, "tool-icons"),
             sp.GetRequiredService<ILogger<AdminToolIconStore>>()));
+        // Обновления из релизов GitHub — свой HttpClient: без учётной записи Windows (она нужна только веб-сервисам списков).
+        services.AddSingleton<IUpdateService>(sp => new UpdateService(
+            new HttpClient(new SocketsHttpHandler { ConnectTimeout = TimeSpan.FromSeconds(10) })
+            {
+                Timeout = TimeSpan.FromSeconds(30),
+                DefaultRequestHeaders = { { "User-Agent", PlatformServices.AppFolderName } },
+            },
+            sp.GetRequiredService<ILogger<UpdateService>>()));
         services.AddSingleton(new AvailabilityChecker());
         services.AddSingleton<InfoBaseCatalogLoader>();
         services.AddSingleton<IProcessLauncher, ProcessLauncher>();

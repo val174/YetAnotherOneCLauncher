@@ -12,6 +12,7 @@ using YetAnotherOneCLauncher.Core.Parsing;
 using YetAnotherOneCLauncher.Core.Platforms;
 using YetAnotherOneCLauncher.Core.Settings;
 using YetAnotherOneCLauncher.Core.Text;
+using YetAnotherOneCLauncher.Core.Updates;
 using YetAnotherOneCLauncher.Platform.Abstractions;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
@@ -86,6 +87,11 @@ internal sealed class FakeDialogs : IDialogService
     public Task<bool> EditInfoBaseAsync(InfoBaseEditorViewModel editor) =>
         // Новая база создаётся в самой форме (TryCreateAsync): тогда результат уже есть, повторная проверка не нужна.
         Task.FromResult(InfoBaseEditor(editor) && (editor.IsCreateMode ? editor.Result is not null : editor.TryAccept()));
+
+    /// <summary>Что «пользователь» сделает в окне выбора группы; <c>false</c> — отмена.</summary>
+    public Func<GroupPickerViewModel, Task<bool>> GroupChooser { get; set; } = _ => Task.FromResult(false);
+
+    public Task<bool> ChooseGroupAsync(GroupPickerViewModel picker) => GroupChooser(picker);
 
     /// <summary>Что «пользователь» сделает в форме параметров запуска: режим разового запуска или <c>null</c> для сохранения; <c>false</c> в ответе — отмена.</summary>
     public Func<LaunchParametersViewModel, (bool Accept, LaunchMode? Mode)> LaunchParameters { get; set; } = _ => (false, null);
@@ -415,7 +421,8 @@ internal sealed class ViewModelFixture : IDisposable
             availabilityChecker: new Core.Availability.AvailabilityChecker(Availability),
             jumpList: JumpList,
             startup: new StartupOptions(startupLaunchKey),
-            clusterConsole: ClusterConsole);
+            clusterConsole: ClusterConsole,
+            updates: Updates);
     }
 
     public string ListPath { get; }
@@ -433,6 +440,8 @@ internal sealed class ViewModelFixture : IDisposable
     public FakeJumpList JumpList { get; } = new();
 
     public FakeClusterConsole ClusterConsole { get; } = new();
+
+    public FakeUpdates Updates { get; } = new();
 
     /// <summary>Стандартные каталоги установки 1С (как «Program Files» и «Program Files (x86)») — здесь ищется стартер 1cestart; пустые.</summary>
     public string InstallRoot => Path.Combine(_directory, "Program Files", "1cv8");
@@ -520,5 +529,55 @@ internal sealed class ViewModelFixture : IDisposable
         var bin = Path.Combine("C:", "1cv8", version, "bin");
         return new PlatformInstallation(
             PlatformVersion.Parse(version), PlatformArchitecture.X64, bin, Path.Combine(bin, "1cv8.exe"), Path.Combine(bin, "1cv8c.exe"));
+    }
+}
+
+/// <summary>Служба обновлений: ответ проверки и установки задаёт тест, вызовы считаются.</summary>
+internal sealed class FakeUpdates : IUpdateService
+{
+    public ReleaseVersion CurrentVersion { get; set; } = ReleaseVersion.Parse("0.1.0");
+
+    public bool CanInstall => CannotInstallReason is null;
+
+    public string? CannotInstallReason { get; set; }
+
+    /// <summary>Что вернёт проверка; по умолчанию — обновлений нет.</summary>
+    public UpdateCheckResult CheckResult { get; set; } = new UpdateCheckResult.UpToDate(ReleaseVersion.Parse("0.1.0"));
+
+    public int CheckCount { get; private set; }
+
+    public List<UpdateCheckResult.Available> Installed { get; } = [];
+
+    /// <summary>Ошибка установки; <c>null</c> — установка удаётся.</summary>
+    public string? InstallError { get; set; }
+
+    public int RestartCount { get; private set; }
+
+    public static UpdateCheckResult.Available Available(string version)
+    {
+        var asset = new GitHubReleaseAsset("YetAnotherOneCLauncher.exe", 10, null, new Uri($"https://github.com/val174/YetAnotherOneCLauncher/releases/download/{version}/YetAnotherOneCLauncher.exe"));
+        var release = new GitHubRelease(version, version, string.Empty, new Uri($"https://github.com/val174/YetAnotherOneCLauncher/releases/tag/{version}"), "main", false, false, null, [asset]);
+        return new UpdateCheckResult.Available(ReleaseVersion.Parse(version), release, asset);
+    }
+
+    public Task<UpdateCheckResult> CheckAsync(CancellationToken cancellationToken = default)
+    {
+        CheckCount++;
+        return Task.FromResult(CheckResult);
+    }
+
+    public Task<UpdateInstallResult> InstallAsync(UpdateCheckResult.Available update, IProgress<double>? progress, CancellationToken cancellationToken = default)
+    {
+        Installed.Add(update);
+        progress?.Report(1);
+        return Task.FromResult<UpdateInstallResult>(InstallError is { } error
+            ? new UpdateInstallResult.Failed(error)
+            : new UpdateInstallResult.Installed(update.Version));
+    }
+
+    public bool StartUpdatedVersion()
+    {
+        RestartCount++;
+        return true;
     }
 }

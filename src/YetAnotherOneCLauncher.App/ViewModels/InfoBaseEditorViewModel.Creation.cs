@@ -30,11 +30,11 @@ public sealed partial class InfoBaseEditorViewModel
         }
     }
 
-    /// <summary>Названия баз, уже есть в списках: новую базу с таким же названием не создаём.</summary>
+    /// <summary>Названия других баз во всех списках: базу с таким же названием не добавляем и в него не переименовываем.</summary>
     public IReadOnlyCollection<string> ExistingNames
     {
         get;
-        init => field = new HashSet<string>(value.Select(n => n.Trim()), StringComparer.CurrentCultureIgnoreCase);
+        init => field = new HashSet<string>(value.Select(n => n.Trim()), PersonalListEditor.NameComparer);
     } = [];
 
     /// <summary>Можно ли создать новую базу (новая запись и задан <see cref="Creator"/>).</summary>
@@ -71,7 +71,7 @@ public sealed partial class InfoBaseEditorViewModel
     [ObservableProperty]
     [NotifyPropertyChangedFor(
         nameof(IsExistingMode), nameof(IsTemplateMode), nameof(IsEmptyMode), nameof(IsCreateMode), nameof(Title), nameof(AcceptText),
-        nameof(ShowExistingFields), nameof(ShowCreateServerFields), nameof(ShowExistingServerFields))]
+        nameof(ShowExistingFields), nameof(ShowCreateServerFields), nameof(ShowExistingServerFields), nameof(ShowConnectionStringField))]
     public partial InfoBaseAddMode AddMode { get; set; }
 
     // Положения переключателя на первой странице: установка в true выбирает вариант.
@@ -163,6 +163,23 @@ public sealed partial class InfoBaseEditorViewModel
 
     public IReadOnlyList<string> CreationKindNames { get; } = ["На данном компьютере или в локальной сети", "На сервере 1С:Предприятия"];
 
+    /// <summary>
+    /// Расположение новой базы — у списка «Создать» свой индекс: в нём нет пункта «На веб-сервере», и общий
+    /// <see cref="KindIndex"/> он сбрасывал бы в -1 (скрытый список тоже пишет в привязку), из-за чего у
+    /// существующей базы на веб-сервере пропадало поле адреса.
+    /// </summary>
+    public int CreationKindIndex
+    {
+        get => KindIndex < CreationKindNames.Count ? KindIndex : -1;
+        set
+        {
+            if (value >= 0 && value < CreationKindNames.Count)
+            {
+                KindIndex = value;
+            }
+        }
+    }
+
     public IReadOnlyList<string> SecureConnectionNames { get; } = ["Выключено", "Только соединение", "Постоянно"];
 
     public IReadOnlyList<string> DbmsNames { get; } = ["MS SQL Server", "PostgreSQL", "IBM DB2", "Oracle Database"];
@@ -217,6 +234,7 @@ public sealed partial class InfoBaseEditorViewModel
 
     partial void OnKindIndexChanged(int value)
     {
+        OnPropertyChanged(nameof(CreationKindIndex));
         OnPropertyChanged(nameof(ShowCreateServerFields));
         OnPropertyChanged(nameof(ShowExistingServerFields));
     }
@@ -270,10 +288,6 @@ public sealed partial class InfoBaseEditorViewModel
         var draft = Result!;
         var creation = BuildCreation();
         var errors = creation.Validate().ToList();
-        if (ExistingNames.Contains(draft.Name))
-        {
-            errors.Insert(0, $"В списке уже есть база «{draft.Name}». Укажите другое название.");
-        }
         if (SelectedCreationPlatform is null)
         {
             errors.Add("Не найдена платформа 1С с конфигуратором (1cv8) — создать базу нечем.");
