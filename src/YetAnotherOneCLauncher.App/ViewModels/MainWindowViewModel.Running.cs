@@ -102,6 +102,7 @@ public sealed partial class MainWindowViewModel
 
         _running = running;
         ApplyRunning();
+        RefreshEdtOpenState();
     }
 
     /// <summary>Какие базы открыты и в каких клиентах. Командная строка каждого процесса разбирается один раз.</summary>

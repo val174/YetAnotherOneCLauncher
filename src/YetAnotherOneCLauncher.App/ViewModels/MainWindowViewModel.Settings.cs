@@ -20,6 +20,7 @@ public sealed partial class MainWindowViewModel
         UseThickClientForFileBases = UseThickClientForFileBases,
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
+        ShowEdtProjects = ShowEdtProjects,
         ThemeIndex = ThemeIndex,
         IconStyleIndex = IconStyleIndex,
         ShowDetails = ShowDetails,
@@ -62,6 +63,7 @@ public sealed partial class MainWindowViewModel
         UseThickClientForFileBases = values.UseThickClientForFileBases;
         CheckAvailability = values.CheckAvailability;
         UpdateModeIndex = values.UpdateModeIndex;
+        ShowEdtProjects = values.ShowEdtProjects;
         ThemeIndex = values.ThemeIndex;
         IconStyleIndex = values.IconStyleIndex;
         ShowDetails = values.ShowDetails;

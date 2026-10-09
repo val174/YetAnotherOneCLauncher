@@ -143,6 +143,15 @@ public sealed partial class InfoBaseViewModel : ObservableObject
 
     public bool HasRowFolder => RowFolderText.Length > 0;
 
+    /// <summary>Связанный проект 1C:EDT (форма базы) — кнопка «1C:EDT» в строке; <c>null</c> — не привязан или проекты выключены.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEdtProject), nameof(EdtButtonToolTip))]
+    public partial string? EdtProjectName { get; set; }
+
+    public bool HasEdtProject => EdtProjectName is not null;
+
+    public string EdtButtonToolTip => "1C:EDT — " + EdtProjectName;
+
     /// <summary>Подсказка к имени в списке: имя и подключение.</summary>
     public string NameToolTip => $"{Name}{Environment.NewLine}{ConnectionText}";
 

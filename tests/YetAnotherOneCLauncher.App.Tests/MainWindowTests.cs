@@ -144,10 +144,10 @@ public class MainWindowTests
         var grid = window.FindControl<Grid>("PropertiesGrid")!;
         var labels = grid.Children.OfType<TextBlock>().Where(t => t.Classes.Contains("label")).OrderBy(Grid.GetRow).Select(t => t.Text);
         Assert.Equal(
-            ["Тип", "Клиент", "Платформа", "Параметры", "Пользователь", "Подключение", "Источник", "Группа", "Кэш", "Доступность", "Последний запуск", "Запусков"],
+            ["Тип", "Клиент", "Платформа", "Параметры", "Пользователь", "Подключение", "Источник", "Группа", "Проект 1C:EDT", "Кэш", "Доступность", "Последний запуск", "Запусков"],
             labels);
         var separators = grid.Children.OfType<Border>().Where(b => b.Classes.Contains("propertiesSeparator")).Select(Grid.GetRow);
-        Assert.Equal([6, 9], separators); // после «Подключения» и после «Группы»
+        Assert.Equal([6, 10], separators); // после «Подключения» и после «Группы» с «Проектом 1C:EDT»
 
         // Звезда на кнопке: контур — не в избранном, закрашенная — в избранном.
         var favorite = window.FindControl<Button>("FavoriteButton")!;
@@ -396,7 +396,7 @@ public class MainWindowTests
         Assert.True(Left(visible) + visible.Bounds.Width <= Left(platform));
 
         Button RowButton(string kind) => visible.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains(kind));
-        Assert.Equal(3, visible.GetVisualDescendants().OfType<Button>().Count());
+        Assert.Equal(3, visible.GetVisualDescendants().OfType<Button>().Count(b => b.IsVisible)); // кнопка 1C:EDT — только у связанной с проектом базы
 
         // «Конфигуратор» в строке запускает именно эту базу.
         RowButton("designer").Command!.Execute(RowButton("designer").CommandParameter);

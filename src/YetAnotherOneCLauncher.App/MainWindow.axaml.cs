@@ -167,6 +167,20 @@ public partial class MainWindow : Window
         menu.Items.Add(Item("Конфигуратор", viewModel.LaunchDesignerCommand, viewModel.HotKeys.LaunchDesigner, "DesignerIconGeometry"));
         menu.Items.Add(Item("Запустить с параметрами…", viewModel.LaunchWithParametersCommand, viewModel.HotKeys.LaunchWithParameters,
             "ParametersIconGeometry", "ParametersKnobsIconGeometry"));
+        if (infoBase.HasEdtProject)
+        {
+            // База связана с проектом 1C:EDT — как кнопка «1C:EDT» в строке при кнопках справа.
+            menu.Items.Add(new MenuItem
+            {
+                Header = infoBase.EdtButtonToolTip,
+                Command = viewModel.OpenInEdtCommand,
+                CommandParameter = infoBase,
+                Icon = viewModel.EdtIcon is { } icon
+                    ? new Image { Source = icon, Width = 16, Height = 16 }
+                    : new Controls.ToolIcon { Classes = { "buttonIcon" }, Data = (Avalonia.Media.Geometry?)this.FindResource("DesignerIconGeometry") },
+            });
+        }
+
         return menu;
     }
 
@@ -314,6 +328,7 @@ public partial class MainWindow : Window
                     HotKeyCommand.Delete => vm.DeleteCommand,
                     HotKeyCommand.MoveUp => vm.MoveUpCommand,
                     HotKeyCommand.MoveDown => vm.MoveDownCommand,
+                    HotKeyCommand.ShowEdtProjects => vm.ShowEdtProjectsModeCommand,
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
                 });
                 break;
@@ -480,7 +495,7 @@ public partial class MainWindow : Window
         // Двойной щелчок по папке раскрывает её, по базе — запускает.
         var item = (e.Source as Visual)?.FindAncestorOfType<TreeViewItem>(includeSelf: true)?.DataContext
                    ?? (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext;
-        if (item is BaseNodeViewModel or BaseListItemViewModel)
+        if (item is BaseNodeViewModel or BaseListItemViewModel or EdtProjectNodeViewModel)
         {
             LaunchEnterprise();
             e.Handled = true;
@@ -500,12 +515,12 @@ public partial class MainWindow : Window
         e.Handled = true;
     }
 
-    /// <summary>Enter и двойной щелчок — 1С: Предприятие (как F3).</summary>
+    /// <summary>Enter и двойной щелчок — 1С: Предприятие (как F3); у проекта 1C:EDT — открыть его в EDT.</summary>
     private void LaunchEnterprise()
     {
         if (ViewModel is { } vm)
         {
-            Execute(vm.LaunchEnterpriseCommand);
+            Execute(vm.IsEdtProjectSelected ? vm.OpenInEdtCommand : vm.LaunchEnterpriseCommand);
         }
     }
 
