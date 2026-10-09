@@ -809,6 +809,11 @@
           <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="{Binding HotKeys.AddBase}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconAddBrush}" Data="{StaticResource AddIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
+          <!-- Строка-копия выделенной базы: «Имя_копия». То же — перетаскивание базы с зажатым Ctrl. -->
+          <MenuItem x:Name="DuplicateMenuItem" Header="Дублировать" Command="{Binding DuplicateCommand}"
+                    ToolTip.Tip="Новая строка списка с теми же настройками, название — «Имя_копия». Можно и перетащить базу с зажатым Ctrl.">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource CopyIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
           <MenuItem Header="Новая папка…" Command="{Binding AddFolderCommand}" InputGesture="{Binding HotKeys.AddFolder}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
