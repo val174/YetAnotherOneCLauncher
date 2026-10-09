@@ -622,3 +622,12 @@ internal sealed class FakeEdt : IEdtProjects
     public IReadOnlySet<string> InfobaseIds(Core.Edt.EdtProject project) =>
         Bindings.TryGetValue(project.Workspace, out var ids) ? ids : new HashSet<string>();
 }
+
+/// <summary>Строки плоского списка в тестах: база строки (в старых проверках списка — только базы).</summary>
+internal static class CatalogListItemTestExtensions
+{
+    extension(CatalogListItemViewModel item)
+    {
+        public InfoBaseViewModel Base => ((BaseListItemViewModel)item).Base;
+    }
+}

@@ -205,6 +205,10 @@
     <Style Selector="Grid.baseRow.launchLeft Button.rowLaunchMenu">
       <Setter Property="IsVisible" Value="True" />
     </Style>
+    <!-- У проекта 1C:EDT кнопка одна — при кнопках слева она, как ▶ у баз, видна всегда. -->
+    <Style Selector="Grid.baseRow.launchLeft.edtRow StackPanel.rowLaunch">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
     <Style Selector="Button.rowLaunch">
       <Setter Property="Padding" Value="5,3" />
       <Setter Property="MinHeight" Value="0" />
@@ -516,6 +520,14 @@
                          ToolTip.Tip="Избранные базы">
               <c:ToolIcon Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" />
             </RadioButton>
+            <!-- Только проекты 1C:EDT: есть, если проекты включены в настройках и найдены в EDT Start. -->
+            <RadioButton x:Name="EdtProjectsButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter"
+                         IsChecked="{Binding IsEdtProjectsMode}" IsVisible="{Binding IsEdtModeAvailable}" ToolTip.Tip="Проекты 1C:EDT">
+              <Panel>
+                <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DesignerIconGeometry}" />
+                <Image Source="{Binding EdtIcon}" Width="22" Height="22" RenderOptions.BitmapInterpolationMode="HighQuality" />
+              </Panel>
+            </RadioButton>
           </StackPanel>
           </Panel>
         </Border>
@@ -791,8 +803,8 @@
               <TextBlock Grid.Row="8" Classes="label" Text="Группа" />
               <SelectableTextBlock Grid.Row="8" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.FolderText}"
                                    ToolTip.Tip="{Binding SelectedInfoBase.FolderPathTip}" />
-              <TextBlock Grid.Row="9" Classes="label" Text="Проект 1C:EDT" />
-              <SelectableTextBlock x:Name="BaseEdtProjectText" Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedBaseEdtProjectText}"
+              <TextBlock Grid.Row="9" Classes="label" Text="Проект 1C:EDT" IsVisible="{Binding IsEdtEnabled}" />
+              <SelectableTextBlock x:Name="BaseEdtProjectText" Grid.Row="9" Grid.Column="1" Classes="value" Text="{Binding SelectedBaseEdtProjectText}" IsVisible="{Binding IsEdtEnabled}"
                                    ToolTip.Tip="Связь задаётся в форме базы (поле «Проект 1C:EDT»)" />
 
               <Border Grid.Row="10" Grid.ColumnSpan="2" Classes="propertiesSeparator" />
@@ -998,11 +1010,27 @@
           <DataTemplate DataType="vm:EdtProjectNodeViewModel">
             <Grid Classes="baseRow edtRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
                   Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
+                  Classes.launchLeft="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsRowLaunchLeft}"
                   ToolTip.Tip="{Binding Project.Workspace}">
-              <Grid Classes="nameWithDot" ColumnDefinitions="*,Auto" HorizontalAlignment="Left">
-                <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-                <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding IsOpen}" ToolTip.Tip="Открыт в 1C:EDT" />
-              </Grid>
+              <DockPanel>
+                <!-- Кнопка «Открыть в 1C:EDT» — там же, где кнопки запуска у баз. -->
+                <Panel Classes="rowLaunchCell" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
+                  <StackPanel Classes="rowLaunch" Orientation="Horizontal">
+                    <Button Classes="rowLaunch edt" ToolTip.Tip="Открыть в 1C:EDT"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding}">
+                      <Panel Classes="edtIcon">
+                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
+                               RenderOptions.BitmapInterpolationMode="HighQuality" />
+                      </Panel>
+                    </Button>
+                  </StackPanel>
+                </Panel>
+                <Grid DockPanel.Dock="Left" Classes="nameWithDot" ColumnDefinitions="*,Auto">
+                  <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+                  <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding IsOpen}" ToolTip.Tip="Открыт в 1C:EDT" />
+                </Grid>
+              </DockPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding VersionText}" ToolTip.Tip="{Binding VersionToolTip}"
                          Classes.missing="{Binding IsVersionMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding JavaText}" ToolTip.Tip="{Binding JavaPath}" />
@@ -1030,6 +1058,15 @@
                     <Button Classes="rowLaunch designer" ToolTip.Tip="Конфигуратор"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchDesignerCommand}" CommandParameter="{Binding Base}">
                       <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                    </Button>
+                    <!-- База связана с проектом 1C:EDT: открыть проект (как кнопка «Конфигуратор»). -->
+                    <Button Classes="rowLaunch edt" IsVisible="{Binding Base.HasEdtProject}" ToolTip.Tip="{Binding Base.EdtButtonToolTip}"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding Base}">
+                      <Panel Classes="edtIcon">
+                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
+                               RenderOptions.BitmapInterpolationMode="HighQuality" />
+                      </Panel>
                     </Button>
                     <Button Classes="rowLaunch parameters" ToolTip.Tip="Запустить с параметрами"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchWithParametersCommand}" CommandParameter="{Binding Base}">
@@ -1075,11 +1112,11 @@
                IsVisible="{Binding ShowList}"
                Background="Transparent">
         <ListBox.Styles>
-          <Style Selector="ListBoxItem" x:DataType="vm:BaseListItemViewModel">
+          <Style Selector="ListBoxItem" x:DataType="vm:CatalogListItemViewModel">
             <Setter Property="c:RowStripe.IsStripe" Value="{Binding IsStripe}" />
           </Style>
         </ListBox.Styles>
-        <ListBox.ItemTemplate>
+        <ListBox.DataTemplates>
           <DataTemplate DataType="vm:BaseListItemViewModel">
             <Grid Classes="baseRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
                   Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
@@ -1097,6 +1134,15 @@
                     <Button Classes="rowLaunch designer" ToolTip.Tip="Конфигуратор"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchDesignerCommand}" CommandParameter="{Binding Base}">
                       <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                    </Button>
+                    <!-- База связана с проектом 1C:EDT: открыть проект (как кнопка «Конфигуратор»). -->
+                    <Button Classes="rowLaunch edt" IsVisible="{Binding Base.HasEdtProject}" ToolTip.Tip="{Binding Base.EdtButtonToolTip}"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding Base}">
+                      <Panel Classes="edtIcon">
+                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
+                               RenderOptions.BitmapInterpolationMode="HighQuality" />
+                      </Panel>
                     </Button>
                     <Button Classes="rowLaunch parameters" ToolTip.Tip="Запустить с параметрами"
                             Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).LaunchWithParametersCommand}" CommandParameter="{Binding Base}">
@@ -1129,7 +1175,41 @@
               </StackPanel>
             </Grid>
           </DataTemplate>
-        </ListBox.ItemTemplate>
+          <!-- Проект 1C:EDT в поиске и в режиме «Проекты 1C:EDT»: без значка, с путём рабочей области серым. -->
+          <DataTemplate DataType="vm:EdtListItemViewModel">
+            <Grid Classes="baseRow edtRow" ColumnDefinitions="*,Auto,Auto,Auto" RowDefinitions="Auto,Auto" Background="Transparent"
+                  Classes.twoLine="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).TwoLineRows}"
+                  Classes.launchLeft="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).IsRowLaunchLeft}">
+              <DockPanel VerticalAlignment="Center">
+                <Panel Classes="rowLaunchCell" IsVisible="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ShowRowLaunchButtons}">
+                  <StackPanel Classes="rowLaunch" Orientation="Horizontal">
+                    <Button Classes="rowLaunch edt" ToolTip.Tip="Открыть в 1C:EDT"
+                            Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).OpenInEdtCommand}" CommandParameter="{Binding Project}">
+                      <Panel Classes="edtIcon">
+                        <c:ToolIcon Data="{StaticResource DesignerIconGeometry}" />
+                        <Image Source="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).EdtIcon}" Width="16" Height="16"
+                               RenderOptions.BitmapInterpolationMode="HighQuality" />
+                      </Panel>
+                    </Button>
+                  </StackPanel>
+                </Panel>
+                <Grid DockPanel.Dock="Left" Classes="nameWithDot" ColumnDefinitions="*,Auto">
+                  <c:HighlightTextBlock Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Project.Project.Workspace}" />
+                  <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding Project.IsOpen}" ToolTip.Tip="Открыт в 1C:EDT" />
+                </Grid>
+                <TextBlock Classes="secondary" Text="{Binding Project.Project.Workspace}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+              </DockPanel>
+              <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Project.VersionText}" ToolTip.Tip="{Binding Project.VersionToolTip}"
+                         Classes.missing="{Binding Project.IsVersionMissing}" />
+              <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Project.JavaText}" ToolTip.Tip="{Binding Project.JavaPath}" />
+              <TextBlock Grid.Column="3" Classes="cell date" />
+              <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
+                <TextBlock Classes="secondary" Text="{Binding Project.VersionText}" Classes.missing="{Binding Project.IsVersionMissing}" />
+                <TextBlock Classes="secondary" Text="{Binding Project.JavaText, StringFormat='·  {0}'}" />
+              </StackPanel>
+            </Grid>
+          </DataTemplate>
+        </ListBox.DataTemplates>
       </ListBox>
 
       <TextBlock Text="{Binding EmptyListText}" Opacity="0.6" HorizontalAlignment="Center" VerticalAlignment="Center"

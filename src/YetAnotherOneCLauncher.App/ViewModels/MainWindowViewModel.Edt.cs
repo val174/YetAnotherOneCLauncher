@@ -24,7 +24,10 @@ public sealed partial class MainWindowViewModel
 
     public bool HasEdtIcon => EdtIcon is not null;
 
-    /// <summary>Показывать группу «Проекты 1C:EDT» (настройка «Общие»).</summary>
+    /// <summary>
+    /// Проекты 1C:EDT включены (настройка «Общие» → «Использовать проекты 1C:EDT»): группа в дереве, поиск, режим
+    /// «Проекты 1C:EDT», связь базы с проектом и кнопки EDT. Выключено — ничего этого нет.
+    /// </summary>
     public bool ShowEdtProjects
     {
         get => _settings.Settings.Edt.ShowProjects;
@@ -38,14 +41,31 @@ public sealed partial class MainWindowViewModel
             _settings.Settings.Edt.ShowProjects = value;
             _settings.RequestSave();
             OnPropertyChanged();
-            if (ShowTree)
+            OnPropertyChanged(nameof(IsEdtModeAvailable));
+            OnPropertyChanged(nameof(IsEdtEnabled));
+            UpdateBaseEdtLinks();
+            var key = CurrentSelectionKey();
+            if (!value && IsEdtProjectsMode)
             {
-                var key = CurrentSelectionKey();
-                RebuildTree();
-                Reselect(key);
+                // Режима «Проекты 1C:EDT» больше нет; смена режима сама перестроит список.
+                ListFilter = BaseListFilter.All;
+                key = CurrentSelectionKey();
             }
+
+            RebuildTree();
+            RebuildList();
+            Reselect(key);
         }
     }
+
+    /// <summary>EDT доступен и не выключен в настройках.</summary>
+    private bool EdtEnabled => _edt is not null && ShowEdtProjects;
+
+    /// <summary>Для разметки: строка «Проект 1C:EDT» в свойствах базы и прочее, что есть только при включённых проектах.</summary>
+    public bool IsEdtEnabled => EdtEnabled;
+
+    /// <summary>Положение «Проекты 1C:EDT» в переключателе режимов: проекты включены и есть.</summary>
+    public bool IsEdtModeAvailable => EdtEnabled && HasEdtProjects;
 
     /// <summary>Есть ли проекты EDT на компьютере — для настройки «Показывать проекты 1C:EDT».</summary>
     public bool HasEdtProjects => !_edtCatalog.IsEmpty;
@@ -67,7 +87,7 @@ public sealed partial class MainWindowViewModel
     public string PropertiesHeaderText => IsEdtProjectSelected ? "Свойства проекта 1C:EDT" : "Свойства информационной базы";
 
     /// <summary>Проект EDT выделенной базы (связь из формы базы); <c>null</c> — не привязан или проекта больше нет.</summary>
-    public EdtProject? SelectedBaseEdtProject => SelectedInfoBase is { } infoBase ? EdtProjectOf(infoBase) : null;
+    public EdtProject? SelectedBaseEdtProject => EdtEnabled && SelectedInfoBase is { } infoBase ? EdtProjectOf(infoBase) : null;
 
     public bool HasSelectedBaseEdtProject => SelectedBaseEdtProject is not null;
 
@@ -113,28 +133,118 @@ public sealed partial class MainWindowViewModel
     {
         _edtCatalog = _edt?.Load() ?? EdtCatalog.Empty;
         OnPropertyChanged(nameof(HasEdtProjects));
+        OnPropertyChanged(nameof(IsEdtModeAvailable));
         OnPropertyChanged(nameof(EdtIcon));
         OnPropertyChanged(nameof(HasEdtIcon));
+        NotifyBaseEdtLink();
+    }
+
+    /// <summary>Узлы проектов по названию — для группы в дереве и для плоского списка.</summary>
+    private List<EdtProjectNodeViewModel> CreateEdtNodes()
+    {
+        if (_edt is null)
+        {
+            return [];
+        }
+
+        var nodes = new List<EdtProjectNodeViewModel>();
+        foreach (var project in _edtCatalog.Projects.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
+        {
+            var own = _edtCatalog.InstallationOf(project);
+            var installation = own ?? ChosenInstallation(project) ?? _edtCatalog.Newest;
+            nodes.Add(new EdtProjectNodeViewModel(project, installation, own is null, installation is null ? null : _edt.JavaFor(installation))
+            {
+                IsOpen = _edt.IsOpen(project),
+            });
+        }
+
+        return nodes;
+    }
+
+    /// <summary>
+    /// Проекты в плоский список: в режиме «Проекты 1C:EDT» — все (или найденные), в поиске «Всех баз» — найденные.
+    /// Найден — каждое слово поиска есть в названии или в пути рабочей области.
+    /// </summary>
+    private void AddEdtListItems()
+    {
+        if (!EdtEnabled)
+        {
+            return;
+        }
+
+        var words = HasSearch ? SearchText.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries) : [];
+        foreach (var node in CreateEdtNodes())
+        {
+            if (words.All(w => node.Name.Contains(w, StringComparison.CurrentCultureIgnoreCase)
+                               || node.Project.Workspace.Contains(w, StringComparison.CurrentCultureIgnoreCase)))
+            {
+                ListItems.Add(new EdtListItemViewModel(node, Segments(node.Name, Highlights(node.Name, words)), isStripe: ListItems.Count % 2 == 1));
+            }
+        }
+    }
+
+    /// <summary>Где в названии встретились слова поиска — для подсветки (без пересечений, по порядку).</summary>
+    private static List<Core.Search.TextRange> Highlights(string text, IReadOnlyList<string> words)
+    {
+        var marked = new bool[text.Length];
+        foreach (var word in words)
+        {
+            for (var at = text.IndexOf(word, StringComparison.CurrentCultureIgnoreCase); at >= 0 && word.Length > 0;
+                 at = text.IndexOf(word, at + word.Length, StringComparison.CurrentCultureIgnoreCase))
+            {
+                Array.Fill(marked, true, at, Math.Min(word.Length, text.Length - at));
+            }
+        }
+
+        var ranges = new List<Core.Search.TextRange>();
+        for (var i = 0; i < text.Length; i++)
+        {
+            if (marked[i] && (i == 0 || !marked[i - 1]))
+            {
+                var end = i;
+                while (end < text.Length && marked[end])
+                {
+                    end++;
+                }
+
+                ranges.Add(new Core.Search.TextRange(i, end - i));
+            }
+        }
+
+        return ranges;
+    }
+
+    /// <summary>Ключ строки списка — для восстановления выделения.</summary>
+    private static string? ListItemKey(CatalogListItemViewModel item) => item switch
+    {
+        BaseListItemViewModel b => b.Base.InfoBase.IdentityKey,
+        EdtListItemViewModel e => EdtProjectKeyPrefix + e.Project.Project.Id,
+        _ => null,
+    };
+
+    /// <summary>У баз — проект для кнопки «1C:EDT» в строке (пусто, если не привязан или проекты выключены).</summary>
+    private void UpdateBaseEdtLinks()
+    {
+        foreach (var infoBase in _bases)
+        {
+            infoBase.EdtProjectName = EdtEnabled ? EdtProjectOf(infoBase)?.Name : null;
+        }
+
         NotifyBaseEdtLink();
     }
 
     /// <summary>Группа «Проекты 1C:EDT» для дерева; <c>null</c> — проектов нет или группа выключена.</summary>
     private FolderNodeViewModel? BuildEdtGroup(HashSet<string> collapsed)
     {
-        if (_edt is null || _edtCatalog.IsEmpty || !ShowEdtProjects)
+        if (!EdtEnabled || _edtCatalog.IsEmpty)
         {
             return null;
         }
 
         var group = new FolderNodeViewModel("Проекты 1C:EDT", EdtFolderKey, FolderKind.EdtProjects, !collapsed.Contains(EdtFolderKey), OnFolderExpansionChanged);
-        foreach (var project in _edtCatalog.Projects.OrderBy(p => p.Name, StringComparer.CurrentCultureIgnoreCase))
+        foreach (var node in CreateEdtNodes())
         {
-            var own = _edtCatalog.InstallationOf(project);
-            var installation = own ?? ChosenInstallation(project) ?? _edtCatalog.Newest;
-            group.Children.Add(new EdtProjectNodeViewModel(project, installation, own is null, installation is null ? null : _edt.JavaFor(installation))
-            {
-                IsOpen = _edt.IsOpen(project),
-            });
+            group.Children.Add(node);
         }
 
         return group;
@@ -148,23 +258,35 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
-        foreach (var node in TreeItems.OfType<FolderNodeViewModel>().Where(f => f.IsEdtProjects).SelectMany(f => f.Children).OfType<EdtProjectNodeViewModel>())
+        var nodes = TreeItems.OfType<FolderNodeViewModel>().Where(f => f.IsEdtProjects).SelectMany(f => f.Children).OfType<EdtProjectNodeViewModel>()
+            .Concat(ListItems.OfType<EdtListItemViewModel>().Select(i => i.Project));
+        foreach (var node in nodes)
         {
             node.IsOpen = _edt.IsOpen(node.Project);
         }
     }
 
-    /// <summary>«Открыть в 1C:EDT»: выделенный проект или проект выделенной базы.</summary>
+    /// <summary>
+    /// «Открыть в 1C:EDT»: проект из параметра (кнопка в строке проекта), проект базы из параметра (кнопка в строке базы)
+    /// или — без параметра — выделенный проект или проект выделенной базы.
+    /// </summary>
     [RelayCommand(CanExecute = nameof(CanOpenInEdt))]
-    private async Task OpenInEdtAsync()
+    private async Task OpenInEdtAsync(object? target)
     {
-        if ((SelectedEdtProject?.Project ?? SelectedBaseEdtProject) is { } project)
+        if (EdtTarget(target) is { } project)
         {
             await OpenEdtProjectAsync(project);
         }
     }
 
-    private bool CanOpenInEdt() => _edt is not null && (SelectedEdtProject is not null || SelectedBaseEdtProject is not null);
+    private bool CanOpenInEdt(object? target) => EdtTarget(target) is not null;
+
+    private EdtProject? EdtTarget(object? target) => !EdtEnabled ? null : target switch
+    {
+        EdtProjectNodeViewModel node => node.Project,
+        InfoBaseViewModel infoBase => EdtProjectOf(infoBase),
+        _ => SelectedEdtProject?.Project ?? SelectedBaseEdtProject,
+    };
 
     /// <summary>
     /// Открыть проект в EDT: уже открыт — сказать об этом; версии проекта нет — спросить, в какой открыть
@@ -293,7 +415,7 @@ public sealed partial class MainWindowViewModel
         var profile = _settings.UserData.LaunchProfile(infoBase.InfoBase) ?? new Core.Settings.InfoBaseLaunchProfile();
         _settings.UserData.SetLaunchProfile(infoBase.InfoBase, profile with { EdtProjectId = project?.Id, EdtWorkspace = project?.Workspace });
         _settings.RequestSave();
-        NotifyBaseEdtLink();
+        UpdateBaseEdtLinks();
     }
 
     private void NotifyBaseEdtLink()

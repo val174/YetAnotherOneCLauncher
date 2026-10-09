@@ -77,7 +77,7 @@
               <TextBlock TextWrapping="Wrap" Text="Проверять доступность баз: каталог файловой базы, сервер 1С, веб-сервер" />
             </CheckBox>
             <CheckBox x:Name="ShowEdtProjectsBox" IsChecked="{Binding ShowEdtProjects}">
-              <TextBlock TextWrapping="Wrap" Text="Показывать проекты 1C:EDT (из 1C:EDT Start) в списке баз" />
+              <TextBlock TextWrapping="Wrap" Text="Использовать проекты 1C:EDT (из 1C:EDT Start): группа в списке, поиск, режим «Проекты 1C:EDT», кнопки 1C:EDT у баз" />
             </CheckBox>
 
             <!-- Обновление лаунчера из релизов GitHub (ветка main). -->

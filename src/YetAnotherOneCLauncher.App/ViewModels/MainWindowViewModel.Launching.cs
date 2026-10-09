@@ -216,10 +216,10 @@ public sealed partial class MainWindowViewModel
             CreationPlatforms = isNew ? CreationPlatforms() : [],
             FoundTemplates = templates ?? [],
             // Проект 1C:EDT: связь из профиля базы и подсказка — проект, с которым базу связал сам EDT.
-            EdtProjects = EdtProjectChoices,
+            EdtProjects = EdtEnabled ? EdtProjectChoices : [],
             EdtProjectChooser = names => _dialogs.ChooseAsync("Проект 1C:EDT", "Выберите проект 1C:EDT для этой базы:", names),
-            InitialEdtProjectId = existing is null ? null : EdtProjectOf(existing)?.Id,
-            SuggestedEdtProject = SuggestedEdtProject(existing?.InfoBase),
+            InitialEdtProjectId = existing is null || !EdtEnabled ? null : EdtProjectOf(existing)?.Id,
+            SuggestedEdtProject = EdtEnabled ? SuggestedEdtProject(existing?.InfoBase) : null,
         };
 
     /// <summary>Ветки установленных платформ («8.3», «8.5») и сами версии — от новых к старым.</summary>

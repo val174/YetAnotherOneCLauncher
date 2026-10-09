@@ -36,6 +36,9 @@ public enum BaseListFilter
     All,
     Recent,
     Favorites,
+
+    /// <summary>Только проекты 1C:EDT (из EDT Start).</summary>
+    EdtProjects,
 }
 
 /// <summary>
@@ -169,7 +172,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
 
     public ObservableCollection<TreeNodeViewModel> TreeItems { get; } = [];
 
-    public ObservableCollection<BaseListItemViewModel> ListItems { get; } = [];
+    public ObservableCollection<CatalogListItemViewModel> ListItems { get; } = [];
 
     public IReadOnlyList<string> ThemeNames { get; } = ["Как в системе", "Светлая", "Тёмная"];
 
@@ -297,7 +300,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(
-        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode),
+        nameof(ShowTree), nameof(ShowList), nameof(IsAllBasesMode), nameof(IsRecentMode), nameof(IsFavoritesMode), nameof(IsEdtProjectsMode),
         nameof(CanEditList), nameof(EmptyListText))]
     [NotifyCanExecuteChangedFor(
         nameof(AddBaseCommand), nameof(DuplicateCommand), nameof(AddFolderCommand), nameof(ImportCommand), nameof(DeleteCommand),
@@ -321,6 +324,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
     {
         get => ListFilter == BaseListFilter.Favorites;
         set => SelectFilter(BaseListFilter.Favorites, value);
+    }
+
+    public bool IsEdtProjectsMode
+    {
+        get => ListFilter == BaseListFilter.EdtProjects;
+        set => SelectFilter(BaseListFilter.EdtProjects, value);
     }
 
     private void SelectFilter(BaseListFilter filter, bool selected)
@@ -352,7 +361,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public partial TreeNodeViewModel? SelectedTreeItem { get; set; }
 
     [ObservableProperty]
-    public partial BaseListItemViewModel? SelectedListItem { get; set; }
+    public partial CatalogListItemViewModel? SelectedListItem { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(HasSelection), nameof(ShowNoSelectionHint), nameof(SelectedBaseEdtProject), nameof(HasSelectedBaseEdtProject),
@@ -563,6 +572,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         LoadEdtCatalog();
         ApplyPlatforms(platforms, catalog.StarterConfig.DefaultVersion);
         ShowCatalog(catalog, CurrentSelectionKey());
+        UpdateBaseEdtLinks();
         StartCacheScan();
         StartAvailabilityCheck();
         _ = OnCatalogLoadedAsync();
@@ -753,6 +763,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ShowAllBases() => ListFilter = BaseListFilter.All;
 
+    /// <summary>Показать только проекты 1C:EDT.</summary>
+    [RelayCommand]
+    private void ShowEdtProjectsMode() => ListFilter = BaseListFilter.EdtProjects;
+
     partial void OnListFilterChanged(BaseListFilter value)
     {
         var key = CurrentSelectionKey();
@@ -762,6 +776,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             BaseListFilter.Recent => "Показаны недавние базы.",
             BaseListFilter.Favorites => "Показаны избранные базы.",
+            BaseListFilter.EdtProjects => "Показаны проекты 1C:EDT.",
             _ => string.Empty,
         };
     }
@@ -828,12 +843,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
-    partial void OnSelectedListItemChanged(BaseListItemViewModel? value)
+    partial void OnSelectedListItemChanged(CatalogListItemViewModel? value)
     {
         if (ShowList)
         {
-            SelectedInfoBase = value?.Base;
-            SelectedEdtProject = null;
+            SelectedInfoBase = (value as BaseListItemViewModel)?.Base;
+            SelectedEdtProject = (value as EdtListItemViewModel)?.Project;
         }
     }
 
@@ -1167,6 +1182,14 @@ public sealed partial class MainWindowViewModel : ObservableObject
             return;
         }
 
+        // Режим «Проекты 1C:EDT» — только проекты (с поиском по ним).
+        if (IsEdtProjectsMode)
+        {
+            AddEdtListItems();
+            ShowNothingFound = ListItems.Count == 0;
+            return;
+        }
+
         var byInfoBase = _bases.ToDictionary(b => b.InfoBase);
         // Недавние: последние запуски, свежие сверху; избранное — по наименованию; поиск — только среди них.
         IReadOnlyList<InfoBase>? subset = ListFilter switch
@@ -1196,6 +1219,12 @@ public sealed partial class MainWindowViewModel : ObservableObject
             }
         }
 
+        // Поиск во «Всех базах» находит и проекты 1C:EDT — после баз.
+        if (HasSearch && IsAllBasesMode)
+        {
+            AddEdtListItems();
+        }
+
         ShowNothingFound = ListItems.Count == 0 && (HasSearch || !IsAllBasesMode);
     }
 
@@ -1206,6 +1235,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         {
             BaseListFilter.Recent => "Недавних запусков пока нет",
             BaseListFilter.Favorites => "Избранных баз пока нет: добавьте базу в избранное из контекстного меню или звездой",
+            BaseListFilter.EdtProjects => "Проектов 1C:EDT нет: их создают и добавляют в 1C:EDT Start",
             _ => "Ничего не найдено",
         };
 
@@ -1245,9 +1275,10 @@ public sealed partial class MainWindowViewModel : ObservableObject
         SelectedTreeItem = null;
         SelectedEdtProject = null;
         SelectedFolder = null;
-        SelectedListItem = (identityKey is null ? null : ListItems.FirstOrDefault(i => i.Base.InfoBase.IdentityKey == identityKey))
+        SelectedListItem = (identityKey is null ? null : ListItems.FirstOrDefault(i => ListItemKey(i) == identityKey))
                            ?? ListItems.FirstOrDefault();
-        SelectedInfoBase = SelectedListItem?.Base;
+        SelectedInfoBase = (SelectedListItem as BaseListItemViewModel)?.Base;
+        SelectedEdtProject = (SelectedListItem as EdtListItemViewModel)?.Project;
     }
 
     private static FolderNodeViewModel? FindFolder(IEnumerable<TreeNodeViewModel> nodes, string path)

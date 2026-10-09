@@ -87,22 +87,27 @@ public sealed class BaseNodeViewModel : TreeNodeViewModel
 /// <summary>Кусок текста для подсветки совпадений.</summary>
 public sealed record TextSegment(string Text, bool IsMatch);
 
-/// <summary>Строка плоского списка и результатов поиска.</summary>
-public sealed class BaseListItemViewModel
+/// <summary>Строка плоского списка и результатов поиска: база или проект 1C:EDT.</summary>
+public abstract class CatalogListItemViewModel(IReadOnlyList<TextSegment> nameSegments, bool isStripe)
 {
-    public BaseListItemViewModel(InfoBaseViewModel infoBase, IReadOnlyList<TextSegment> nameSegments, bool isStripe = false)
-    {
-        Base = infoBase;
-        NameSegments = nameSegments;
-        IsStripe = isStripe;
-    }
-
     /// <summary>Чётная строка списка (вторая, четвёртая…) — на подложке, если чередование включено.</summary>
-    public bool IsStripe { get; }
+    public bool IsStripe { get; } = isStripe;
 
-    public InfoBaseViewModel Base { get; }
+    public IReadOnlyList<TextSegment> NameSegments { get; } = nameSegments;
+}
 
-    public IReadOnlyList<TextSegment> NameSegments { get; }
+/// <summary>База в плоском списке.</summary>
+public sealed class BaseListItemViewModel(InfoBaseViewModel infoBase, IReadOnlyList<TextSegment> nameSegments, bool isStripe = false)
+    : CatalogListItemViewModel(nameSegments, isStripe)
+{
+    public InfoBaseViewModel Base { get; } = infoBase;
+}
+
+/// <summary>Проект 1C:EDT в плоском списке (поиск, режим «Проекты 1C:EDT»).</summary>
+public sealed class EdtListItemViewModel(EdtProjectNodeViewModel project, IReadOnlyList<TextSegment> nameSegments, bool isStripe = false)
+    : CatalogListItemViewModel(nameSegments, isStripe)
+{
+    public EdtProjectNodeViewModel Project { get; } = project;
 }
 
 /// <summary>Проект 1C:EDT (рабочая область из EDT Start) в группе «Проекты 1C:EDT».</summary>

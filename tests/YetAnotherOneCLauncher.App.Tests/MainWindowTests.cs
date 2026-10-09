@@ -396,7 +396,7 @@ public class MainWindowTests
         Assert.True(Left(visible) + visible.Bounds.Width <= Left(platform));
 
         Button RowButton(string kind) => visible.GetVisualDescendants().OfType<Button>().Single(b => b.Classes.Contains(kind));
-        Assert.Equal(3, visible.GetVisualDescendants().OfType<Button>().Count());
+        Assert.Equal(3, visible.GetVisualDescendants().OfType<Button>().Count(b => b.IsVisible)); // кнопка 1C:EDT — только у связанной с проектом базы
 
         // «Конфигуратор» в строке запускает именно эту базу.
         RowButton("designer").Command!.Execute(RowButton("designer").CommandParameter);

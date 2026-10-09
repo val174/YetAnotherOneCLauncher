@@ -167,6 +167,20 @@ public partial class MainWindow : Window
         menu.Items.Add(Item("Конфигуратор", viewModel.LaunchDesignerCommand, viewModel.HotKeys.LaunchDesigner, "DesignerIconGeometry"));
         menu.Items.Add(Item("Запустить с параметрами…", viewModel.LaunchWithParametersCommand, viewModel.HotKeys.LaunchWithParameters,
             "ParametersIconGeometry", "ParametersKnobsIconGeometry"));
+        if (infoBase.HasEdtProject)
+        {
+            // База связана с проектом 1C:EDT — как кнопка «1C:EDT» в строке при кнопках справа.
+            menu.Items.Add(new MenuItem
+            {
+                Header = infoBase.EdtButtonToolTip,
+                Command = viewModel.OpenInEdtCommand,
+                CommandParameter = infoBase,
+                Icon = viewModel.EdtIcon is { } icon
+                    ? new Image { Source = icon, Width = 16, Height = 16 }
+                    : new Controls.ToolIcon { Classes = { "buttonIcon" }, Data = (Avalonia.Media.Geometry?)this.FindResource("DesignerIconGeometry") },
+            });
+        }
+
         return menu;
     }
 
