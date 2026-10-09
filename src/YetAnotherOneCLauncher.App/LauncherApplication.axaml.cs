@@ -27,10 +27,10 @@ public partial class LauncherApplication : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // Оттенок тёмной темы — до первого окна, чтобы при запуске не мелькал чёрный фон.
+            // Оттенки тем — до первого окна, чтобы при запуске не мелькал прежний фон.
             if (_services?.GetService<UserSettingsService>() is { } settings)
             {
-                DarkShades.Apply(this, settings.Settings.Ui.DarkShade);
+                ThemeShades.Apply(this, settings.Settings.Ui.LightShade, settings.Settings.Ui.DarkShade);
             }
 
             desktop.MainWindow = _services?.GetRequiredService<MainWindow>() ?? new MainWindow();
