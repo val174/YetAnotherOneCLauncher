@@ -204,8 +204,8 @@ public sealed partial class UpdateService : IUpdateService
     {
         var path = Environment.ProcessPath;
         var expected = UpdateChecker.AssetNameForCurrentOs();
-        // У опубликованного одним файлом приложения сборки лежат внутри файла: Location пустой.
-        var singleFile = string.IsNullOrEmpty(typeof(UpdateService).Assembly.Location);
+        // У опубликованного одним файлом приложения сборки внутри файла; рядом с exe из bin\Debug лежит YetAnotherOneCLauncher.dll.
+        var singleFile = !File.Exists(Path.Combine(AppContext.BaseDirectory, typeof(UpdateService).Assembly.GetName().Name + ".dll"));
         return singleFile && path is not null && expected is not null
                && string.Equals(Path.GetFileName(path), expected, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal)
             ? path
