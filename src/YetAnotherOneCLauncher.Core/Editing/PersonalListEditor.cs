@@ -5,7 +5,10 @@ using YetAnotherOneCLauncher.Core.Parsing;
 namespace YetAnotherOneCLauncher.Core.Editing;
 
 /// <summary>Итог импорта.</summary>
-public sealed record ImportResult(int Added, int Skipped);
+/// <param name="Added">Добавлено записей.</param>
+/// <param name="Skipped">Пропущено: такая база (по ID или подключению) или папка уже есть.</param>
+/// <param name="SameName">Пропущено: база с таким же названием уже есть.</param>
+public sealed record ImportResult(int Added, int Skipped, int SameName = 0);
 
 /// <summary>
 /// Правки документа личного списка. Меняются только затронутые строки; остальное остаётся байт в байт.
@@ -21,6 +24,26 @@ public static class PersonalListEditor
     public const long OrderStep = 16384;
 
     private const string CopySuffix = " (копия)";
+
+    /// <summary>Сравнение названий баз: две базы с одним названием в списках не допускаются (регистр и пробелы по краям не важны).</summary>
+    public static readonly StringComparer NameComparer = StringComparer.CurrentCultureIgnoreCase;
+
+    /// <summary>Названия баз (не папок) документа.</summary>
+    public static IEnumerable<string> BaseNames(V8iDocument document) =>
+        document.Sections.Where(s => !V8iSections.IsFolder(s) && !string.IsNullOrWhiteSpace(s.Name)).Select(s => s.Name.Trim());
+
+    /// <summary>Свободное название копии: «Имя (копия)», «Имя (копия 2)»…</summary>
+    public static string UniqueCopyName(string name, IEnumerable<string> takenNames)
+    {
+        var taken = takenNames.Select(n => n.Trim()).ToHashSet(NameComparer);
+        var candidate = name.Trim() + CopySuffix;
+        for (var i = 2; taken.Contains(candidate); i++)
+        {
+            candidate = $"{name.Trim()} (копия {i.ToString(CultureInfo.InvariantCulture)})";
+        }
+
+        return candidate;
+    }
 
     public static V8iSection AddBase(V8iDocument document, InfoBaseDraft draft)
     {
@@ -252,7 +275,8 @@ public static class PersonalListEditor
     }
 
     /// <summary>Заменяет запись текстом, отредактированным вручную: заголовок <c>[Имя]</c> и строки ключей.</summary>
-    public static void ReplaceText(V8iDocument document, EntryRef target, string sectionText)
+    /// <param name="otherBaseNames">Названия других баз (во всех списках): переименовать базу в одно из них нельзя.</param>
+    public static void ReplaceText(V8iDocument document, EntryRef target, string sectionText, IEnumerable<string>? otherBaseNames = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(target);
@@ -272,16 +296,26 @@ public static class PersonalListEditor
             ? FindFolderChecked(document, folder) ?? throw new ListEditException(ListEditErrorKind.Invalid, "У этой папки нет своей записи в списке.")
             : FindBase(document, (BaseEntryRef)target);
 
+        // Название базы сменили на занятое — запрет, как в форме базы; прежнее название оставить можно.
+        if (target is BaseEntryRef && !V8iSections.IsFolder(replacement)
+            && !NameComparer.Equals(replacement.Name.Trim(), section.Name.Trim())
+            && otherBaseNames is not null && otherBaseNames.Contains(replacement.Name.Trim(), NameComparer))
+        {
+            throw new ListEditException(ListEditErrorKind.Invalid, $"В списке уже есть база «{replacement.Name.Trim()}». Укажите другое название.");
+        }
+
         document.Sections[document.Sections.IndexOf(section)] = replacement;
     }
 
     /// <summary>Копирует базу (например, из общего списка) в личный список под новым ID.</summary>
-    public static V8iSection CopyBase(V8iDocument document, InfoBase source)
+    /// <param name="takenNames">Названия баз в других списках; названия личного списка учитываются сами.</param>
+    public static V8iSection CopyBase(V8iDocument document, InfoBase source, IEnumerable<string>? takenNames = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(source);
         var copy = Clone(source.Section);
-        copy.Name = source.Name + CopySuffix;
+        // «Имя (копия)», а если такое уже есть — «Имя (копия 2)»: двух баз с одним названием не бывает.
+        copy.Name = UniqueCopyName(source.Name, BaseNames(document).Concat(takenNames ?? []));
         copy.Set(V8iKeys.Id, NewId());
         copy.Set(V8iKeys.OrderInList, Format(NextOrderInList(document)));
         copy.Set(V8iKeys.OrderInTree, Format(NextOrderInTree(document, source.FolderPath)));
@@ -290,9 +324,11 @@ public static class PersonalListEditor
     }
 
     /// <summary>
-    /// Добавляет записи другого списка. Базы, которые уже есть (по ID или подключению), и существующие папки пропускаются.
+    /// Добавляет записи другого списка. Базы, которые уже есть (по ID или подключению), базы с занятым названием
+    /// и существующие папки пропускаются.
     /// </summary>
-    public static ImportResult Import(V8iDocument document, V8iDocument source)
+    /// <param name="takenNames">Названия баз в других списках; названия личного списка учитываются сами.</param>
+    public static ImportResult Import(V8iDocument document, V8iDocument source, IEnumerable<string>? takenNames = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(source);
@@ -302,7 +338,9 @@ public static class PersonalListEditor
             .SelectMany(s => IdentityKeys(new InfoBase(s, personal)))
             .ToHashSet(StringComparer.Ordinal);
 
-        int added = 0, skipped = 0;
+        var names = BaseNames(document).Concat(takenNames ?? []).Select(n => n.Trim()).ToHashSet(NameComparer);
+
+        int added = 0, skipped = 0, sameName = 0;
         foreach (var section in source.Sections.Where(s => !string.IsNullOrWhiteSpace(s.Name)))
         {
             if (V8iSections.IsFolder(section))
@@ -323,6 +361,13 @@ public static class PersonalListEditor
                     continue;
                 }
 
+                // Другая база с тем же названием — не добавляем: двух баз с одним названием не бывает.
+                if (!names.Add(section.Name.Trim()))
+                {
+                    sameName++;
+                    continue;
+                }
+
                 existingKeys.UnionWith(keys);
             }
 
@@ -330,7 +375,7 @@ public static class PersonalListEditor
             added++;
         }
 
-        return new ImportResult(added, skipped);
+        return new ImportResult(added, skipped, sameName);
     }
 
     /// <summary>Новый документ с копиями записей — для выгрузки в файл .v8i.</summary>

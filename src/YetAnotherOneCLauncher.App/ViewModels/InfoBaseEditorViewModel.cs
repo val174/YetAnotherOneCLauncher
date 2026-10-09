@@ -69,7 +69,13 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     public IReadOnlyList<string> PlatformVersions { get; init; } = [];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(NameTakenHint), nameof(IsNameTakenHintVisible))]
     public partial string Name { get; set; }
+
+    /// <summary>Подсказка под названием, если оно занято другой базой: сохранить такую базу нельзя.</summary>
+    public string NameTakenHint => IsNameTaken(Name.Trim()) ? $"База «{Name.Trim()}» уже есть в списке — укажите другое название." : string.Empty;
+
+    public bool IsNameTakenHintVisible => NameTakenHint.Length > 0;
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsFile), nameof(IsServer), nameof(IsWeb))]
@@ -158,6 +164,12 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
     /// <summary>Данные формы; заполняется в <see cref="TryAccept"/>.</summary>
     public InfoBaseDraft? Result { get; private set; }
 
+    /// <summary>
+    /// Название занято другой базой. У изменяемой базы прежнее название (даже если оно уже повторяется) оставить можно.
+    /// </summary>
+    private bool IsNameTaken(string name) =>
+        name.Length > 0 && !PersonalListEditor.NameComparer.Equals(name, _original.Name.Trim()) && ExistingNames.Contains(name);
+
     /// <summary>Проверяет данные; при успехе заполняет <see cref="Result"/>.</summary>
     public bool TryAccept()
     {
@@ -180,7 +192,12 @@ public sealed partial class InfoBaseEditorViewModel : ObservableObject
             OriginalConnection = _pastedConnection ?? _original.OriginalConnection,
         };
 
-        var errors = draft.Validate();
+        var errors = draft.Validate().ToList();
+        if (IsNameTaken(draft.Name))
+        {
+            errors.Insert(0, $"В списке уже есть база «{draft.Name}». Укажите другое название.");
+        }
+
         Errors = string.Join(Environment.NewLine, errors);
         Result = errors.Count == 0 ? draft : null;
         return Result is not null;

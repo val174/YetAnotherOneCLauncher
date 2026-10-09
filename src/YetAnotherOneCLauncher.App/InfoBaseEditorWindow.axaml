@@ -127,6 +127,9 @@
         <StackPanel x:Name="FormPage" Spacing="10" Margin="0,0,14,0" IsEnabled="{Binding IsIdle}">
           <TextBlock Text="Название" />
           <TextBox x:Name="NameBox" Text="{Binding Name}" />
+          <!-- Две базы с одним названием не допускаются: занятое — видно сразу, сохранить не даст проверка. -->
+          <TextBlock x:Name="NameTakenText" Classes="hint warning" Text="{Binding NameTakenHint}" IsVisible="{Binding IsNameTakenHintVisible}"
+                     Margin="0,-4,0,0" />
 
           <!-- Существующая база: вставленная строка подключения заполняет поля ниже. -->
           <StackPanel Spacing="6" IsVisible="{Binding ShowConnectionStringField}">

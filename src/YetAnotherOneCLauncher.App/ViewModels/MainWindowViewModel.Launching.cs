@@ -211,7 +211,8 @@ public sealed partial class MainWindowViewModel
             GroupNamePrompt = parent => _dialogs.PromptAsync(
                 "Новая группа", parent == FolderPaths.Root ? "Имя группы:" : $"Имя группы внутри «{parent.TrimStart('/')}»:", string.Empty),
             Creator = isNew && templates is not null ? CreateInfoBaseAsync : null,
-            ExistingNames = isNew ? [.. _bases.Select(b => b.Name)] : [],
+            // Названия других баз: совпадать с ними название не должно (у изменяемой — кроме её самой).
+            ExistingNames = OtherBaseNames(existing),
             CreationPlatforms = isNew ? CreationPlatforms() : [],
             FoundTemplates = templates ?? [],
         };
