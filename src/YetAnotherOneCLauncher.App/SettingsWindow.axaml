@@ -143,7 +143,7 @@
             </StackPanel>
             <TextBlock Classes="secondary" Text="Сохранять вместе со списком:" Margin="0,8,0,0" />
             <CheckBox x:Name="ExportLaunchParametersBox" IsChecked="{Binding ExportLaunchParameters}" Content="Параметры запуска баз и групп" />
-            <CheckBox x:Name="ExportBaseSettingsBox" IsChecked="{Binding ExportBaseSettings}" Content="Избранное, версии платформы, проекты 1C:EDT" />
+            <CheckBox x:Name="ExportBaseSettingsBox" IsChecked="{Binding ExportBaseSettings}" Content="Избранное, метки, версии платформы, проекты 1C:EDT" />
             <StackPanel Orientation="Horizontal" Spacing="6">
               <CheckBox x:Name="ExportUserNamesBox" IsChecked="{Binding ExportUserNames}" Content="Имена пользователей" />
               <!-- «?»: подсказка при наведении и по щелчку. -->
@@ -156,6 +156,13 @@
                   </Flyout>
                 </Button.Flyout>
               </Button>
+            </StackPanel>
+
+            <!-- Метки баз (то же — «Метки…» в строке меток и в контекстном меню). -->
+            <TextBlock Classes="fieldLabel" Text="Метки баз" Margin="0,16,0,4" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button x:Name="ManageTagsButton" Content="Метки…" Command="{Binding ManageTagsCommand}" />
+              <TextBlock Classes="secondary" Text="Создать, переименовать, удалить метку, выбрать цвет" VerticalAlignment="Center" TextWrapping="Wrap" />
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

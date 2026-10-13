@@ -475,6 +475,11 @@ public sealed partial class MainWindowViewModel
             },
             () => $"Добавлена копия «{source.Name}»: «{copyName}».",
             () => key);
+        if (added)
+        {
+            CopyTags(source.InfoBase, key);
+        }
+
         KeepCustomOrderAfterMove(added && byName && (before is not null || afterSource));
     }
 

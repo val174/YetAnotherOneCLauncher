@@ -1,0 +1,358 @@
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
+using YetAnotherOneCLauncher.App.ViewModels;
+using YetAnotherOneCLauncher.Core.Settings;
+
+namespace YetAnotherOneCLauncher.App.Tests;
+
+/// <summary>Метки баз и быстрый отбор по ним (задача #25).</summary>
+public class TagsTests
+{
+    private const string Buh = "Бухгалтерия предприятия";
+    private const string Zup = "Зарплата и управление персоналом";
+    private const string Copy = "Копия бухгалтерии";
+
+    private static FolderNodeViewModel Folder(MainWindowViewModel vm, string name) =>
+        vm.TreeItems.OfType<FolderNodeViewModel>().Single(f => f.Name == name);
+
+    private static BaseNodeViewModel Node(MainWindowViewModel vm, string name) =>
+        vm.TreeItems.OfType<FolderNodeViewModel>().SelectMany(f => f.Children).Concat(vm.TreeItems)
+            .OfType<BaseNodeViewModel>().First(b => b.Name == name);
+
+    private static List<string> ListNames(MainWindowViewModel vm) =>
+        [.. vm.ListItems.OfType<BaseListItemViewModel>().Select(i => i.Base.Name)];
+
+    /// <summary>Пункт подменю «Метки» по имени.</summary>
+    private static TagMenuItemViewModel MenuItem(MainWindowViewModel vm, string header) =>
+        vm.TagMenuItems.Single(i => i.Header == header);
+
+    private static async Task<ViewModelFixture> TaggedAsync()
+    {
+        var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        foreach (var (name, tags) in new[] { (Buh, new[] { "прод", "бух" }), (Zup, ["прод"]), (Copy, ["тест", "бух"]) })
+        {
+            vm.SelectedTreeItem = Node(vm, name);
+            foreach (var tag in tags)
+            {
+                vm.AddTagCommand.Execute(tag);
+            }
+        }
+
+        return fixture;
+    }
+
+    [Fact]
+    public async Task Context_menu_creates_and_toggles_tag_on_base()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Zup);
+        Assert.True(vm.HasTagTarget);
+        Assert.False(vm.HasTags);
+        Assert.Equal(["Новая метка…", "Управление метками…"], vm.TagMenuItems.Select(i => i.Header));
+
+        fixture.Dialogs.PromptAnswer = "  прод ";
+        await vm.NewTagCommand.ExecuteAsync(null);
+
+        var zup = fixture.Base(Zup);
+        Assert.Equal(["прод"], zup.AssignedTags);
+        Assert.Equal("прод", Assert.Single(zup.RowTags).Name);
+        Assert.Contains("Метка «прод» поставлена: «Зарплата и управление персоналом». Метка создана.", vm.StatusText, StringComparison.Ordinal);
+        Assert.True(vm.HasTags);
+        Assert.True(vm.IsTagBarVisible); // строка меток по умолчанию включена
+        Assert.Equal("прод · 1", Assert.Single(vm.TagFilters).Text);
+        Assert.True(MenuItem(vm, "прод").IsChecked);
+        Assert.Equal("-", vm.TagMenuItems[1].Header); // разделитель перед командами
+
+        MenuItem(vm, "прод").Command!.Execute(MenuItem(vm, "прод").CommandParameter);
+
+        Assert.Empty(zup.AssignedTags);
+        Assert.False(MenuItem(vm, "прод").IsChecked);
+        Assert.False(vm.HasTags); // метка в каталоге осталась, но ни у одной базы её нет
+        Assert.Contains("снята", vm.StatusText, StringComparison.Ordinal);
+        Assert.NotNull(fixture.Settings.UserData.Tag("прод"));
+    }
+
+    [Fact]
+    public async Task Folder_target_tags_all_its_bases_and_second_toggle_removes_from_all()
+    {
+        using var fixture = new ViewModelFixture();
+        await fixture.LoadAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Buh);
+        vm.AddTagCommand.Execute("прод");
+
+        vm.SelectedTreeItem = Folder(vm, "Рабочие");
+        Assert.False(MenuItem(vm, "прод").IsChecked); // есть не у всех баз папки
+        vm.ToggleTagCommand.Execute("прод");
+
+        Assert.Equal(["прод"], fixture.Base(Buh).AssignedTags);
+        Assert.Equal(["прод"], fixture.Base(Zup).AssignedTags);
+        Assert.Contains("2 базы", vm.StatusText, StringComparison.Ordinal);
+        Assert.True(MenuItem(vm, "прод").IsChecked);
+
+        vm.ToggleTagCommand.Execute("прод");
+        Assert.Empty(fixture.Base(Buh).AssignedTags);
+        Assert.Empty(fixture.Base(Zup).AssignedTags);
+    }
+
+    [Fact]
+    public async Task Filter_bar_shows_bases_with_all_selected_tags_in_flat_list()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        Assert.Equal(["бух · 2", "прод · 2", "тест · 1"], vm.TagFilters.Select(t => t.Text));
+        Assert.True(vm.ShowTree);
+
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters.Single(t => t.Name == "прод"));
+
+        Assert.True(vm.HasTagFilter);
+        Assert.False(vm.ShowTree); // при отборе — плоский список, как при поиске
+        Assert.Equal([Buh, Zup], ListNames(vm));
+        Assert.True(vm.TagFilters.Single(t => t.Name == "прод").IsSelected);
+        Assert.Contains("Отбор по меткам: прод — найдено 2", vm.StatusText, StringComparison.Ordinal);
+
+        // Вторая метка — условие «И».
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters.Single(t => t.Name == "бух"));
+        Assert.Equal([Buh], ListNames(vm));
+
+        // Поиск — среди отобранных.
+        vm.SearchText = "зарплата";
+        Assert.Empty(ListNames(vm));
+        Assert.True(vm.ShowNothingFound);
+        vm.SearchText = string.Empty;
+
+        vm.ClearTagFilterCommand.Execute(null);
+        Assert.False(vm.HasTagFilter);
+        Assert.True(vm.ShowTree);
+        Assert.All(vm.TagFilters, t => Assert.False(t.IsSelected));
+    }
+
+    [Fact]
+    public async Task Filter_works_inside_favorites_mode()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        fixture.Settings.UserData.SetFavorite(fixture.Base(Copy).InfoBase, true);
+        fixture.Settings.UserData.SetFavorite(fixture.Base(Zup).InfoBase, true);
+        fixture.Base(Copy).Refresh();
+        fixture.Base(Zup).Refresh();
+        vm.IsFavoritesMode = true;
+
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters.Single(t => t.Name == "бух"));
+
+        Assert.Equal([Copy], ListNames(vm));
+    }
+
+    [Fact]
+    public async Task Hash_words_in_search_filter_by_tag_prefix()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+
+        vm.SearchText = "#пр";
+        Assert.Equal([Buh, Zup], ListNames(vm));
+
+        vm.SearchText = "#пр бухг";
+        Assert.Equal([Buh], ListNames(vm));
+
+        vm.SearchText = "#нет";
+        Assert.Empty(ListNames(vm));
+        Assert.Equal("Ничего не найдено", vm.EmptyListText);
+    }
+
+    [Fact]
+    public async Task Hiding_tag_bar_clears_filter_and_is_remembered()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters[0]);
+
+        vm.ToggleTagBarCommand.Execute(null);
+
+        Assert.False(vm.ShowTagBar);
+        Assert.False(vm.IsTagBarVisible);
+        Assert.False(vm.HasTagFilter);
+        Assert.True(vm.ShowTree);
+        Assert.False(fixture.Settings.Settings.Ui.ShowTagBar);
+    }
+
+    [Fact]
+    public async Task Removing_last_base_of_selected_tag_drops_it_from_filter()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters.Single(t => t.Name == "тест"));
+        vm.SelectedListItem = vm.ListItems.Single();
+
+        vm.RemoveTagCommand.Execute("тест");
+
+        Assert.False(vm.HasTagFilter);
+        Assert.DoesNotContain(vm.TagFilters, t => t.Name == "тест");
+    }
+
+    [Fact]
+    public async Task Manage_window_renames_recolors_hides_and_deletes()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        fixture.Dialogs.TagsEditor = editor =>
+        {
+            Assert.Equal(["бух", "прод", "тест"], editor.Rows.Select(r => r.Name));
+            Assert.Equal(["2", "2", "1"], editor.Rows.Select(r => r.CountText));
+            var prod = editor.Rows.Single(r => r.Name == "прод");
+            prod.Name = "боевые";
+            prod.ColorIndex = (int)TagColor.Blue;
+            editor.Rows.Single(r => r.Name == "бух").ShowInRow = false;
+            editor.SelectedRow = editor.Rows.Single(r => r.Name == "тест");
+            editor.DeleteCommand.Execute(null);
+            editor.CreateCommand.Execute(null);
+            Assert.Equal("Новая метка", editor.SelectedRow!.Name);
+            Assert.True(editor.Validate());
+            return true;
+        };
+
+        await vm.ManageTagsCommand.ExecuteAsync(null);
+
+        Assert.Equal(["боевые", "бух"], fixture.Base(Buh).AssignedTags);
+        Assert.Equal(["боевые"], fixture.Base(Buh).RowTags.Select(t => t.Name)); // «бух» не показывается в строке
+        Assert.Equal(TagColor.Blue, fixture.Base(Zup).Tags.Single().Color);
+        Assert.Equal(["бух"], fixture.Base(Copy).AssignedTags);
+        Assert.Null(fixture.Settings.UserData.Tag("тест"));
+        Assert.NotNull(fixture.Settings.UserData.Tag("Новая метка"));
+        Assert.Equal(["боевые · 2", "бух · 2"], vm.TagFilters.Select(t => t.Text));
+    }
+
+    [Fact]
+    public async Task Manage_window_swaps_names_and_rejects_duplicates_and_blanks()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        fixture.Dialogs.TagsEditor = editor =>
+        {
+            var bux = editor.Rows.Single(r => r.Name == "бух");
+            var prod = editor.Rows.Single(r => r.Name == "прод");
+            bux.Name = "ПРОД";
+            Assert.False(editor.Validate());
+            Assert.Equal("Метка «прод» уже есть.", editor.ErrorText);
+            bux.Name = " ";
+            Assert.False(editor.Validate());
+            Assert.Equal("Укажите наименование метки.", editor.ErrorText);
+            bux.Name = "прод";
+            prod.Name = "бух";
+            Assert.True(editor.Validate());
+            Assert.Null(editor.ErrorText);
+            return true;
+        };
+
+        await vm.ManageTagsCommand.ExecuteAsync(null);
+
+        // Имена поменялись местами, а не слились.
+        Assert.Equal(["бух", "прод"], fixture.Base(Buh).AssignedTags);
+        Assert.Equal(["бух"], fixture.Base(Zup).AssignedTags);
+        Assert.Equal(["прод", "тест"], fixture.Base(Copy).AssignedTags);
+    }
+
+    [Fact]
+    public async Task Cancelled_manage_window_changes_nothing()
+    {
+        using var fixture = await TaggedAsync();
+        fixture.Dialogs.TagsEditor = editor =>
+        {
+            editor.Rows[0].Name = "другое";
+            return false;
+        };
+
+        await fixture.ViewModel.ManageTagsCommand.ExecuteAsync(null);
+
+        Assert.NotNull(fixture.Settings.UserData.Tag("бух"));
+    }
+
+    [Fact]
+    public async Task Duplicate_copies_tags()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Zup);
+        fixture.Dialogs.ConfirmAnswer = true;
+
+        await vm.DuplicateCommand.ExecuteAsync(null);
+
+        Assert.Equal(["прод"], fixture.Base(Zup + "_копия").AssignedTags);
+        Assert.Equal("прод · 3", vm.TagFilters.Single(t => t.Name == "прод").Text);
+    }
+
+    [Fact]
+    public async Task Editor_field_sets_tags_and_offers_existing_ones()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Zup);
+        fixture.Dialogs.InfoBaseEditor = editor =>
+        {
+            Assert.Equal("прод", editor.TagsText);
+            Assert.Equal(["бух", "прод", "тест"], editor.TagChoices);
+            editor.ToggleTagChoiceCommand.Execute("тест");
+            editor.ToggleTagChoiceCommand.Execute("прод");
+            Assert.Equal("тест", editor.TagsText);
+            editor.TagsText += "; новая ,  тест";
+            return true;
+        };
+
+        await vm.EditCommand.ExecuteAsync(null);
+
+        Assert.Equal(["новая", "тест"], fixture.Base(Zup).AssignedTags);
+        Assert.Contains(vm.TagFilters, t => t.Text == "новая · 1");
+    }
+
+    [Fact]
+    public async Task Tags_are_saved_to_settings()
+    {
+        using var fixture = await TaggedAsync();
+
+        var set = fixture.Settings.Settings.InfoBaseTags.Single(t => t.InfoBase.Name == Zup);
+        Assert.Equal(["прод"], set.Tags);
+        Assert.Equal("00000000-0000-0000-0000-000000000002", set.InfoBase.Id);
+    }
+
+    [AvaloniaFact]
+    public async Task Tag_bar_row_chips_properties_and_tags_window_are_shown()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        var window = await MainWindowTests.OpenAsync(fixture);
+
+        Assert.True(window.FindControl<Button>("TagBarButton")!.IsVisible);
+        Assert.True(window.FindControl<DockPanel>("TagBar")!.IsVisible);
+        Assert.Equal(3, window.FindControl<ItemsControl>("TagFilterList")!.ItemCount);
+        Assert.Equal("Метки", window.FindControl<MenuItem>("TagsMenu")!.Header);
+        MainWindowTests.Snapshot(window, "52-tags-tree");
+
+        vm.SelectedTreeItem = Node(vm, Buh);
+        vm.ToggleTagFilterCommand.Execute(vm.TagFilters.Single(t => t.Name == "прод"));
+        vm.SelectedListItem = vm.ListItems[0];
+        MainWindowTests.Render();
+        Assert.True(window.FindControl<Button>("ClearTagFilterButton")!.IsVisible);
+        Assert.Equal(2, window.FindControl<ItemsControl>("SelectedTagsList")!.ItemCount);
+        MainWindowTests.Snapshot(window, "52-tags-filter");
+
+        vm.ToggleTagBarCommand.Execute(null);
+        MainWindowTests.Render();
+        Assert.False(window.FindControl<DockPanel>("TagBar")!.IsVisible);
+        window.Close();
+
+        var counts = fixture.Settings.UserData.TagCatalog().ToDictionary(t => t.Name, _ => 1);
+        var dialog = new TagsWindow(new TagsEditorViewModel(fixture.Settings.UserData.TagCatalog(), counts));
+        dialog.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.Equal(3, dialog.FindControl<ListBox>("TagsList")!.ItemCount);
+        Assert.Equal(7, dialog.FindControl<ListBox>("ColorList")!.ItemCount);
+        Assert.Equal("бух", dialog.FindControl<TextBox>("NameBox")!.Text);
+        MainWindowTests.Snapshot(dialog, "52-tags-window");
+        dialog.Close();
+    }
+}

@@ -316,6 +316,55 @@
     <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <!-- Кнопка-переключатель панели (строка меток): включённая — тоном акцента. -->
+    <Style Selector="StackPanel#ToolbarButtons > Button.checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonCheckedBrush}" />
+    </Style>
+    <!-- Метки в строках списка и в свойствах. -->
+    <Style Selector="ItemsControl.rowTags">
+      <Setter Property="Margin" Value="8,0,0,0" />
+      <Setter Property="DockPanel.Dock" Value="Right" />
+      <Setter Property="MaxWidth" Value="200" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="ItemTemplate">
+        <DataTemplate x:DataType="vm:TagChipViewModel">
+          <Border Classes="tagChip" c:TagChip.Color="{Binding Color}">
+            <TextBlock Text="{Binding Name}" />
+          </Border>
+        </DataTemplate>
+      </Setter>
+      <!-- Не влезшие целиком метки не показываются: места после наименования бывает мало. -->
+      <Setter Property="ItemsPanel">
+        <ItemsPanelTemplate>
+          <c:FitPanel />
+        </ItemsPanelTemplate>
+      </Setter>
+    </Style>
+    <!-- Кнопка-метка строки отбора: без своего фона — фон у плашки. -->
+    <Style Selector="Button.tagFilter">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,2,6,2" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagFilter /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.tagFilter:pointerover Border.tagChip">
+      <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <!-- Крестик «снять метку» на плашке в свойствах. -->
+    <Style Selector="Button.tagRemove">
+      <Setter Property="Padding" Value="4,0,0,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagRemove /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
     <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button > c|ToolIcon, Window.flatToolbar Panel.toolbarGlyph">
       <Setter Property="Width" Value="26" />
       <Setter Property="Height" Value="26" />
@@ -554,6 +603,11 @@
           </StackPanel>
           </Panel>
         </Border>
+        <!-- Строка меток под панелью: есть, если у баз есть метки; включённая — подсвечена. -->
+        <Button x:Name="TagBarButton" Command="{Binding ToggleTagBarCommand}" IsVisible="{Binding HasTags}" Classes.checked="{Binding ShowTagBar}"
+                ToolTip.Tip="Метки: показать или скрыть строку отбора по меткам">
+          <c:ToolIcon Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
+        </Button>
         <Border Classes="toolbarSeparator" />
         <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}"
                 ToolTip.Tip="{Binding HotKeys.ReloadSuffix, StringFormat='Обновить: перечитать списки баз и платформы{0}'}">
@@ -597,6 +651,37 @@
                   Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc, Ctrl+Q)" />
         </TextBox.InnerRightContent>
       </TextBox>
+    </DockPanel>
+
+    <!-- Строка меток (задача #25): щелчок по метке — показать базы с ней; выбрано несколько — базы со всеми сразу. -->
+    <DockPanel x:Name="TagBar" DockPanel.Dock="Top" Margin="12,0,12,4" IsVisible="{Binding IsTagBarVisible}">
+      <c:ToolIcon DockPanel.Dock="Left" Width="16" Height="16" Margin="2,0,8,0" VerticalAlignment="Center"
+                  Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+        <Button x:Name="ClearTagFilterButton" Classes="bare" Content="Сбросить" Command="{Binding ClearTagFilterCommand}"
+                IsVisible="{Binding HasTagFilter}" Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
+                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" ToolTip.Tip="Снять отбор по меткам" />
+        <Button x:Name="ManageTagsButton" Classes="bare" Content="Метки…" Command="{Binding ManageTagsCommand}"
+                Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
+                ToolTip.Tip="Создать, переименовать, удалить метку, выбрать цвет" />
+      </StackPanel>
+      <ItemsControl x:Name="TagFilterList" ItemsSource="{Binding TagFilters}" VerticalAlignment="Center">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:TagFilterViewModel">
+            <Button Classes="tagFilter" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleTagFilterCommand}"
+                    CommandParameter="{Binding}" ToolTip.Tip="Показать базы с этой меткой (вместе с другими выбранными)">
+              <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Classes.selected="{Binding IsSelected}">
+                <TextBlock Text="{Binding Text}" />
+              </Border>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
     </DockPanel>
 
     <!-- Низ: строка состояния и диагностика. -->
@@ -784,7 +869,7 @@
                    HorizontalAlignment="Center" VerticalAlignment="Center" />
         <ScrollViewer IsVisible="{Binding HasSelection}" HorizontalScrollBarVisibility="Disabled">
           <!-- Справа — место под полосу прокрутки: в теме Fluent она рисуется поверх содержимого. -->
-          <StackPanel Spacing="10" Margin="0,0,12,0">
+          <StackPanel Spacing="10" Margin="0,0,12,0" Grid.IsSharedSizeScope="True">
             <DockPanel>
               <Button x:Name="FavoriteButton" DockPanel.Dock="Right" Command="{Binding ToggleFavoriteCommand}" Padding="8,4"
                       VerticalAlignment="Top" ToolTip.Tip="{Binding HotKeys.ToggleFavoriteSuffix, StringFormat='Избранное{0}'}">
@@ -804,8 +889,54 @@
               <SelectableTextBlock Text="{Binding SelectedInfoBase.Name}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" TextWrapping="Wrap" Margin="0,0,8,0" />
             </DockPanel>
 
+            <!-- Метки базы: крестик снимает метку, «+» — поставить (подсказки — из имеющихся меток). -->
+            <Grid x:Name="TagsGrid">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="PropertyLabel" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
+              <TextBlock Classes="label" Text="Метки" VerticalAlignment="Center" />
+              <WrapPanel Grid.Column="1" VerticalAlignment="Center">
+                <ItemsControl x:Name="SelectedTagsList" ItemsSource="{Binding SelectedInfoBase.Tags, FallbackValue={x:Null}}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TagChipViewModel">
+                      <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Margin="0,2,4,2">
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding Name}" />
+                          <Button Classes="tagRemove" Content="✕" FontSize="10" ToolTip.Tip="Снять метку"
+                                  Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RemoveTagCommand}" CommandParameter="{Binding Name}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button x:Name="AddTagButton" Classes="icon" Margin="0,2" ToolTip.Tip="Поставить метку">
+                  <c:ToolIcon Brush="{DynamicResource IconAddBrush}" Data="{StaticResource AddIconGeometry}" />
+                  <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                      <StackPanel Spacing="6" Width="220">
+                        <AutoCompleteBox x:Name="TagInputBox" Text="{Binding NewTagText}" ItemsSource="{Binding TagNameChoices}"
+                                         FilterMode="ContainsOrdinal" MinimumPrefixLength="0" MaxLength="40" PlaceholderText="Метка" />
+                        <TextBlock Opacity="0.7" FontSize="12" TextWrapping="Wrap"
+                                   Text="Enter — поставить; новая метка создаётся сама." />
+                      </StackPanel>
+                    </Flyout>
+                  </Button.Flyout>
+                </Button>
+              </WrapPanel>
+            </Grid>
+
             <!-- Свойства тремя группами: как запускается; откуда база в списке; состояние и история. -->
-            <Grid x:Name="PropertiesGrid" ColumnDefinitions="Auto,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+            <Grid x:Name="PropertiesGrid" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" SharedSizeGroup="PropertyLabel" />
+                <ColumnDefinition Width="*" />
+              </Grid.ColumnDefinitions>
               <TextBlock Grid.Row="0" Classes="label" Text="Тип" />
               <SelectableTextBlock Grid.Row="0" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.ConnectionKindText}" />
               <TextBlock Grid.Row="1" Classes="label" Text="Клиент" />
@@ -994,6 +1125,26 @@
           <MenuItem Header="Избранное" Command="{Binding ToggleFavoriteCommand}" InputGesture="{Binding HotKeys.ToggleFavorite}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
+          <!-- Метки: у базы или у всех баз папки; пункт метки — с цветным кружком, галочка — метка уже стоит. -->
+          <MenuItem x:Name="TagsMenu" Header="Метки" ItemsSource="{Binding TagMenuItems}" IsVisible="{Binding HasTagTarget}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" /></MenuItem.Icon>
+            <MenuItem.Styles>
+              <Style Selector="MenuItem#TagsMenu > MenuItem" x:DataType="vm:TagMenuItemViewModel">
+                <Setter Property="Header" Value="{Binding Header}" />
+                <Setter Property="Command" Value="{Binding Command}" />
+                <Setter Property="CommandParameter" Value="{Binding CommandParameter}" />
+                <Setter Property="Icon">
+                  <Template>
+                    <Panel IsVisible="{Binding IsTag}" Width="14" Height="14">
+                      <Ellipse Classes="tagSwatch" c:TagChip.Color="{Binding SwatchColor}" Width="14" Height="14" />
+                      <TextBlock Text="✓" IsVisible="{Binding IsChecked}" Foreground="White" FontSize="11" FontWeight="Bold"
+                                 HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Panel>
+                  </Template>
+                </Setter>
+              </Style>
+            </MenuItem.Styles>
+          </MenuItem>
           <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource CopyIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
@@ -1116,6 +1267,8 @@
                     <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                   </Button>
                 </Panel>
+                <!-- Метки — у правого края колонки наименования (перед кнопками запуска); имя обрезается перед ними. -->
+                <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,8,0" />
@@ -1192,6 +1345,8 @@
                     <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                   </Button>
                 </Panel>
+                <!-- Метки — у правого края колонки наименования (перед кнопками запуска); имя обрезается перед ними. -->
+                <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,6,0" />

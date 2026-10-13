@@ -201,10 +201,37 @@ public sealed partial class InfoBaseViewModel : ObservableObject
             : local;
     }
 
+    /// <summary>Все метки базы — в свойствах и для отбора.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasTags))]
+    public partial IReadOnlyList<TagChipViewModel> Tags { get; private set; } = [];
+
+    /// <summary>Метки, показываемые в строке списка.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasRowTags))]
+    public partial IReadOnlyList<TagChipViewModel> RowTags { get; private set; } = [];
+
+    public bool HasTags => Tags.Count > 0;
+
+    public bool HasRowTags => RowTags.Count > 0;
+
+    /// <summary>Имена меток базы.</summary>
+    public IReadOnlyList<string> AssignedTags { get; private set; } = [];
+
+    /// <summary>Перечитать метки (после правки каталога меток).</summary>
+    public void RefreshTags()
+    {
+        AssignedTags = _userData.TagsOf(InfoBase);
+        var tags = AssignedTags.Select(n => _userData.Tag(n)).OfType<TagDefinition>().Select(t => new TagChipViewModel(t)).ToList();
+        Tags = tags;
+        RowTags = [.. tags.Where(t => t.ShowInRow)];
+    }
+
     /// <summary>Перечитать избранное, историю и выбранную версию из настроек.</summary>
     public void Refresh()
     {
         IsFavorite = _userData.IsFavorite(InfoBase);
+        RefreshTags();
         LaunchCount = _userData.LaunchCount(InfoBase);
         PlatformVersionOverride = _userData.PlatformVersionOverride(InfoBase);
 

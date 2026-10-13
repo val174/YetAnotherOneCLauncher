@@ -220,6 +220,8 @@ public sealed partial class MainWindowViewModel
             EdtProjectChooser = names => _dialogs.ChooseAsync("Проект 1C:EDT", "Выберите проект 1C:EDT для этой базы:", names),
             InitialEdtProjectId = existing is null || !EdtEnabled ? null : EdtProjectOf(existing)?.Id,
             SuggestedEdtProject = EdtEnabled ? SuggestedEdtProject(existing?.InfoBase) : null,
+            TagChoices = TagNameChoices,
+            InitialTags = existing?.AssignedTags ?? [],
         };
 
     /// <summary>Ветки установленных платформ («8.3», «8.5») и сами версии — от новых к старым.</summary>
@@ -266,6 +268,14 @@ public sealed partial class MainWindowViewModel
     /// <summary>После сохранения формы — пользователь и пароль, заданные в окне параметров.</summary>
     private async Task ApplyPendingLaunchSettingsAsync(InfoBaseEditorViewModel editor, string? selectionKey)
     {
+        // Метки — в настройках лаунчера, у сохранённой базы.
+        if (editor.IsTagsChanged && _bases.FirstOrDefault(b => b.InfoBase.IdentityKey == selectionKey) is { } tagged)
+        {
+            _settings.UserData.SetTags(tagged.InfoBase, editor.Tags);
+            tagged.RefreshTags();
+            AfterTagsChanged();
+        }
+
         // Связь с проектом 1C:EDT — в профиле сохранённой базы.
         if (editor.IsEdtProjectChanged && _bases.FirstOrDefault(b => b.InfoBase.IdentityKey == selectionKey) is { } linked)
         {

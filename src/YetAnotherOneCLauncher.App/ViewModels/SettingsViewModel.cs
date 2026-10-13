@@ -235,7 +235,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Окно «Восстановление списка баз» — задаёт главное окно.</summary>
     public Func<Task>? RestoreList { get; init; }
 
+    /// <summary>Окно «Метки» — задаёт главное окно.</summary>
+    public Func<Task>? ManageTags { get; init; }
+
     public bool CanExchangeList => SaveList is not null && LoadList is not null;
+
+    [RelayCommand]
+    private Task ManageTagsAsync() => ManageTags?.Invoke() ?? Task.CompletedTask;
 
     [RelayCommand]
     private Task RestoreListJsonAsync() => RestoreList?.Invoke() ?? Task.CompletedTask;

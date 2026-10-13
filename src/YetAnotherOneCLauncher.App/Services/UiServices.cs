@@ -53,6 +53,9 @@ public interface IDialogService
 
     /// <summary>Окно «Восстановление списка баз»; <c>true</c> — восстановить выбранную копию.</summary>
     Task<bool> ChooseListBackupAsync(RestoreListViewModel restore);
+
+    /// <summary>Окно «Метки»; <c>true</c> — сохранить изменения.</summary>
+    Task<bool> EditTagsAsync(TagsEditorViewModel editor);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -157,6 +160,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> ChooseListBackupAsync(RestoreListViewModel restore) =>
         Owner is { } owner ? new RestoreListWindow(restore).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> EditTagsAsync(TagsEditorViewModel editor) =>
+        Owner is { } owner ? new TagsWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public async Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
     {

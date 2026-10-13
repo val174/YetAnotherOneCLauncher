@@ -108,6 +108,10 @@ public partial class MainWindow : Window
             grip.PointerCaptureLost += (_, _) => _columnResize = null;
         }
 
+        // Метки в свойствах: «+» открывает поле ввода, Enter ставит метку (после того как подсказка подставила выбранное).
+        TagInputBox.AddHandler(KeyDownEvent, OnTagInputKeyDown, RoutingStrategies.Bubble, handledEventsToo: true);
+        AddTagButton.Flyout!.Opened += (_, _) => Dispatcher.UIThread.Post(() => TagInputBox.Focus());
+
         // Кнопка ▶ в строке (кнопки слева от наименования): меню режимов запуска этой базы.
         AddHandler(Button.ClickEvent, OnRowLaunchMenuClick);
 
@@ -374,6 +378,23 @@ public partial class MainWindow : Window
                 (container ?? list).Focus(NavigationMethod.Directional);
             },
             DispatcherPriority.Background);
+    }
+
+    private void OnTagInputKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Enter || ViewModel is not { } vm)
+        {
+            return;
+        }
+
+        if (TagInputBox.Text is { } text && !string.IsNullOrWhiteSpace(text) && vm.AddTagCommand.CanExecute(text))
+        {
+            vm.AddTagCommand.Execute(text);
+        }
+
+        TagInputBox.Text = string.Empty;
+        AddTagButton.Flyout?.Hide();
+        e.Handled = true;
     }
 
     private static void Execute(ICommand command)
