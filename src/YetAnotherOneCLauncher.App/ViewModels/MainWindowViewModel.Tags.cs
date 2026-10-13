@@ -240,12 +240,30 @@ public sealed partial class MainWindowViewModel
     private async Task NewTagAsync()
     {
         var targets = TagTargets();
-        var name = await _dialogs.PromptAsync("Новая метка", "Наименование метки:", string.Empty);
-        if (TagNames.Normalize(name) is { } normalized && targets.Count > 0)
+        if (targets.Count == 0)
         {
-            SetTagOn(targets, normalized, on: true);
+            return;
+        }
+
+        var form = new NewTagViewModel(_settings.UserData.TagCatalog(), _settings.UserData.NextTagColor(), $"Метка будет поставлена: {TargetsText(targets)}.");
+        if (!await _dialogs.CreateTagAsync(form) || TagNames.Normalize(form.Name) is not { } name)
+        {
+            return;
+        }
+
+        // Новая — с выбранным цветом; у имеющейся цвет свой.
+        var created = _settings.UserData.Tag(name) is null;
+        _settings.UserData.EnsureTag(name, form.Color);
+        SetTagOn(targets, name, on: true);
+        if (created)
+        {
+            StatusText += " Метка создана.";
         }
     }
+
+    /// <summary>«Имя базы» или «N баз».</summary>
+    private static string TargetsText(List<InfoBaseViewModel> targets) =>
+        targets.Count == 1 ? $"«{targets[0].Name}»" : $"{targets.Count} {Plural(targets.Count, "база", "базы", "баз")}";
 
     private void SetTagOn(List<InfoBaseViewModel> targets, string name, bool on)
     {
@@ -262,10 +280,9 @@ public sealed partial class MainWindowViewModel
         }
 
         var shown = _settings.UserData.Tag(name)?.Name ?? name;
-        var who = targets.Count == 1 ? $"«{targets[0].Name}»" : $"{targets.Count} {Plural(targets.Count, "база", "базы", "баз")}";
         StatusText = on
-            ? $"Метка «{shown}» поставлена: {who}." + (created ? " Метка создана." : string.Empty)
-            : $"Метка «{shown}» снята: {who}.";
+            ? $"Метка «{shown}» поставлена: {TargetsText(targets)}." + (created ? " Метка создана." : string.Empty)
+            : $"Метка «{shown}» снята: {TargetsText(targets)}.";
         AfterTagsChanged();
     }
 

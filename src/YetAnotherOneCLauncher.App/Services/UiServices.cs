@@ -56,6 +56,9 @@ public interface IDialogService
 
     /// <summary>Окно «Метки»; <c>true</c> — сохранить изменения.</summary>
     Task<bool> EditTagsAsync(TagsEditorViewModel editor);
+
+    /// <summary>Окно «Новая метка»; <c>true</c> — создать.</summary>
+    Task<bool> CreateTagAsync(NewTagViewModel tag);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -163,6 +166,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditTagsAsync(TagsEditorViewModel editor) =>
         Owner is { } owner ? new TagsWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> CreateTagAsync(NewTagViewModel tag) =>
+        Owner is { } owner ? new NewTagWindow(tag).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public async Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
     {

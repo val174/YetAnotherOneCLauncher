@@ -201,15 +201,16 @@ public sealed class LauncherUserData
             return existing;
         }
 
-        var palette = Enum.GetValues<TagColor>();
-        var tag = new TagDefinition
-        {
-            Name = normalized,
-            // Серый — для «архивных» меток, его выбирают сами; новым метки по кругу достаются цветные.
-            Color = color ?? palette[1 + (Settings.Tags.Count % (palette.Length - 1))],
-        };
+        var tag = new TagDefinition { Name = normalized, Color = color ?? NextTagColor() };
         Settings.Tags.Add(tag);
         return tag;
+    }
+
+    /// <summary>Цвет следующей новой метки: по кругу, кроме серого (его — для «архивных» меток — выбирают сами).</summary>
+    public TagColor NextTagColor()
+    {
+        var palette = Enum.GetValues<TagColor>();
+        return palette[1 + (Settings.Tags.Count % (palette.Length - 1))];
     }
 
     /// <summary>Ставит или снимает метку у базы; новая метка попадает в каталог.</summary>

@@ -56,8 +56,21 @@ public class TagsTests
         Assert.False(vm.HasTags);
         Assert.Equal(["Новая метка…", "Управление метками…"], vm.TagMenuItems.Select(i => i.Header));
 
-        fixture.Dialogs.PromptAnswer = "  прод ";
+        fixture.Dialogs.NewTagEditor = form =>
+        {
+            Assert.Equal("Метка будет поставлена: «Зарплата и управление персоналом».", form.TargetText);
+            Assert.Equal(TagColor.Red, form.Color); // первый цвет по кругу
+            Assert.False(form.Validate());
+            Assert.Equal("Укажите наименование метки.", form.ErrorText);
+            form.Name = "  прод ";
+            Assert.Null(form.ErrorText);
+            Assert.Equal("прод", form.PreviewName);
+            form.ColorIndex = (int)TagColor.Purple;
+            Assert.Equal(TagColor.Purple, form.PreviewColor);
+            return true;
+        };
         await vm.NewTagCommand.ExecuteAsync(null);
+        Assert.Equal(TagColor.Purple, fixture.Settings.UserData.Tag("прод")!.Color);
 
         var zup = fixture.Base(Zup);
         Assert.Equal(["прод"], zup.AssignedTags);
@@ -76,6 +89,40 @@ public class TagsTests
         Assert.False(vm.HasTags); // метка в каталоге осталась, но ни у одной базы её нет
         Assert.Contains("снята", vm.StatusText, StringComparison.Ordinal);
         Assert.NotNull(fixture.Settings.UserData.Tag("прод"));
+    }
+
+    [Fact]
+    public async Task New_tag_with_existing_name_keeps_its_color_and_cancel_does_nothing()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        var color = fixture.Settings.UserData.Tag("тест")!.Color;
+        vm.SelectedTreeItem = Folder(vm, "Рабочие");
+        fixture.Dialogs.NewTagEditor = form =>
+        {
+            Assert.Equal("Метка будет поставлена: 2 базы.", form.TargetText);
+            form.Name = "ТЕСТ";
+            Assert.True(form.IsExisting);
+            Assert.Equal("тест", form.PreviewName);
+            Assert.Equal(color, form.PreviewColor);
+            form.Color = color == TagColor.Pink ? TagColor.Blue : TagColor.Pink; // выбор цвета скрыт и не действует
+            return true;
+        };
+
+        await vm.NewTagCommand.ExecuteAsync(null);
+
+        Assert.Equal(color, fixture.Settings.UserData.Tag("тест")!.Color);
+        Assert.Contains("тест", fixture.Base(Buh).AssignedTags);
+        Assert.Contains("тест", fixture.Base(Zup).AssignedTags);
+        Assert.DoesNotContain("Метка создана", vm.StatusText, StringComparison.Ordinal);
+
+        fixture.Dialogs.NewTagEditor = form =>
+        {
+            form.Name = "отменённая";
+            return false;
+        };
+        await vm.NewTagCommand.ExecuteAsync(null);
+        Assert.Null(fixture.Settings.UserData.Tag("отменённая"));
     }
 
     [Fact]
@@ -367,5 +414,19 @@ public class TagsTests
         Assert.Equal("бух", dialog.FindControl<TextBox>("NameBox")!.Text);
         MainWindowTests.Snapshot(dialog, "52-tags-window");
         dialog.Close();
+
+        var form = new NewTagViewModel(fixture.Settings.UserData.TagCatalog(), TagColor.Amber, "Метка будет поставлена: «Копия бухгалтерии».") { Name = "клиент А" };
+        var newTag = new NewTagWindow(form);
+        newTag.Show();
+        Dispatcher.UIThread.RunJobs();
+        Assert.True(newTag.FindControl<ListBox>("ColorList")!.IsEffectivelyVisible);
+        Assert.Equal((int)TagColor.Amber, newTag.FindControl<ListBox>("ColorList")!.SelectedIndex);
+        MainWindowTests.Snapshot(newTag, "52-new-tag");
+        form.Name = "прод";
+        Dispatcher.UIThread.RunJobs();
+        Assert.False(newTag.FindControl<ListBox>("ColorList")!.IsEffectivelyVisible);
+        Assert.True(newTag.FindControl<TextBlock>("ExistingText")!.IsVisible);
+        MainWindowTests.Snapshot(newTag, "52-new-tag-existing");
+        newTag.Close();
     }
 }
