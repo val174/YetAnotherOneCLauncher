@@ -436,6 +436,29 @@
     <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,12,4" LastChildFill="True">
       <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
       <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
+        <!-- «Меню»: сохранение личного списка в файл JSON и загрузка из файлов JSON и .v8i. -->
+        <Button x:Name="MenuButton" ToolTip.Tip="Меню (сохранение и загрузка списка баз)">
+          <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconSettingsBrush}" Data="M 2,3.5 L 14,3.5 M 2,8 L 14,8 M 2,12.5 L 14,12.5" />
+          <Button.Flyout>
+            <MenuFlyout Placement="BottomEdgeAlignedLeft">
+              <MenuItem x:Name="ExportListJsonMenuItem" Header="Сохранить список в файл JSON…" Command="{Binding ExportListJsonCommand}"
+                        InputGesture="{Binding HotKeys.ExportListJson}">
+                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource SaveFileIconGeometry}" /></MenuItem.Icon>
+              </MenuItem>
+              <Separator />
+              <MenuItem x:Name="ImportListJsonMenuItem" Header="Загрузить список из файла JSON…" Command="{Binding ImportListJsonCommand}"
+                        InputGesture="{Binding HotKeys.ImportListJson}">
+                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource LoadFileIconGeometry}" /></MenuItem.Icon>
+              </MenuItem>
+              <MenuItem Header="Загрузить из файла .v8i…" Command="{Binding ImportCommand}" />
+              <Separator />
+              <MenuItem x:Name="RestoreListMenuItem" Header="Восстановить список…" Command="{Binding RestoreListCommand}">
+                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource HistoryIconGeometry}" /></MenuItem.Icon>
+              </MenuItem>
+            </MenuFlyout>
+          </Button.Flyout>
+        </Button>
+        <Border Classes="toolbarSeparator" />
         <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
         <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}">
           <Panel Classes="toolbarGlyph">
@@ -620,6 +643,22 @@
           </Button>
         </StackPanel>
         <TextBlock Text="{Binding StatusText}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+      </DockPanel>
+    </Border>
+
+    <!-- После загрузки списка из файла: вернуть прежний список (копия сделана перед загрузкой). -->
+    <Border x:Name="RestoreBanner" DockPanel.Dock="Bottom" Classes="updateBanner"
+            Padding="12,6" BorderThickness="0,1,0,0" IsVisible="{Binding ShowRestoreBanner}">
+      <DockPanel>
+        <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6" Margin="12,0,0,0">
+          <Button x:Name="UndoImportButton" Content="Вернуть прежний список" Command="{Binding UndoLastImportCommand}" />
+          <Button x:Name="DismissRestoreButton" Classes="statusIcon" Command="{Binding DismissRestoreBannerCommand}" ToolTip.Tip="Скрыть">
+            <c:ToolIcon Width="12" Height="12" StrokeThickness="1.6" Brush="{DynamicResource IconViewBrush}" Data="M 3,3 L 13,13 M 13,3 L 3,13" />
+          </Button>
+        </StackPanel>
+        <c:ToolIcon DockPanel.Dock="Left" Width="18" Height="18" Margin="0,0,10,0" VerticalAlignment="Center"
+                    Brush="{DynamicResource IconViewBrush}" Data="{StaticResource HistoryIconGeometry}" />
+        <TextBlock x:Name="RestoreBannerText" Text="{Binding RestoreBannerText}" VerticalAlignment="Center" TextWrapping="Wrap" />
       </DockPanel>
     </Border>
 
@@ -971,6 +1010,9 @@
             <MenuItem Header="Пользовательский кэш" Command="{Binding OpenRoamingCacheCommand}" />
           </MenuItem>
           <MenuItem Header="Сохранить ссылку в файл…" Command="{Binding ExportCommand}" />
+          <MenuItem x:Name="ExportSelectionJsonMenuItem" Header="Сохранить в файл JSON…" Command="{Binding ExportSelectionJsonCommand}">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource SaveFileIconGeometry}" /></MenuItem.Icon>
+          </MenuItem>
         </ContextMenu>
       </Panel.ContextMenu>
 

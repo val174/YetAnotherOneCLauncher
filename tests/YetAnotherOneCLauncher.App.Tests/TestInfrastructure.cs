@@ -113,6 +113,28 @@ internal sealed class FakeDialogs : IDialogService
 
     public Task<bool> EditSettingsAsync(SettingsViewModel settings) => Task.FromResult(SettingsEditor(settings));
 
+    /// <summary>Что «пользователь» сделает в окне «Загрузка списка баз»; <c>false</c> — отмена.</summary>
+    public Func<ImportListViewModel, bool> ImportConfirmer { get; set; } = _ => false;
+
+    public List<ImportListViewModel> ImportForms { get; } = [];
+
+    public Task<bool> ConfirmImportAsync(ImportListViewModel import)
+    {
+        ImportForms.Add(import);
+        return Task.FromResult(ImportConfirmer(import));
+    }
+
+    /// <summary>Что «пользователь» сделает в окне «Восстановление списка баз»; <c>false</c> — отмена.</summary>
+    public Func<RestoreListViewModel, bool> BackupChooser { get; set; } = _ => false;
+
+    public List<RestoreListViewModel> RestoreForms { get; } = [];
+
+    public Task<bool> ChooseListBackupAsync(RestoreListViewModel restore)
+    {
+        RestoreForms.Add(restore);
+        return Task.FromResult(BackupChooser(restore));
+    }
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)
@@ -144,6 +166,15 @@ internal sealed class FakeFiles : IFileDialogService
     public Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns) => Task.FromResult(OpenAnswer);
 
     public Task<string?> SaveListFileAsync(string title, string suggestedName) => Task.FromResult(SaveAnswer);
+
+    /// <summary>Предложенное имя последнего сохранения файла.</summary>
+    public string? SuggestedName { get; private set; }
+
+    public Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
+    {
+        SuggestedName = suggestedName;
+        return Task.FromResult(SaveAnswer);
+    }
 }
 
 internal sealed class FakeShell : IClipboardService, IWindowService, IThemeService

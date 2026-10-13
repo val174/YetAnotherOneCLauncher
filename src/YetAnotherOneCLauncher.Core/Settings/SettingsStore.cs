@@ -106,6 +106,7 @@ public sealed class SettingsStore
         settings.Updates ??= new UpdateSettings();
         settings.Edt ??= new EdtSettings();
         settings.Edt.ProjectInstallations ??= [];
+        settings.ListExchange ??= new ListExchangeSettings();
         if (!Enum.IsDefined(settings.Updates.Mode))
         {
             settings.Updates.Mode = UpdateMode.CheckOnly;

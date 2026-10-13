@@ -1,0 +1,54 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        x:Class="YetAnotherOneCLauncher.App.RestoreListWindow"
+        x:DataType="vm:RestoreListViewModel"
+        Title="Восстановление списка баз"
+        Width="620" Height="440" MinWidth="520" MinHeight="320"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <DockPanel Margin="16">
+    <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,8"
+               Text="Копии личного списка, сделанные перед загрузкой из файлов и перед восстановлением:" />
+
+    <StackPanel DockPanel.Dock="Bottom" Spacing="8" Margin="0,10,0,0">
+      <CheckBox x:Name="RestoreSettingsBox" IsChecked="{Binding RestoreSettings}"
+                Content="Вернуть и настройки баз (избранное, параметры, платформа, EDT)" />
+      <TextBlock Classes="secondary" Opacity="0.7" FontSize="12" TextWrapping="Wrap"
+                 Text="Текущий список тоже сохранится копией — восстановление можно отменить." />
+      <DockPanel Margin="0,6,0,0">
+        <Button x:Name="OpenFolderButton" DockPanel.Dock="Left" Content="Открыть каталог копий" Command="{Binding OpenFolderCommand}"
+                IsVisible="{Binding OpenFolderCommand, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+          <Button x:Name="OkButton" Classes="accent" Content="Восстановить" IsDefault="True" MinWidth="110" IsEnabled="{Binding HasSelection}" />
+          <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
+        </StackPanel>
+      </DockPanel>
+    </StackPanel>
+
+    <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
+      <Panel>
+        <TextBlock x:Name="NoBackupsText" IsVisible="{Binding !HasRows}" Opacity="0.7" Margin="12" TextWrapping="Wrap"
+                   Text="Копий пока нет: они появляются перед загрузкой списка из файла." />
+        <DockPanel IsVisible="{Binding HasRows}">
+          <Grid DockPanel.Dock="Top" ColumnDefinitions="140,*,110" Margin="12,6" Opacity="0.65">
+            <TextBlock Text="Когда" FontSize="12" />
+            <TextBlock Grid.Column="1" Text="Перед чем" FontSize="12" />
+            <TextBlock Grid.Column="2" Text="Записей в копии" FontSize="12" />
+          </Grid>
+          <ListBox x:Name="BackupsList" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="vm:ListBackupRowViewModel">
+                <Grid ColumnDefinitions="140,*,110">
+                  <TextBlock Text="{Binding WhenText}" />
+                  <TextBlock Grid.Column="1" Text="{Binding ReasonText}" TextTrimming="CharacterEllipsis" Margin="0,0,8,0" />
+                  <TextBlock Grid.Column="2" Text="{Binding CountText}" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </DockPanel>
+      </Panel>
+    </Border>
+  </DockPanel>
+</Window>

@@ -393,7 +393,9 @@ public static class PersonalListEditor
     /// и существующие папки пропускаются.
     /// </summary>
     /// <param name="takenNames">Названия баз в других списках; названия личного списка учитываются сами.</param>
-    public static ImportResult Import(V8iDocument document, V8iDocument source, IEnumerable<string>? takenNames = null)
+    /// <param name="added">Сюда попадают добавленные записи.</param>
+    public static ImportResult Import(
+        V8iDocument document, V8iDocument source, IEnumerable<string>? takenNames = null, ICollection<V8iSection>? added = null)
     {
         ArgumentNullException.ThrowIfNull(document);
         ArgumentNullException.ThrowIfNull(source);
@@ -405,7 +407,7 @@ public static class PersonalListEditor
 
         var names = BaseNames(document).Concat(takenNames ?? []).Select(n => n.Trim()).ToHashSet(NameComparer);
 
-        int added = 0, skipped = 0, sameName = 0;
+        int count = 0, skipped = 0, sameName = 0;
         foreach (var section in source.Sections.Where(s => !string.IsNullOrWhiteSpace(s.Name)))
         {
             if (V8iSections.IsFolder(section))
@@ -436,11 +438,13 @@ public static class PersonalListEditor
                 existingKeys.UnionWith(keys);
             }
 
-            document.Sections.Add(Clone(section));
-            added++;
+            var copy = Clone(section);
+            document.Sections.Add(copy);
+            added?.Add(copy);
+            count++;
         }
 
-        return new ImportResult(added, skipped, sameName);
+        return new ImportResult(count, skipped, sameName);
     }
 
     /// <summary>Новый документ с копиями записей — для выгрузки в файл .v8i.</summary>

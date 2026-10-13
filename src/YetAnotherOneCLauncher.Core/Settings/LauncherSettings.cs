@@ -308,6 +308,19 @@ public sealed class CacheSettings
     public bool IncludeRoaming { get; set; }
 }
 
+/// <summary>Что сохранять в файл JSON вместе со списком баз.</summary>
+public sealed class ListExchangeSettings
+{
+    /// <summary>Параметры запуска баз и групп.</summary>
+    public bool IncludeLaunchParameters { get; set; } = true;
+
+    /// <summary>Избранное, версии платформы, проекты 1C:EDT.</summary>
+    public bool IncludeBaseSettings { get; set; } = true;
+
+    /// <summary>Имена пользователей (пароли не сохраняются никогда).</summary>
+    public bool IncludeUserNames { get; set; }
+}
+
 /// <summary>Все настройки лаунчера: хранятся в JSON в каталоге приложения.</summary>
 public sealed class LauncherSettings
 {
@@ -346,6 +359,9 @@ public sealed class LauncherSettings
 
     /// <summary>Проекты 1C:EDT в списке баз.</summary>
     public EdtSettings Edt { get; set; } = new();
+
+    /// <summary>Сохранение списка баз в файл JSON.</summary>
+    public ListExchangeSettings ListExchange { get; set; } = new();
 
     /// <summary>Название инструмента, в который переносится прежний адрес «ПУСК».</summary>
     public const string PuskToolName = "Панель управления сервисами и компонентами";

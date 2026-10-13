@@ -281,12 +281,21 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
+        var (proceed, backup) = await BackupBeforeImportAsync(path, Core.Exchange.ImportMode.Add);
+        if (!proceed)
+        {
+            return;
+        }
+
         ImportResult? result = null;
-        await EditListAsync(
-            document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
-            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
-                  + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
-            CurrentSelectionKey);
+        if (await EditListAsync(
+                document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
+                () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
+                      + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
+                CurrentSelectionKey))
+        {
+            OfferUndo(backup, path, $"добавлено записей: {result?.Added ?? 0}");
+        }
     }
 
     /// <summary>Выгрузить выделенную базу или папку со всем содержимым в файл .v8i.</summary>
@@ -561,7 +570,10 @@ public sealed partial class MainWindowViewModel
     /// Применяет правку к личному списку и показывает результат. Ошибки — сообщением;
     /// если запись изменили или удалили в другой программе, список перечитывается.
     /// </summary>
-    private async Task<bool> EditListAsync(Action<V8iDocument> edit, Func<string> successMessage, Func<string?> selectionKey)
+    /// <param name="backup">Сохранить прежний список в <c>.bak</c> (замена всего списка).</param>
+    /// <param name="afterSave">Выполняется после записи, до показа списка (например, перенос настроек баз).</param>
+    private async Task<bool> EditListAsync(
+        Action<V8iDocument> edit, Func<string> successMessage, Func<string?> selectionKey, bool backup = false, Action? afterSave = null)
     {
         if (_store is null || _catalog is null)
         {
@@ -570,7 +582,11 @@ public sealed partial class MainWindowViewModel
 
         try
         {
-            var document = await _store.EditAsync(edit);
+            var document = await _store.EditAsync(edit, backup);
+            afterSave?.Invoke();
+
+            // Список снова правили — «Вернуть прежний список» отменил бы и эту правку; полоса больше не нужна.
+            ShowRestoreBanner = false;
             ShowCatalog(_catalog.WithPersonalDocument(document), selectionKey());
             StatusText = successMessage();
             return true;

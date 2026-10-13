@@ -329,6 +329,8 @@ public partial class MainWindow : Window
                     HotKeyCommand.MoveUp => vm.MoveUpCommand,
                     HotKeyCommand.MoveDown => vm.MoveDownCommand,
                     HotKeyCommand.ShowEdtProjects => vm.ShowEdtProjectsModeCommand,
+                    HotKeyCommand.ExportListJson => vm.ExportListJsonCommand,
+                    HotKeyCommand.ImportListJson => vm.ImportListJsonCommand,
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
                 });
                 break;
