@@ -52,6 +52,7 @@ public sealed partial class LaunchRequestChannel : ILaunchRequestChannel, IDispo
 
     private readonly ILogger _logger;
     private readonly CancellationTokenSource _stop = new();
+    private int _disposed;
 
     public LaunchRequestChannel(ILogger<LaunchRequestChannel> logger)
     {
@@ -92,8 +93,14 @@ public sealed partial class LaunchRequestChannel : ILaunchRequestChannel, IDispo
         _ = Task.Run(() => ListenAsync(onLaunchRequest, _stop.Token));
     }
 
+    /// <summary>Остановить приём. Повторный вызов ничего не делает.</summary>
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
         _stop.Cancel();
         _stop.Dispose();
     }
