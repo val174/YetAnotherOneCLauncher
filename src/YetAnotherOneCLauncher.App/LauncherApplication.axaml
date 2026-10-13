@@ -236,7 +236,8 @@
     <!-- Метки баз (Controls/TagChip.cs): плашка-«таблетка», цвет — классом tagRed, tagBlue…; без класса — серая. -->
     <Style Selector="Border.tagChip">
       <Setter Property="CornerRadius" Value="10" />
-      <Setter Property="Padding" Value="8,1" />
+      <!-- Снизу отступ больше: строчные буквы (без выносных элементов) иначе кажутся прижатыми к низу. -->
+      <Setter Property="Padding" Value="8,0,8,2" />
       <Setter Property="MinHeight" Value="21" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="BorderThickness" Value="0" />
@@ -251,7 +252,7 @@
     <!-- Выбранная в строке отбора — с рамкой цвета текста. -->
     <Style Selector="Border.tagChip.selected">
       <Setter Property="BorderThickness" Value="1.5" />
-      <Setter Property="Padding" Value="6.5,-0.5" />
+      <Setter Property="Padding" Value="6.5,-1.5,6.5,0.5" />
     </Style>
     <Style Selector="Ellipse.tagSwatch">
       <Setter Property="Width" Value="12" />
