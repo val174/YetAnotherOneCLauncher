@@ -32,9 +32,20 @@ internal static partial class Program
             Platform.Windows.WindowsJumpList.SetProcessAppUserModelId();
         }
 
-        using var services = AppServices.Build(new StartupOptions(launchKey));
+        var services = AppServices.Build(new StartupOptions(launchKey));
         var logger = services.GetRequiredService<ILoggerFactory>().CreateLogger(typeof(Program));
+        try
+        {
+            return Run(services, logger, instance, args);
+        }
+        finally
+        {
+            DisposeServices(services, logger);
+        }
+    }
 
+    private static int Run(ServiceProvider services, ILogger logger, InstanceLock instance, string[] args)
+    {
         AppDomain.CurrentDomain.UnhandledException += (_, e) =>
             LogUnhandled(logger, e.IsTerminating, e.ExceptionObject as Exception);
         TaskScheduler.UnobservedTaskException += (_, e) =>
@@ -82,6 +93,22 @@ internal static partial class Program
         }
     }
 
+    /// <summary>
+    /// Освободить сервисы при выходе. Настройки к этому моменту сохранены, окна закрыты: ошибка здесь не должна
+    /// превращаться в аварийное завершение с окном Windows «Ошибка приложения» (в том числе при выключении компьютера).
+    /// </summary>
+    internal static void DisposeServices(ServiceProvider services, ILogger logger)
+    {
+        try
+        {
+            services.Dispose();
+        }
+        catch (Exception ex)
+        {
+            LogDisposeFailed(logger, ex);
+        }
+    }
+
     /// <summary>Передать команду открытому лаунчеру и разрешить ему выйти на передний план.</summary>
     private static bool Forward(string command)
     {
@@ -113,6 +140,9 @@ internal static partial class Program
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Приложение завершено")]
     private static partial void LogStopped(ILogger logger);
+
+    [LoggerMessage(Level = LogLevel.Error, Message = "Ошибка при освобождении ресурсов на выходе")]
+    private static partial void LogDisposeFailed(ILogger logger, Exception exception);
 
     [LoggerMessage(Level = LogLevel.Critical, Message = "Необработанное исключение (завершение: {IsTerminating})")]
     private static partial void LogUnhandled(ILogger logger, bool isTerminating, Exception? exception);
