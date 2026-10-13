@@ -21,6 +21,9 @@ public sealed partial class MainWindowViewModel
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
         ShowEdtProjects = ShowEdtProjects,
+        ExportLaunchParameters = _settings.Settings.ListExchange.IncludeLaunchParameters,
+        ExportBaseSettings = _settings.Settings.ListExchange.IncludeBaseSettings,
+        ExportUserNames = _settings.Settings.ListExchange.IncludeUserNames,
         ThemeIndex = ThemeIndex,
         DarkShadeIndex = DarkShadeIndex,
         LightShadeIndex = LightShadeIndex,
@@ -45,6 +48,8 @@ public sealed partial class MainWindowViewModel
         {
             CheckForUpdatesCommand = CanCheckForUpdates ? CheckForUpdatesCommand : null,
             UpdateStatusText = UpdateStatusText,
+            SaveList = HasPersonalList ? SaveWholeListJsonAsync : null,
+            LoadList = HasPersonalList ? ImportListJsonAsync : null,
         };
         if (await _dialogs.EditSettingsAsync(settings))
         {
@@ -77,6 +82,17 @@ public sealed partial class MainWindowViewModel
         TwoLineRows = values.TwoLineRows;
         HighlightRunning = values.HighlightRunning;
         RowStripesIndex = values.RowStripesIndex;
+
+        var exchange = _settings.Settings.ListExchange;
+        if (exchange.IncludeLaunchParameters != values.ExportLaunchParameters
+            || exchange.IncludeBaseSettings != values.ExportBaseSettings
+            || exchange.IncludeUserNames != values.ExportUserNames)
+        {
+            exchange.IncludeLaunchParameters = values.ExportLaunchParameters;
+            exchange.IncludeBaseSettings = values.ExportBaseSettings;
+            exchange.IncludeUserNames = values.ExportUserNames;
+            _settings.RequestSave();
+        }
 
         if (!values.HotKeys.SameAs(HotKeys))
         {

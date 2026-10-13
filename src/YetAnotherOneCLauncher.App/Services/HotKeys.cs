@@ -19,6 +19,8 @@ public enum HotKeyCommand
     MoveUp,
     MoveDown,
     ShowEdtProjects,
+    ExportListJson,
+    ImportListJson,
 }
 
 /// <summary>Где действует сочетание: во всём окне или когда фокус в дереве или списке баз.</summary>
@@ -57,6 +59,8 @@ public sealed class HotKeyMap
         new(HotKeyCommand.MoveUp, "Выше в папке", new KeyGesture(Key.Up, KeyModifiers.Alt), HotKeyScope.List),
         new(HotKeyCommand.MoveDown, "Ниже в папке", new KeyGesture(Key.Down, KeyModifiers.Alt), HotKeyScope.List),
         new(HotKeyCommand.ShowEdtProjects, "Проекты 1C:EDT (режим списка; повторно — все базы)", new KeyGesture(Key.E, KeyModifiers.Control | KeyModifiers.Shift), HotKeyScope.Window),
+        new(HotKeyCommand.ExportListJson, "Сохранить список в файл JSON", new KeyGesture(Key.S, KeyModifiers.Control | KeyModifiers.Shift), HotKeyScope.Window),
+        new(HotKeyCommand.ImportListJson, "Загрузить список из файла JSON", new KeyGesture(Key.O, KeyModifiers.Control | KeyModifiers.Shift), HotKeyScope.Window),
     ];
 
     private readonly Dictionary<HotKeyCommand, KeyGesture?> _gestures;
@@ -90,6 +94,10 @@ public sealed class HotKeyMap
     public KeyGesture? MoveUp => this[HotKeyCommand.MoveUp];
 
     public KeyGesture? MoveDown => this[HotKeyCommand.MoveDown];
+
+    public KeyGesture? ExportListJson => this[HotKeyCommand.ExportListJson];
+
+    public KeyGesture? ImportListJson => this[HotKeyCommand.ImportListJson];
 
     // Для подсказок: « (F5)» или пусто, если сочетание снято.
     public string ReloadSuffix => Suffix(HotKeyCommand.Reload);

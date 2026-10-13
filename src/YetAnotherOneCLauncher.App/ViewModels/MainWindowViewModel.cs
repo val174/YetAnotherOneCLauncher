@@ -391,14 +391,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(CopyToPersonalCommand),
         nameof(DuplicateCommand),
         nameof(OpenInEdtCommand),
-        nameof(ExportCommand))]
+        nameof(ExportCommand),
+        nameof(ExportSelectionJsonCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 
     public bool HasSelection => SelectedInfoBase is not null;
 
     /// <summary>Выделенная обычная папка дерева (не «Избранное»).</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ExportCommand), nameof(ExportSelectionJsonCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]

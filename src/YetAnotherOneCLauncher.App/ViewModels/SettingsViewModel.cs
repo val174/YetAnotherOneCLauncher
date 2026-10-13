@@ -5,6 +5,7 @@ using Avalonia.Input;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YetAnotherOneCLauncher.App.Services;
+using YetAnotherOneCLauncher.Core.Exchange;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -29,6 +30,13 @@ public sealed record SettingsValues
 
     /// <summary>Группа «Проекты 1C:EDT» в дереве баз.</summary>
     public bool ShowEdtProjects { get; init; } = true;
+
+    // Что сохранять в файл JSON вместе со списком баз.
+    public bool ExportLaunchParameters { get; init; } = true;
+
+    public bool ExportBaseSettings { get; init; } = true;
+
+    public bool ExportUserNames { get; init; }
 
     // Внешний вид.
     public int ThemeIndex { get; init; }
@@ -122,6 +130,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         CheckAvailability = original.CheckAvailability;
         UpdateModeIndex = original.UpdateModeIndex;
         ShowEdtProjects = original.ShowEdtProjects;
+        ExportLaunchParameters = original.ExportLaunchParameters;
+        ExportBaseSettings = original.ExportBaseSettings;
+        ExportUserNames = original.ExportUserNames;
         ThemeIndex = original.ThemeIndex;
         DarkShadeIndex = original.DarkShadeIndex;
         LightShadeIndex = original.LightShadeIndex;
@@ -202,6 +213,33 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>«Версия 0.1.0 · проверено …» под кнопкой.</summary>
     public string UpdateStatusText { get; init; } = string.Empty;
 
+    // Список информационных баз: сохранение в файл JSON и загрузка.
+    [ObservableProperty]
+    public partial bool ExportLaunchParameters { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportBaseSettings { get; set; }
+
+    [ObservableProperty]
+    public partial bool ExportUserNames { get; set; }
+
+    /// <summary>Что сохранять — по флажкам в окне (даже несохранённым).</summary>
+    public ExportOptions CurrentExportOptions => new(ExportLaunchParameters, ExportBaseSettings, ExportUserNames);
+
+    /// <summary>Сохранение личного списка — задаёт главное окно; <c>null</c> — личного списка нет.</summary>
+    public Func<ExportOptions, Task>? SaveList { get; init; }
+
+    /// <summary>Загрузка списка из файла JSON — задаёт главное окно.</summary>
+    public Func<Task>? LoadList { get; init; }
+
+    public bool CanExchangeList => SaveList is not null && LoadList is not null;
+
+    [RelayCommand]
+    private Task SaveListJsonAsync() => SaveList?.Invoke(CurrentExportOptions) ?? Task.CompletedTask;
+
+    [RelayCommand]
+    private Task LoadListJsonAsync() => LoadList?.Invoke() ?? Task.CompletedTask;
+
     // --- Внешний вид ---
     [ObservableProperty]
     public partial int ThemeIndex { get; set; }
@@ -279,7 +317,10 @@ public sealed partial class SettingsViewModel : ObservableObject
         || UseThickClientForFileBases != _original.UseThickClientForFileBases
         || CheckAvailability != _original.CheckAvailability
         || UpdateModeIndex != _original.UpdateModeIndex
-        || ShowEdtProjects != _original.ShowEdtProjects;
+        || ShowEdtProjects != _original.ShowEdtProjects
+        || ExportLaunchParameters != _original.ExportLaunchParameters
+        || ExportBaseSettings != _original.ExportBaseSettings
+        || ExportUserNames != _original.ExportUserNames;
 
     public bool IsAppearanceDirty =>
         ThemeIndex != _original.ThemeIndex
@@ -327,6 +368,9 @@ public sealed partial class SettingsViewModel : ObservableObject
         CheckAvailability = CheckAvailability,
         UpdateModeIndex = UpdateModeIndex,
         ShowEdtProjects = ShowEdtProjects,
+        ExportLaunchParameters = ExportLaunchParameters,
+        ExportBaseSettings = ExportBaseSettings,
+        ExportUserNames = ExportUserNames,
         ThemeIndex = ThemeIndex,
         DarkShadeIndex = DarkShadeIndex,
         LightShadeIndex = LightShadeIndex,

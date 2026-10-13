@@ -1,0 +1,38 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        x:Class="YetAnotherOneCLauncher.App.ImportListWindow"
+        x:DataType="vm:ImportListViewModel"
+        Title="Загрузка списка баз"
+        Width="560" SizeToContent="Height" CanResize="False"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+  <StackPanel Margin="16" Spacing="10">
+    <TextBlock TextWrapping="Wrap">
+      <Run Text="Файл:" />
+      <Run x:Name="FileNameRun" Text="{Binding FileName}" FontWeight="SemiBold" />
+      <Run Text="{Binding SavedText}" />
+    </TextBlock>
+    <TextBlock x:Name="ContentText" Text="{Binding ContentText}" Opacity="0.75" />
+
+    <StackPanel Spacing="4" Margin="0,4,0,0">
+      <RadioButton x:Name="AddModeRadio" GroupName="ImportMode" IsChecked="{Binding IsAddMode}"
+                   Content="Добавить новые базы к списку" />
+      <RadioButton x:Name="ReplaceModeRadio" GroupName="ImportMode" IsChecked="{Binding IsReplaceMode}"
+                   Content="Заменить личный список содержимым файла" />
+      <TextBlock Text="Текущий список сохранится в ibases.v8i.bak" Opacity="0.7" FontSize="12" Margin="28,0,0,0" />
+    </StackPanel>
+
+    <CheckBox x:Name="ApplySettingsBox" IsChecked="{Binding ApplySettings}" IsVisible="{Binding HasSettings}"
+              Content="Загрузить настройки баз (параметры, избранное, платформа, EDT)" />
+
+    <Border Padding="8" CornerRadius="4" Background="{DynamicResource SystemControlBackgroundBaseLowBrush}">
+      <TextBlock x:Name="OutcomeText" Text="{Binding OutcomeText}" TextWrapping="Wrap" />
+    </Border>
+
+    <StackPanel Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right" Margin="0,6,0,0">
+      <Button x:Name="OkButton" Classes="accent" Content="Загрузить" IsDefault="True" MinWidth="100" />
+      <Button x:Name="CancelButton" Content="Отмена" IsCancel="True" MinWidth="100" />
+    </StackPanel>
+  </StackPanel>
+</Window>

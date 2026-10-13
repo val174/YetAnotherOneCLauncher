@@ -561,7 +561,10 @@ public sealed partial class MainWindowViewModel
     /// Применяет правку к личному списку и показывает результат. Ошибки — сообщением;
     /// если запись изменили или удалили в другой программе, список перечитывается.
     /// </summary>
-    private async Task<bool> EditListAsync(Action<V8iDocument> edit, Func<string> successMessage, Func<string?> selectionKey)
+    /// <param name="backup">Сохранить прежний список в <c>.bak</c> (замена всего списка).</param>
+    /// <param name="afterSave">Выполняется после записи, до показа списка (например, перенос настроек баз).</param>
+    private async Task<bool> EditListAsync(
+        Action<V8iDocument> edit, Func<string> successMessage, Func<string?> selectionKey, bool backup = false, Action? afterSave = null)
     {
         if (_store is null || _catalog is null)
         {
@@ -570,7 +573,8 @@ public sealed partial class MainWindowViewModel
 
         try
         {
-            var document = await _store.EditAsync(edit);
+            var document = await _store.EditAsync(edit, backup);
+            afterSave?.Invoke();
             ShowCatalog(_catalog.WithPersonalDocument(document), selectionKey());
             StatusText = successMessage();
             return true;
