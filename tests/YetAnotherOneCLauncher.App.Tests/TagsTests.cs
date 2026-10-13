@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
+using Avalonia.VisualTree;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Settings;
 
@@ -339,6 +340,18 @@ public class TagsTests
         Assert.True(window.FindControl<Button>("ClearTagFilterButton")!.IsVisible);
         Assert.Equal(2, window.FindControl<ItemsControl>("SelectedTagsList")!.ItemCount);
         MainWindowTests.Snapshot(window, "52-tags-filter");
+
+        // В одну строку метки — сразу за наименованием; в две — во второй строке.
+        bool Shown(string kind) => window.GetVisualDescendants().OfType<ItemsControl>()
+            .Any(i => i.Classes.Contains("rowTags") && i.Classes.Contains("secondLine") == (kind == "second") && i.IsEffectivelyVisible);
+        Assert.True(Shown("inline"));
+        Assert.False(Shown("second"));
+        vm.TwoLineRows = true;
+        MainWindowTests.Render();
+        Assert.False(Shown("inline"));
+        Assert.True(Shown("second"));
+        MainWindowTests.Snapshot(window, "52-tags-two-line");
+        vm.TwoLineRows = false;
 
         vm.ToggleTagBarCommand.Execute(null);
         MainWindowTests.Render();

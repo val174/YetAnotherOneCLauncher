@@ -123,14 +123,11 @@
               <TextBlock TextWrapping="Wrap" Text="Использовать проекты 1C:EDT (из 1C:EDT Start): группа в списке, поиск, режим «Проекты 1C:EDT», кнопки 1C:EDT у баз" />
             </CheckBox>
 
-            <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
-            <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
-            <ComboBox x:Name="UpdateModeBox" ItemsSource="{Binding UpdateModeNames}" SelectedIndex="{Binding UpdateModeIndex}"
-                      HorizontalAlignment="Stretch" />
-            <TextBlock Classes="secondary" Text="{Binding UpdateModeHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
-            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0" IsVisible="{Binding CheckForUpdatesCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
-              <Button x:Name="CheckForUpdatesButton" Content="Проверить обновления" Command="{Binding CheckForUpdatesCommand}" />
-              <TextBlock Classes="secondary" Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
+            <!-- Метки баз (то же — «Метки…» в строке меток и в контекстном меню). -->
+            <TextBlock Classes="fieldLabel" Text="Метки баз" Margin="0,16,0,4" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button x:Name="ManageTagsButton" Content="Метки…" Command="{Binding ManageTagsCommand}" />
+              <TextBlock Classes="secondary" Text="Создать, переименовать, удалить метку, выбрать цвет" VerticalAlignment="Center" TextWrapping="Wrap" />
             </StackPanel>
 
             <!-- Личный список баз: сохранение в файл JSON и загрузка (то же — в меню ≡ главного окна). -->
@@ -158,11 +155,14 @@
               </Button>
             </StackPanel>
 
-            <!-- Метки баз (то же — «Метки…» в строке меток и в контекстном меню). -->
-            <TextBlock Classes="fieldLabel" Text="Метки баз" Margin="0,16,0,4" />
-            <StackPanel Orientation="Horizontal" Spacing="10">
-              <Button x:Name="ManageTagsButton" Content="Метки…" Command="{Binding ManageTagsCommand}" />
-              <TextBlock Classes="secondary" Text="Создать, переименовать, удалить метку, выбрать цвет" VerticalAlignment="Center" TextWrapping="Wrap" />
+            <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
+            <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
+            <ComboBox x:Name="UpdateModeBox" ItemsSource="{Binding UpdateModeNames}" SelectedIndex="{Binding UpdateModeIndex}"
+                      HorizontalAlignment="Stretch" />
+            <TextBlock Classes="secondary" Text="{Binding UpdateModeHint}" TextWrapping="Wrap" Margin="0,4,0,0" />
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,8,0,0" IsVisible="{Binding CheckForUpdatesCommand, Converter={x:Static ObjectConverters.IsNotNull}}">
+              <Button x:Name="CheckForUpdatesButton" Content="Проверить обновления" Command="{Binding CheckForUpdatesCommand}" />
+              <TextBlock Classes="secondary" Text="{Binding UpdateStatusText}" VerticalAlignment="Center" />
             </StackPanel>
           </StackPanel>
         </ScrollViewer>

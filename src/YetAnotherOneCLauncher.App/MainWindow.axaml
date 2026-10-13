@@ -322,9 +322,7 @@
     </Style>
     <!-- Метки в строках списка и в свойствах. -->
     <Style Selector="ItemsControl.rowTags">
-      <Setter Property="Margin" Value="8,0,0,0" />
-      <Setter Property="DockPanel.Dock" Value="Right" />
-      <Setter Property="MaxWidth" Value="200" />
+      <Setter Property="Margin" Value="0,-2,8,-2" />
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="ItemTemplate">
         <DataTemplate x:DataType="vm:TagChipViewModel">
@@ -339,6 +337,13 @@
           <c:FitPanel />
         </ItemsPanelTemplate>
       </Setter>
+    </Style>
+    <Style Selector="ItemsControl.rowTags.secondLine">
+      <Setter Property="Margin" Value="4,-1,0,-1" />
+    </Style>
+    <!-- В две строки метки — во второй строке, а не за наименованием. -->
+    <Style Selector="Grid.baseRow.twoLine Panel.inlineTags">
+      <Setter Property="IsVisible" Value="False" />
     </Style>
     <!-- Кнопка-метка строки отбора: без своего фона — фон у плашки. -->
     <Style Selector="Button.tagFilter">
@@ -1267,8 +1272,6 @@
                     <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                   </Button>
                 </Panel>
-                <!-- Метки — у правого края колонки наименования (перед кнопками запуска); имя обрезается перед ними. -->
-                <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,8,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,8,0" />
@@ -1276,6 +1279,10 @@
                   <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" />
                   <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding Base.IsRunning}" ToolTip.Tip="{Binding Base.RunningToolTip}" />
                 </Grid>
+                <!-- Метки — сразу за наименованием (в две строки — во второй); не влезшие целиком не показываются. -->
+                <Panel DockPanel.Dock="Left" Classes="inlineTags">
+                  <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
+                </Panel>
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="общий" IsVisible="{Binding Base.InfoBase.IsReadOnly}" VerticalAlignment="Center"
                            Margin="0,0,8,0" ToolTip.Tip="Из общего списка: изменить можно только копию в личном списке" />
                 <TextBlock DockPanel.Dock="Left" Classes="secondary" Text="копия" IsVisible="{Binding Base.IsFromCache}" VerticalAlignment="Center"
@@ -1291,6 +1298,7 @@
                 <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
                 <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
                            IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <ItemsControl Classes="rowTags secondLine" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
               </StackPanel>
             </Grid>
           </DataTemplate>
@@ -1345,8 +1353,6 @@
                     <c:ToolIcon Data="{StaticResource EnterpriseIconGeometry}" SolidData="{StaticResource EnterpriseIconGeometry}" />
                   </Button>
                 </Panel>
-                <!-- Метки — у правого края колонки наименования (перед кнопками запуска); имя обрезается перед ними. -->
-                <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
                 <c:ToolIcon DockPanel.Dock="Left" Classes="favStar" IsVisible="{Binding Base.IsFavorite}" Margin="0,0,6,0" />
                 <TextBlock DockPanel.Dock="Left" Text="⚠" IsVisible="{Binding Base.IsUnavailable}" ToolTip.Tip="{Binding Base.AvailabilityText}"
                            Foreground="#C57C00" Margin="0,0,6,0" />
@@ -1354,6 +1360,9 @@
                   <c:HighlightTextBlock Segments="{Binding NameSegments}" TextTrimming="CharacterEllipsis" ToolTip.Tip="{Binding Base.NameToolTip}" />
                   <Ellipse Grid.Column="1" Classes="runningDot" IsVisible="{Binding Base.IsRunning}" ToolTip.Tip="{Binding Base.RunningToolTip}" />
                 </Grid>
+                <Panel DockPanel.Dock="Left" Classes="inlineTags">
+                  <ItemsControl Classes="rowTags" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
+                </Panel>
                 <TextBlock Classes="secondary" Text="{Binding Base.RowFolderText}" IsVisible="{Binding Base.HasRowFolder}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
               </DockPanel>
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
@@ -1366,6 +1375,7 @@
                 <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
                 <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
                            IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
+                <ItemsControl Classes="rowTags secondLine" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
               </StackPanel>
             </Grid>
           </DataTemplate>
