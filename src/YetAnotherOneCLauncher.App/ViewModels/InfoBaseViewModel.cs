@@ -222,7 +222,7 @@ public sealed partial class InfoBaseViewModel : ObservableObject
     public void RefreshTags()
     {
         AssignedTags = _userData.TagsOf(InfoBase);
-        var tags = AssignedTags.Select(n => _userData.Tag(n)).OfType<TagDefinition>().Select(t => new TagChipViewModel(t)).ToList();
+        var tags = AssignedTags.Select(n => _userData.Tag(n)).OfType<TagDefinition>().Select(t => new TagChipViewModel(t, this)).ToList();
         Tags = tags;
         RowTags = [.. tags.Where(t => t.ShowInRow)];
     }

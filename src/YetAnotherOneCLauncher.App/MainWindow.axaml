@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:local="using:YetAnotherOneCLauncher.App"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -326,8 +327,12 @@
       <Setter Property="VerticalAlignment" Value="Center" />
       <Setter Property="ItemTemplate">
         <DataTemplate x:DataType="vm:TagChipViewModel">
-          <Border Classes="tagChip" c:TagChip.Color="{Binding Color}">
-            <TextBlock Text="{Binding Name}" />
+          <Border Classes="tagChip removable" c:TagChip.Color="{Binding Color}">
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="{Binding Name}" />
+              <Button Classes="tagRemove onHover" Content="✕" FontSize="10" ToolTip.Tip="Снять метку"
+                      Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).RemoveRowTagCommand}" CommandParameter="{Binding}" />
+            </StackPanel>
           </Border>
         </DataTemplate>
       </Setter>
@@ -344,31 +349,6 @@
     <!-- В две строки метки — во второй строке, а не за наименованием. -->
     <Style Selector="Grid.baseRow.twoLine Panel.inlineTags">
       <Setter Property="IsVisible" Value="False" />
-    </Style>
-    <!-- Кнопка-метка строки отбора: без своего фона — фон у плашки. -->
-    <Style Selector="Button.tagFilter">
-      <Setter Property="Padding" Value="0" />
-      <Setter Property="Margin" Value="0,2,6,2" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Cursor" Value="Hand" />
-    </Style>
-    <Style Selector="Button.tagFilter /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="Transparent" />
-    </Style>
-    <Style Selector="Button.tagFilter:pointerover Border.tagChip">
-      <Setter Property="Opacity" Value="0.8" />
-    </Style>
-    <!-- Крестик «снять метку» на плашке в свойствах. -->
-    <Style Selector="Button.tagRemove">
-      <Setter Property="Padding" Value="4,0,0,0" />
-      <Setter Property="MinHeight" Value="0" />
-      <Setter Property="Background" Value="Transparent" />
-      <Setter Property="BorderThickness" Value="0" />
-      <Setter Property="Cursor" Value="Hand" />
-    </Style>
-    <Style Selector="Button.tagRemove /template/ ContentPresenter#PART_ContentPresenter">
-      <Setter Property="Background" Value="Transparent" />
     </Style>
     <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button > c|ToolIcon, Window.flatToolbar Panel.toolbarGlyph">
       <Setter Property="Width" Value="26" />
@@ -924,12 +904,7 @@
                   <c:ToolIcon Brush="{DynamicResource IconAddBrush}" Data="{StaticResource AddIconGeometry}" />
                   <Button.Flyout>
                     <Flyout Placement="BottomEdgeAlignedLeft">
-                      <StackPanel Spacing="6" Width="220">
-                        <AutoCompleteBox x:Name="TagInputBox" Text="{Binding NewTagText}" ItemsSource="{Binding TagNameChoices}"
-                                         FilterMode="ContainsOrdinal" MinimumPrefixLength="0" MaxLength="40" PlaceholderText="Метка" />
-                        <TextBlock Opacity="0.7" FontSize="12" TextWrapping="Wrap"
-                                   Text="Enter — поставить; новая метка создаётся сама." />
-                      </StackPanel>
+                      <local:TagPickerView x:Name="TagPicker" DataContext="{Binding TagPicker}" />
                     </Flyout>
                   </Button.Flyout>
                 </Button>

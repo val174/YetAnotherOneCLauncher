@@ -330,6 +330,43 @@
     <Style Selector="Ellipse.tagSwatch.tagPink">
       <Setter Property="Fill" Value="{StaticResource TagPinkSwatchBrush}" />
     </Style>
+    <!-- Кнопка-метка строки отбора: без своего фона — фон у плашки. -->
+    <Style Selector="Button.tagFilter">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,2,6,2" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagFilter /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.tagFilter:pointerover Border.tagChip">
+      <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <!-- Крестик «снять метку» на плашке в свойствах. -->
+    <Style Selector="Button.tagRemove">
+      <Setter Property="Padding" Value="4,0,0,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagRemove /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <!-- Метка в строке списка: крестик «снять метку» — у метки под указателем. Место под него — из правого отступа
+         плашки, чтобы ширина почти не менялась (иначе метка у края строки то пропадала бы, то появлялась). -->
+    <Style Selector="Border.tagChip Button.tagRemove.onHover">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Padding" Value="2,0,0,0" />
+    </Style>
+    <Style Selector="Border.tagChip:pointerover Button.tagRemove.onHover">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.tagChip.removable:pointerover">
+      <Setter Property="Padding" Value="8,0,3,2" />
+    </Style>
     <Style Selector="Window">
       <Setter Property="Icon" Value="/Assets/app.ico" />
       <Setter Property="FontSize" Value="{StaticResource AppFontSize}" />

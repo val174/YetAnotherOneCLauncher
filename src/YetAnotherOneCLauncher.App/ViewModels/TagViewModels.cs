@@ -5,8 +5,12 @@ using YetAnotherOneCLauncher.Core.Settings;
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
 /// <summary>Плашка метки: в строке списка и в свойствах базы.</summary>
-public sealed class TagChipViewModel(TagDefinition tag)
+/// <param name="tag">Метка.</param>
+/// <param name="owner">База, у которой метка стоит (крестик «снять метку»); <c>null</c> — метка из каталога.</param>
+public sealed class TagChipViewModel(TagDefinition tag, InfoBaseViewModel? owner = null)
 {
+    public InfoBaseViewModel? Owner => owner;
+
     public string Name => tag.Name;
 
     public TagColor Color => tag.Color;

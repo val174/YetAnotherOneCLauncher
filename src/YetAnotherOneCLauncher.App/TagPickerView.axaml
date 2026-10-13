@@ -1,0 +1,31 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
+        xmlns:local="using:YetAnotherOneCLauncher.App"
+        x:Class="YetAnotherOneCLauncher.App.TagPickerView"
+        x:DataType="vm:TagPickerViewModel">
+  <!-- Выбор метки: ввод (Enter — поставить, новая создаётся) и имеющиеся метки, которых у базы ещё нет. -->
+  <StackPanel Spacing="6" Width="250">
+    <TextBox x:Name="FilterBox" Text="{Binding Filter}" MaxLength="40" PlaceholderText="Новая или найти…" />
+    <TextBlock x:Name="CreateHint" Text="{Binding CreateText}" IsVisible="{Binding HasEnterHint}" Opacity="0.7" FontSize="12" TextWrapping="Wrap" />
+    <TextBlock Text="Имеющиеся метки:" IsVisible="{Binding HasAvailable}" Opacity="0.7" FontSize="12" Margin="0,2,0,0" />
+    <ItemsControl x:Name="AvailableList" ItemsSource="{Binding Available}" IsVisible="{Binding HasAvailable}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <WrapPanel />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="vm:TagChipViewModel">
+          <Button Classes="tagFilter" ToolTip.Tip="Поставить метку"
+                  Command="{Binding $parent[local:TagPickerView].((vm:TagPickerViewModel)DataContext).PickCommand}" CommandParameter="{Binding Name}">
+            <Border Classes="tagChip" c:TagChip.Color="{Binding Color}">
+              <TextBlock Text="{Binding Name}" />
+            </Border>
+          </Button>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
+  </StackPanel>
+</UserControl>

@@ -24,6 +24,10 @@ public partial class InfoBaseEditorWindow : Window
         WindowTitleBar.Apply(this);
         DataContext = viewModel;
 
+        // Метки: «+ Добавить» открывает выбор метки; поставили — выбор закрывается.
+        AddTagButton.Flyout!.Opened += (_, _) => TagPicker.Activate();
+        viewModel.TagPicker.Picked += (_, _) => AddTagButton.Flyout?.Hide();
+
         SaveButton.Click += async (_, _) =>
         {
             if (!viewModel.ShowForm)

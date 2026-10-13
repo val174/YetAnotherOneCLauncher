@@ -335,19 +335,27 @@ public class TagsTests
     }
 
     [Fact]
-    public async Task Editor_field_sets_tags_and_offers_existing_ones()
+    public async Task Editor_field_shows_chips_removes_and_picks_tags()
     {
         using var fixture = await TaggedAsync();
         var vm = fixture.ViewModel;
         vm.SelectedTreeItem = Node(vm, Zup);
         fixture.Dialogs.InfoBaseEditor = editor =>
         {
-            Assert.Equal("прод", editor.TagsText);
-            Assert.Equal(["бух", "прод", "тест"], editor.TagChoices);
-            editor.ToggleTagChoiceCommand.Execute("тест");
-            editor.ToggleTagChoiceCommand.Execute("прод");
-            Assert.Equal("тест", editor.TagsText);
-            editor.TagsText += "; новая ,  тест";
+            var chip = Assert.Single(editor.TagChips);
+            Assert.Equal(("прод", fixture.Settings.UserData.Tag("прод")!.Color), (chip.Name, chip.Color));
+            Assert.Equal(["бух", "тест"], editor.TagPicker.Available.Select(t => t.Name)); // поставленных нет
+            Assert.False(editor.IsTagsChanged);
+
+            editor.TagPicker.PickCommand.Execute("тест");
+            editor.RemoveTagCommand.Execute("прод");
+            editor.TagPicker.Filter = "новая";
+            Assert.True(editor.TagPicker.CanCreate);
+            Assert.Equal("Enter — создать метку «новая»", editor.TagPicker.CreateText);
+            editor.TagPicker.PickCommand.Execute(null);
+            Assert.Equal(["тест", "новая"], editor.Tags);
+            Assert.Equal(TagColor.Gray, editor.TagChips[1].Color); // ещё не создана — серая
+            Assert.Empty(editor.TagPicker.Filter);
             return true;
         };
 
@@ -355,6 +363,56 @@ public class TagsTests
 
         Assert.Equal(["новая", "тест"], fixture.Base(Zup).AssignedTags);
         Assert.Contains(vm.TagFilters, t => t.Text == "новая · 1");
+    }
+
+    [Fact]
+    public async Task Details_picker_lists_missing_tags_filters_and_picks()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Zup);
+        var picker = vm.TagPicker;
+        var picked = 0;
+        picker.Picked += (_, _) => picked++;
+        Assert.Equal(["бух", "тест"], picker.Available.Select(t => t.Name));
+
+        picker.Filter = "ес";
+        Assert.Equal(["тест"], picker.Available.Select(t => t.Name));
+        Assert.False(picker.CanCreate);
+        Assert.Equal("Enter — поставить «тест»", picker.CreateText);
+        picker.PickCommand.Execute(null); // Enter: единственная подходящая
+        Assert.Equal(["прод", "тест"], fixture.Base(Zup).AssignedTags);
+        Assert.Equal(1, picked);
+        Assert.Equal(["бух"], picker.Available.Select(t => t.Name));
+
+        picker.Filter = "ПРОД"; // уже стоит — Enter ничего не делает
+        Assert.False(picker.HasEnterHint);
+        picker.PickCommand.Execute(null);
+        Assert.Equal(1, picked);
+
+        picker.PickCommand.Execute("бух"); // щелчок по метке
+        Assert.Equal(["бух", "прод", "тест"], fixture.Base(Zup).AssignedTags);
+        Assert.False(picker.HasAvailable);
+
+        // Другая база — список по её меткам.
+        vm.SelectedTreeItem = Node(vm, Copy);
+        Assert.Equal(["прод"], picker.Available.Select(t => t.Name));
+    }
+
+    [Fact]
+    public async Task Row_chip_cross_removes_tag_from_its_base()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        vm.SelectedTreeItem = Node(vm, Zup);
+        var chip = fixture.Base(Buh).RowTags.Single(t => t.Name == "прод");
+        Assert.Same(fixture.Base(Buh), chip.Owner);
+
+        vm.RemoveRowTagCommand.Execute(chip);
+
+        Assert.Equal(["бух"], fixture.Base(Buh).AssignedTags);
+        Assert.Equal(["прод"], fixture.Base(Zup).AssignedTags); // выделенная база не тронута
+        Assert.Contains("Метка «прод» снята: «Бухгалтерия предприятия».", vm.StatusText, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -414,6 +472,31 @@ public class TagsTests
         Assert.Equal("бух", dialog.FindControl<TextBox>("NameBox")!.Text);
         MainWindowTests.Snapshot(dialog, "52-tags-window");
         dialog.Close();
+
+        var editorModel = new InfoBaseEditorViewModel(
+            new Core.Editing.InfoBaseDraft { Name = "Бухгалтерия", Kind = Core.Parsing.ConnectionKind.File, FilePath = @"C:\B" }, [], isNew: false, new FakeFiles())
+        {
+            TagCatalog = fixture.Settings.UserData.TagCatalog(),
+            InitialTags = ["бух", "прод"],
+        };
+        var editorWindow = new InfoBaseEditorWindow(editorModel);
+        editorWindow.Show();
+        MainWindowTests.Render();
+        Assert.Equal(2, editorWindow.FindControl<ItemsControl>("TagChipsList")!.ItemCount);
+        Assert.Equal("+ Добавить", editorWindow.FindControl<Button>("AddTagButton")!.Content);
+        MainWindowTests.Snapshot(editorWindow, "52-tags-editor");
+        editorWindow.Close();
+
+        var pickerView = new TagPickerView { DataContext = editorModel.TagPicker };
+        var pickerWindow = new Window { Content = new Border { Padding = new Avalonia.Thickness(12), Child = pickerView }, SizeToContent = SizeToContent.WidthAndHeight };
+        pickerWindow.Show();
+        editorModel.TagPicker.Filter = "т";
+        MainWindowTests.Render();
+        Assert.Equal(1, pickerView.FindControl<ItemsControl>("AvailableList")!.ItemCount);
+        Assert.Equal("Enter — поставить «тест»", pickerView.FindControl<TextBlock>("CreateHint")!.Text);
+        editorModel.TagPicker.Filter = string.Empty;
+        MainWindowTests.Snapshot(pickerWindow, "52-tag-picker");
+        pickerWindow.Close();
 
         var form = new NewTagViewModel(fixture.Settings.UserData.TagCatalog(), TagColor.Amber, "Метка будет поставлена: «Копия бухгалтерии».") { Name = "клиент А" };
         var newTag = new NewTagWindow(form);

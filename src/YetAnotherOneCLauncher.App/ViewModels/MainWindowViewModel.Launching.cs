@@ -220,7 +220,7 @@ public sealed partial class MainWindowViewModel
             EdtProjectChooser = names => _dialogs.ChooseAsync("Проект 1C:EDT", "Выберите проект 1C:EDT для этой базы:", names),
             InitialEdtProjectId = existing is null || !EdtEnabled ? null : EdtProjectOf(existing)?.Id,
             SuggestedEdtProject = EdtEnabled ? SuggestedEdtProject(existing?.InfoBase) : null,
-            TagChoices = TagNameChoices,
+            TagCatalog = _settings.UserData.TagCatalog(),
             InitialTags = existing?.AssignedTags ?? [],
         };
 

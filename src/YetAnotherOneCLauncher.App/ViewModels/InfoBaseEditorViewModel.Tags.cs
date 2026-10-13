@@ -1,19 +1,18 @@
-using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using YetAnotherOneCLauncher.Core.Settings;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
 
 /// <summary>
-/// Поле «Метки» в форме базы: метки через запятую (хранятся в настройках лаунчера, список баз не меняется);
-/// кнопка «▾» — поставить или снять имеющуюся метку.
+/// Поле «Метки» в форме базы: метки плашками с крестиком и «+ Добавить» — выбор из имеющихся или новая
+/// (хранятся в настройках лаунчера, список баз не меняется; сохраняются вместе с формой).
 /// </summary>
 public sealed partial class InfoBaseEditorViewModel
 {
-    /// <summary>Все метки — для выбора в списке «▾».</summary>
-    public IReadOnlyList<string> TagChoices { get; init; } = [];
+    private List<string> _tags = [];
 
-    public bool HasTagChoices => TagChoices.Count > 0;
+    /// <summary>Все метки — для выбора и цвета плашек.</summary>
+    public IReadOnlyList<TagDefinition> TagCatalog { get; init; } = [];
 
     /// <summary>Метки базы при открытии формы — чтобы понять, меняли ли их.</summary>
     public IReadOnlyList<string> InitialTags
@@ -22,38 +21,51 @@ public sealed partial class InfoBaseEditorViewModel
         init
         {
             field = value;
-            TagsText = string.Join(", ", value);
+            _tags = [.. value];
         }
     } = [];
 
-    [ObservableProperty]
-    public partial string TagsText { get; set; } = string.Empty;
+    /// <summary>Метки в форме.</summary>
+    public IReadOnlyList<string> Tags => _tags;
 
-    /// <summary>Метки из поля: через запятую или точку с запятой, без повторов.</summary>
-    public IReadOnlyList<string> Tags =>
-        [.. TagsText.Split([',', ';'], StringSplitOptions.RemoveEmptyEntries)
-            .Select(TagNames.Normalize)
-            .OfType<string>()
-            .Distinct(TagNames.Comparer)];
+    /// <summary>Плашки: цвет — из каталога, новая метка (ещё не создана) — серая.</summary>
+    public IReadOnlyList<TagChipViewModel> TagChips =>
+    [
+        .. _tags.Select(name => new TagChipViewModel(
+            TagCatalog.FirstOrDefault(t => TagNames.Same(t.Name, name)) ?? new TagDefinition { Name = name, Color = TagColor.Gray })),
+    ];
+
+    public bool HasTags => _tags.Count > 0;
+
+    /// <summary>«+ Добавить»: имеющиеся метки, которых ещё нет в форме, и ввод новой.</summary>
+    public TagPickerViewModel TagPicker => field ??= new TagPickerViewModel(() => TagCatalog, () => _tags, AddTag);
 
     public bool IsTagsChanged =>
-        !Tags.Order(TagNames.Comparer).SequenceEqual(InitialTags.Order(TagNames.Comparer), TagNames.Comparer);
+        !_tags.Order(TagNames.Comparer).SequenceEqual(InitialTags.Order(TagNames.Comparer), TagNames.Comparer);
 
-    /// <summary>Список «▾»: есть метка в поле — убрать, нет — дописать.</summary>
+    /// <summary>Крестик на плашке.</summary>
     [RelayCommand]
-    private void ToggleTagChoice(string? name)
+    private void RemoveTag(string? name)
     {
-        if (TagNames.Normalize(name) is not { } tag)
+        if (name is not null && _tags.RemoveAll(t => TagNames.Same(t, name)) > 0)
         {
-            return;
+            OnTagsChanged();
         }
+    }
 
-        var tags = Tags.ToList();
-        if (tags.RemoveAll(t => TagNames.Same(t, tag)) == 0)
+    private void AddTag(string name)
+    {
+        if (TagNames.Normalize(name) is { } tag && !_tags.Contains(tag, TagNames.Comparer))
         {
-            tags.Add(tag);
+            _tags.Add(tag);
+            OnTagsChanged();
         }
+    }
 
-        TagsText = string.Join(", ", tags);
+    private void OnTagsChanged()
+    {
+        OnPropertyChanged(nameof(Tags));
+        OnPropertyChanged(nameof(TagChips));
+        OnPropertyChanged(nameof(HasTags));
     }
 }

@@ -39,12 +39,11 @@ public sealed partial class MainWindowViewModel
     /// <summary>Метки можно ставить: выделена база или папка с базами.</summary>
     public bool HasTagTarget => TagTargets().Count > 0;
 
-    /// <summary>Имена всех меток — подсказки при вводе.</summary>
-    public IReadOnlyList<string> TagNameChoices => [.. _settings.UserData.TagCatalog().Select(t => t.Name)];
-
-    /// <summary>Текст поля быстрого ввода метки (кнопка «+» в свойствах).</summary>
-    [ObservableProperty]
-    public partial string NewTagText { get; set; } = string.Empty;
+    /// <summary>Выбор метки — кнопка «+» в свойствах базы: имеющиеся метки, которых у базы ещё нет, и ввод новой.</summary>
+    public TagPickerViewModel TagPicker => field ??= new TagPickerViewModel(
+        () => _settings.UserData.TagCatalog(),
+        () => SelectedInfoBase?.AssignedTags ?? [],
+        name => AddTag(name));
 
     partial void OnShowTagBarChanged(bool value)
     {
@@ -71,6 +70,7 @@ public sealed partial class MainWindowViewModel
         OnPropertyChanged(nameof(HasTagTarget));
         AddTagCommand.NotifyCanExecuteChanged();
         NewTagCommand.NotifyCanExecuteChanged();
+        TagPicker.Refresh();
     }
 
     [RelayCommand]
@@ -139,7 +139,7 @@ public sealed partial class MainWindowViewModel
 
         OnPropertyChanged(nameof(HasTags));
         OnPropertyChanged(nameof(IsTagBarVisible));
-        OnPropertyChanged(nameof(TagNameChoices));
+        TagPicker.Refresh();
         if (hadFilter != HasTagFilter)
         {
             OnPropertyChanged(nameof(HasTagFilter));
@@ -216,14 +216,22 @@ public sealed partial class MainWindowViewModel
     [RelayCommand(CanExecute = nameof(HasTagTarget))]
     private void AddTag(string? name)
     {
-        name ??= NewTagText;
         if (TagNames.Normalize(name) is not { } normalized)
         {
             return;
         }
 
-        NewTagText = string.Empty;
         SetTagOn(TagTargets(), normalized, on: true);
+    }
+
+    /// <summary>Крестик на метке в строке списка (виден у метки под указателем).</summary>
+    [RelayCommand]
+    private void RemoveRowTag(TagChipViewModel? tag)
+    {
+        if (tag?.Owner is { } infoBase)
+        {
+            SetTagOn([infoBase], tag.Name, on: false);
+        }
     }
 
     /// <summary>Крестик на метке в свойствах базы.</summary>

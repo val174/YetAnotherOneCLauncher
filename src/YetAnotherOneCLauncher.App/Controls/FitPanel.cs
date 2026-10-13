@@ -20,6 +20,12 @@ public sealed class FitPanel : Panel
         set => SetValue(SpacingProperty, value);
     }
 
+    /// <summary>
+    /// Насколько может вырасти элемент под указателем (у метки появляется крестик) и всё равно остаться: иначе метка у края
+    /// то пропадала бы, то появлялась.
+    /// </summary>
+    private const double HoverGrowth = 8;
+
     protected override Size MeasureOverride(Size availableSize)
     {
         var width = 0.0;
@@ -28,7 +34,7 @@ public sealed class FitPanel : Panel
         {
             child.Measure(new Size(double.PositiveInfinity, availableSize.Height));
             var next = width + (width > 0 ? Spacing : 0) + child.DesiredSize.Width;
-            if (next > availableSize.Width)
+            if (next - (child.IsPointerOver ? HoverGrowth : 0) > availableSize.Width)
             {
                 break;
             }
@@ -47,7 +53,7 @@ public sealed class FitPanel : Panel
         foreach (var child in Children)
         {
             var width = child.DesiredSize.Width;
-            fits = fits && x + width <= finalSize.Width + 0.5;
+            fits = fits && x + width - (child.IsPointerOver ? HoverGrowth : 0) <= finalSize.Width + 0.5;
             if (fits)
             {
                 child.Arrange(new Rect(x, (finalSize.Height - child.DesiredSize.Height) / 2, width, child.DesiredSize.Height));
