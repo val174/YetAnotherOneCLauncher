@@ -108,6 +108,10 @@ public partial class MainWindow : Window
             grip.PointerCaptureLost += (_, _) => _columnResize = null;
         }
 
+        // Метки в свойствах: «+» открывает выбор метки; поставили — выбор закрывается.
+        AddTagButton.Flyout!.Opened += (_, _) => TagPicker.Activate();
+        viewModel.TagPicker.Picked += (_, _) => AddTagButton.Flyout?.Hide();
+
         // Кнопка ▶ в строке (кнопки слева от наименования): меню режимов запуска этой базы.
         AddHandler(Button.ClickEvent, OnRowLaunchMenuClick);
 
@@ -329,6 +333,8 @@ public partial class MainWindow : Window
                     HotKeyCommand.MoveUp => vm.MoveUpCommand,
                     HotKeyCommand.MoveDown => vm.MoveDownCommand,
                     HotKeyCommand.ShowEdtProjects => vm.ShowEdtProjectsModeCommand,
+                    HotKeyCommand.ExportListJson => vm.ExportListJsonCommand,
+                    HotKeyCommand.ImportListJson => vm.ImportListJsonCommand,
                     _ => throw new ArgumentOutOfRangeException(nameof(command), command, null),
                 });
                 break;

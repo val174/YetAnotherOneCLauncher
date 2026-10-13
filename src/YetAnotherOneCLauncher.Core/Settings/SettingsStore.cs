@@ -70,6 +70,10 @@ public sealed class SettingsStore
         settings.PlatformOverrides ??= [];
         settings.InfoBaseProfiles ??= [];
         settings.FolderProfiles ??= [];
+        settings.Tags ??= [];
+        settings.InfoBaseTags ??= [];
+        settings.Tags.RemoveAll(t => t is null || TagNames.Normalize(t.Name) is null);
+        settings.InfoBaseTags.RemoveAll(t => t?.InfoBase is null || t.Tags is null);
         settings.ParameterTemplates ??= [];
         settings.Ui ??= new UiSettings();
         settings.Ui.CollapsedFolders ??= [];
@@ -106,6 +110,7 @@ public sealed class SettingsStore
         settings.Updates ??= new UpdateSettings();
         settings.Edt ??= new EdtSettings();
         settings.Edt.ProjectInstallations ??= [];
+        settings.ListExchange ??= new ListExchangeSettings();
         if (!Enum.IsDefined(settings.Updates.Mode))
         {
             settings.Updates.Mode = UpdateMode.CheckOnly;

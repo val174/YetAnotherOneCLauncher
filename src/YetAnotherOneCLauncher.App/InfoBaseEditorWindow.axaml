@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:YetAnotherOneCLauncher.App.ViewModels"
+        xmlns:local="using:YetAnotherOneCLauncher.App"
         xmlns:p="using:YetAnotherOneCLauncher.Core.Platforms"
         xmlns:c="using:YetAnotherOneCLauncher.App.Controls"
         x:Class="YetAnotherOneCLauncher.App.InfoBaseEditorWindow"
@@ -255,6 +256,42 @@
                 <Button DockPanel.Dock="Right" Content="Привязать" Command="{Binding AcceptEdtSuggestionCommand}" Padding="10,2" />
                 <TextBlock Text="{Binding EdtSuggestionText}" TextWrapping="Wrap" VerticalAlignment="Center" />
               </DockPanel>
+            </Border>
+          </StackPanel>
+
+          <!-- Метки (задача #25): хранятся в лаунчере; «▾» — поставить или снять имеющуюся. -->
+          <StackPanel x:Name="TagsField" Spacing="6">
+            <TextBlock Text="Метки" />
+            <Border BorderBrush="{DynamicResource TextControlBorderBrush}" BorderThickness="1" CornerRadius="4" Padding="6,4" MinHeight="32">
+              <WrapPanel VerticalAlignment="Center">
+                <ItemsControl x:Name="TagChipsList" ItemsSource="{Binding TagChips}">
+                  <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                      <WrapPanel />
+                    </ItemsPanelTemplate>
+                  </ItemsControl.ItemsPanel>
+                  <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:TagChipViewModel">
+                      <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Margin="0,2,4,2">
+                        <StackPanel Orientation="Horizontal">
+                          <TextBlock Text="{Binding Name}" />
+                          <Button Classes="tagRemove" Content="✕" FontSize="10" ToolTip.Tip="Снять метку"
+                                  Command="{Binding $parent[Window].((vm:InfoBaseEditorViewModel)DataContext).RemoveTagCommand}" CommandParameter="{Binding Name}" />
+                        </StackPanel>
+                      </Border>
+                    </DataTemplate>
+                  </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <Button x:Name="AddTagButton" Classes="bare" Content="+ Добавить" Background="Transparent" Padding="6,2" Margin="0,2"
+                        Foreground="{DynamicResource SystemControlHighlightAccentBrush}"
+                        ToolTip.Tip="Поставить метку: из имеющихся или новую (хранятся в лаунчере, список баз не меняется)">
+                  <Button.Flyout>
+                    <Flyout Placement="BottomEdgeAlignedLeft">
+                      <local:TagPickerView x:Name="TagPicker" DataContext="{Binding TagPicker}" />
+                    </Flyout>
+                  </Button.Flyout>
+                </Button>
+              </WrapPanel>
             </Border>
           </StackPanel>
 

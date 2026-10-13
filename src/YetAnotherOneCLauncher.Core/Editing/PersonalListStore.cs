@@ -37,7 +37,14 @@ public sealed class PersonalListStore : IDisposable
     /// <param name="cancellationToken">Отмена.</param>
     /// <returns>Документ в том виде, в каком он записан.</returns>
     /// <exception cref="ListEditException">Правка невозможна; файл не изменён.</exception>
-    public async Task<V8iDocument> EditAsync(Action<V8iDocument> edit, CancellationToken cancellationToken = default)
+    public Task<V8iDocument> EditAsync(Action<V8iDocument> edit, CancellationToken cancellationToken = default) =>
+        EditAsync(edit, backup: false, cancellationToken);
+
+    /// <inheritdoc cref="EditAsync(Action{V8iDocument}, CancellationToken)"/>
+    /// <param name="edit">Правка свежепрочитанного документа.</param>
+    /// <param name="backup">Сохранить прежнюю версию в <c>.bak</c> и при этой записи (например, перед заменой всего списка).</param>
+    /// <param name="cancellationToken">Отмена.</param>
+    public async Task<V8iDocument> EditAsync(Action<V8iDocument> edit, bool backup, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(edit);
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -57,9 +64,9 @@ public sealed class PersonalListStore : IDisposable
                     continue;
                 }
 
-                var backup = !_backupMade && original is not null ? BackupPath : null;
-                await AtomicFileWriter.WriteAllBytesAsync(FilePath, content, backup, cancellationToken).ConfigureAwait(false);
-                _backupMade |= backup is not null;
+                var backupPath = (backup || !_backupMade) && original is not null ? BackupPath : null;
+                await AtomicFileWriter.WriteAllBytesAsync(FilePath, content, backupPath, cancellationToken).ConfigureAwait(false);
+                _backupMade |= backupPath is not null;
                 LastWrittenFingerprint = Fingerprint(content);
                 return document;
             }
@@ -73,6 +80,30 @@ public sealed class PersonalListStore : IDisposable
             _gate.Release();
         }
     }
+
+    /// <summary>Записывает файл списка целиком (восстановление копии); прежняя версия — в <c>.bak</c>.</summary>
+    /// <returns>Записанный документ.</returns>
+    public async Task<V8iDocument> ReplaceAsync(byte[] content, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var original = await ReadBytesAsync(cancellationToken).ConfigureAwait(false);
+            var backupPath = original is not null ? BackupPath : null;
+            await AtomicFileWriter.WriteAllBytesAsync(FilePath, content, backupPath, cancellationToken).ConfigureAwait(false);
+            _backupMade |= backupPath is not null;
+            LastWrittenFingerprint = Fingerprint(content);
+            return content.Length == 0 ? new V8iDocument() : V8iDocument.Parse(content);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Текущее содержимое файла как есть; <c>null</c>, если файла нет.</summary>
+    public Task<byte[]?> ReadContentAsync(CancellationToken cancellationToken = default) => ReadBytesAsync(cancellationToken);
 
     public void Dispose() => _gate.Dispose();
 

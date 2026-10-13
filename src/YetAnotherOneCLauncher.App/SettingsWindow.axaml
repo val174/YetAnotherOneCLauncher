@@ -123,6 +123,38 @@
               <TextBlock TextWrapping="Wrap" Text="Использовать проекты 1C:EDT (из 1C:EDT Start): группа в списке, поиск, режим «Проекты 1C:EDT», кнопки 1C:EDT у баз" />
             </CheckBox>
 
+            <!-- Метки баз (то же — «Метки…» в строке меток и в контекстном меню). -->
+            <TextBlock Classes="fieldLabel" Text="Метки баз" Margin="0,16,0,4" />
+            <StackPanel Orientation="Horizontal" Spacing="10">
+              <Button x:Name="ManageTagsButton" Content="Метки…" Command="{Binding ManageTagsCommand}" />
+              <TextBlock Classes="secondary" Text="Создать, переименовать, удалить метку, выбрать цвет" VerticalAlignment="Center" TextWrapping="Wrap" />
+            </StackPanel>
+
+            <!-- Личный список баз: сохранение в файл JSON и загрузка (то же — в меню ≡ главного окна). -->
+            <TextBlock Classes="fieldLabel" Text="Список информационных баз" Margin="0,16,0,4" />
+            <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CanExchangeList}">
+              <Button x:Name="SaveListJsonButton" Content="Сохранить в файл JSON…" Command="{Binding SaveListJsonCommand}" />
+              <Button x:Name="LoadListJsonButton" Content="Загрузить из файла JSON…" Command="{Binding LoadListJsonCommand}" />
+              <Button x:Name="RestoreListButton" Content="Восстановить…" Command="{Binding RestoreListJsonCommand}"
+                      ToolTip.Tip="Вернуть список, каким он был до загрузки из файла" />
+            </StackPanel>
+            <TextBlock Classes="secondary" Text="Сохранять вместе со списком:" Margin="0,8,0,0" />
+            <CheckBox x:Name="ExportLaunchParametersBox" IsChecked="{Binding ExportLaunchParameters}" Content="Параметры запуска баз и групп" />
+            <CheckBox x:Name="ExportBaseSettingsBox" IsChecked="{Binding ExportBaseSettings}" Content="Избранное, метки, версии платформы, проекты 1C:EDT" />
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <CheckBox x:Name="ExportUserNamesBox" IsChecked="{Binding ExportUserNames}" Content="Имена пользователей" />
+              <!-- «?»: подсказка при наведении и по щелчку. -->
+              <Button x:Name="UserNamesHelpButton" Content="?" Width="20" Height="20" Padding="0" CornerRadius="10" FontSize="12"
+                      HorizontalContentAlignment="Center" VerticalContentAlignment="Center" VerticalAlignment="Center"
+                      ToolTip.Tip="Пароли в файл не сохраняются.">
+                <Button.Flyout>
+                  <Flyout Placement="Right">
+                    <TextBlock Text="Пароли в файл не сохраняются." />
+                  </Flyout>
+                </Button.Flyout>
+              </Button>
+            </StackPanel>
+
             <!-- Обновление лаунчера из релизов GitHub (ветка main). -->
             <TextBlock Classes="fieldLabel" Text="Обновление" Margin="0,16,0,4" />
             <ComboBox x:Name="UpdateModeBox" ItemsSource="{Binding UpdateModeNames}" SelectedIndex="{Binding UpdateModeIndex}"

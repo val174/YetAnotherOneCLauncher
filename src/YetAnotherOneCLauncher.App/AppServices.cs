@@ -47,8 +47,8 @@ internal static class AppServices
             services.AddSingleton(_ => PlatformServices.CreateCacheUsageProbe());
             services.AddSingleton(_ => PlatformServices.CreateJumpList());
             services.AddSingleton(_ => PlatformServices.CreateClusterConsole());
-            services.AddSingleton<LaunchRequestChannel>();
-            services.AddSingleton<ILaunchRequestChannel>(sp => sp.GetRequiredService<LaunchRequestChannel>());
+            // Одна регистрация: при регистрации ещё и класса контейнер освобождал бы один объект дважды.
+            services.AddSingleton<ILaunchRequestChannel, LaunchRequestChannel>();
             services.AddSingleton<StartupCatalog>();
         }
 

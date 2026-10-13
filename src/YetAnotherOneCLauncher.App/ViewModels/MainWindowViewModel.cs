@@ -160,6 +160,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         TwoLineRows = ui.TwoLineRows;
         RowStripesIndex = (int)ui.RowStripes;
         HighlightRunning = ui.HighlightRunningBases;
+        ShowTagBar = ui.ShowTagBar;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         // Прежняя настройка «Адрес сервиса ПУСК» — теперь инструмент в «Средствах администрирования».
@@ -355,7 +356,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
     public bool HasSearch => !string.IsNullOrWhiteSpace(SearchText);
 
     /// <summary>Дерево — только для всех баз и без поиска; результаты поиска, недавние и избранное — списком.</summary>
-    public bool ShowTree => IsTreeMode && !HasSearch && IsAllBasesMode;
+    public bool ShowTree => IsTreeMode && !HasSearch && IsAllBasesMode && !HasTagFilter;
 
     public bool ShowList => !ShowTree;
 
@@ -391,14 +392,15 @@ public sealed partial class MainWindowViewModel : ObservableObject
         nameof(CopyToPersonalCommand),
         nameof(DuplicateCommand),
         nameof(OpenInEdtCommand),
-        nameof(ExportCommand))]
+        nameof(ExportCommand),
+        nameof(ExportSelectionJsonCommand))]
     public partial InfoBaseViewModel? SelectedInfoBase { get; private set; }
 
     public bool HasSelection => SelectedInfoBase is not null;
 
     /// <summary>Выделенная обычная папка дерева (не «Избранное»).</summary>
     [ObservableProperty]
-    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ExportCommand), nameof(EditLaunchSettingsCommand))]
+    [NotifyCanExecuteChangedFor(nameof(EditCommand), nameof(EditAsTextCommand), nameof(DeleteCommand), nameof(MoveUpCommand), nameof(MoveDownCommand), nameof(SortFolderByNameCommand), nameof(ExportCommand), nameof(ExportSelectionJsonCommand), nameof(EditLaunchSettingsCommand))]
     public partial FolderNodeViewModel? SelectedFolder { get; private set; }
 
     [ObservableProperty]
@@ -648,6 +650,7 @@ public sealed partial class MainWindowViewModel : ObservableObject
         ApplyCacheReport();
         ApplyAvailability();
         ApplyRunning();
+        RefreshTagFilters();
         RebuildTree();
         RebuildList();
         Reselect(selectionKey);
@@ -1228,9 +1231,20 @@ public sealed partial class MainWindowViewModel : ObservableObject
                 .ToList(),
             _ => null,
         };
-        if (HasSearch)
+
+        // Отбор по меткам (строка меток и слова «#метка» в поиске) — внутри режима; поиск — среди отобранных.
+        var (searchText, tagPrefixes) = TagNames.ParseSearch(SearchText);
+        var byTags = HasTagFilter || tagPrefixes.Count > 0;
+        if (byTags)
         {
-            foreach (var match in InfoBaseSearch.Search(subset ?? _catalog.InfoBases, SearchText, b => SearchBoost(byInfoBase[b])))
+            subset = (subset ?? [.. _bases.OrderByDescending(b => b.IsFavorite).ThenBy(b => b.Name, StringComparer.CurrentCultureIgnoreCase).Select(b => b.InfoBase)])
+                .Where(b => MatchesTags(byInfoBase[b], tagPrefixes))
+                .ToList();
+        }
+
+        if (searchText.Length > 0)
+        {
+            foreach (var match in InfoBaseSearch.Search(subset ?? _catalog.InfoBases, searchText, b => SearchBoost(byInfoBase[b])))
             {
                 var infoBase = byInfoBase[match.InfoBase];
                 ListItems.Add(new BaseListItemViewModel(infoBase, Segments(infoBase.Name, match.NameHighlights), isStripe: ListItems.Count % 2 == 1));
@@ -1247,16 +1261,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
 
         // Поиск во «Всех базах» находит и проекты 1C:EDT — после баз.
-        if (HasSearch && IsAllBasesMode)
+        if (HasSearch && IsAllBasesMode && !byTags)
         {
             AddEdtListItems();
         }
 
-        ShowNothingFound = ListItems.Count == 0 && (HasSearch || !IsAllBasesMode);
+        ShowNothingFound = ListItems.Count == 0 && (HasSearch || HasTagFilter || !IsAllBasesMode);
     }
 
     /// <summary>Надпись на пустом списке: ничего не нашлось, ещё нет запусков или избранного.</summary>
-    public string EmptyListText => HasSearch
+    public string EmptyListText => HasSearch || HasTagFilter
         ? "Ничего не найдено"
         : ListFilter switch
         {

@@ -47,6 +47,18 @@ public interface IDialogService
 
     /// <summary>Окно «Настройки»; <c>true</c> — сохранить.</summary>
     Task<bool> EditSettingsAsync(SettingsViewModel settings);
+
+    /// <summary>Окно «Загрузка списка баз» (файл JSON); <c>true</c> — загрузить.</summary>
+    Task<bool> ConfirmImportAsync(ImportListViewModel import);
+
+    /// <summary>Окно «Восстановление списка баз»; <c>true</c> — восстановить выбранную копию.</summary>
+    Task<bool> ChooseListBackupAsync(RestoreListViewModel restore);
+
+    /// <summary>Окно «Метки»; <c>true</c> — сохранить изменения.</summary>
+    Task<bool> EditTagsAsync(TagsEditorViewModel editor);
+
+    /// <summary>Окно «Новая метка»; <c>true</c> — создать.</summary>
+    Task<bool> CreateTagAsync(NewTagViewModel tag);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -60,6 +72,9 @@ public interface IFileDialogService
     Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns);
 
     Task<string?> SaveListFileAsync(string title, string suggestedName);
+
+    /// <summary>Сохранение файла с расширением <paramref name="extension"/> (без точки), например <c>json</c>.</summary>
+    Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension);
 }
 
 public interface IClipboardService
@@ -142,6 +157,36 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> EditSettingsAsync(SettingsViewModel settings) =>
         Owner is { } owner ? new SettingsWindow(settings).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> ConfirmImportAsync(ImportListViewModel import) =>
+        Owner is { } owner ? new ImportListWindow(import).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> ChooseListBackupAsync(RestoreListViewModel restore) =>
+        Owner is { } owner ? new RestoreListWindow(restore).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> EditTagsAsync(TagsEditorViewModel editor) =>
+        Owner is { } owner ? new TagsWindow(editor).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> CreateTagAsync(NewTagViewModel tag) =>
+        Owner is { } owner ? new NewTagWindow(tag).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public async Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
+    {
+        if (Owner?.StorageProvider is not { } storage)
+        {
+            return null;
+        }
+
+        var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
+        {
+            Title = title,
+            SuggestedFileName = suggestedName,
+            DefaultExtension = extension,
+            FileTypeChoices = [new FilePickerFileType(typeName) { Patterns = ["*." + extension] }],
+            ShowOverwritePrompt = true,
+        });
+        return file?.TryGetLocalPath();
+    }
 
     public async Task<string?> OpenFileAsync(string title, string typeName, IReadOnlyList<string> patterns)
     {
