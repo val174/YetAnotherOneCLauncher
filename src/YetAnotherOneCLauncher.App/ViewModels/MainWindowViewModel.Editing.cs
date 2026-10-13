@@ -281,12 +281,21 @@ public sealed partial class MainWindowViewModel
             return;
         }
 
+        var (proceed, backup) = await BackupBeforeImportAsync(path, Core.Exchange.ImportMode.Add);
+        if (!proceed)
+        {
+            return;
+        }
+
         ImportResult? result = null;
-        await EditListAsync(
-            document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
-            () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
-                  + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
-            CurrentSelectionKey);
+        if (await EditListAsync(
+                document => result = PersonalListEditor.Import(document, source, OtherBaseNames(null)),
+                () => $"Из файла добавлено записей: {result?.Added ?? 0}; пропущено (уже есть в списке): {result?.Skipped ?? 0}"
+                      + (result is { SameName: > 0 } ? $"; пропущено (база с таким же названием уже есть): {result.SameName}." : "."),
+                CurrentSelectionKey))
+        {
+            OfferUndo(backup, path, $"добавлено записей: {result?.Added ?? 0}");
+        }
     }
 
     /// <summary>Выгрузить выделенную базу или папку со всем содержимым в файл .v8i.</summary>
@@ -575,6 +584,9 @@ public sealed partial class MainWindowViewModel
         {
             var document = await _store.EditAsync(edit, backup);
             afterSave?.Invoke();
+
+            // Список снова правили — «Вернуть прежний список» отменил бы и эту правку; полоса больше не нужна.
+            ShowRestoreBanner = false;
             ShowCatalog(_catalog.WithPersonalDocument(document), selectionKey());
             StatusText = successMessage();
             return true;

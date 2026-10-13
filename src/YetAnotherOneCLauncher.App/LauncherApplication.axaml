@@ -28,6 +28,8 @@
       <!-- Файл со стрелкой вниз (сохранить в файл) и вверх (загрузить из файла). -->
       <StreamGeometry x:Key="SaveFileIconGeometry">M 3,1.5 L 10,1.5 L 13,4.5 L 13,14.5 L 3,14.5 Z M 8,6 L 8,12 M 5.5,9.5 L 8,12 L 10.5,9.5</StreamGeometry>
       <StreamGeometry x:Key="LoadFileIconGeometry">M 3,1.5 L 10,1.5 L 13,4.5 L 13,14.5 L 3,14.5 Z M 8,12 L 8,6 M 5.5,8.5 L 8,6 L 10.5,8.5</StreamGeometry>
+      <!-- Часы со стрелкой против часовой — вернуть прежнее. -->
+      <StreamGeometry x:Key="HistoryIconGeometry">M 2.5,8 A 5.5,5.5 0 1 0 4.1,4.1 M 1.8,2.2 L 4.1,4.1 L 1.9,5.9 M 8,5 L 8,8.3 L 10.3,9.8</StreamGeometry>
       <StreamGeometry x:Key="EditIconGeometry">M 10.5,2.5 L 13.5,5.5 L 5.5,13.5 L 2,14 L 2.5,10.5 Z M 9,4 L 12,7</StreamGeometry>
       <!-- Стартер 1С: окно со списком баз. -->
       <StreamGeometry x:Key="StarterIconGeometry">M 1.5,2.5 L 14.5,2.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,5.5 L 14.5,5.5 M 4,8.3 L 12,8.3 M 4,11 L 10,11</StreamGeometry>

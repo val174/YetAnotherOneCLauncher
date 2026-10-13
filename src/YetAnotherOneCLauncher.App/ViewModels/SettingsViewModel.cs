@@ -232,7 +232,13 @@ public sealed partial class SettingsViewModel : ObservableObject
     /// <summary>Загрузка списка из файла JSON — задаёт главное окно.</summary>
     public Func<Task>? LoadList { get; init; }
 
+    /// <summary>Окно «Восстановление списка баз» — задаёт главное окно.</summary>
+    public Func<Task>? RestoreList { get; init; }
+
     public bool CanExchangeList => SaveList is not null && LoadList is not null;
+
+    [RelayCommand]
+    private Task RestoreListJsonAsync() => RestoreList?.Invoke() ?? Task.CompletedTask;
 
     [RelayCommand]
     private Task SaveListJsonAsync() => SaveList?.Invoke(CurrentExportOptions) ?? Task.CompletedTask;

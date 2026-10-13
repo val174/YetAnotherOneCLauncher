@@ -20,7 +20,7 @@
                    Content="Добавить новые базы к списку" />
       <RadioButton x:Name="ReplaceModeRadio" GroupName="ImportMode" IsChecked="{Binding IsReplaceMode}"
                    Content="Заменить личный список содержимым файла" />
-      <TextBlock Text="Текущий список сохранится в ibases.v8i.bak" Opacity="0.7" FontSize="12" Margin="28,0,0,0" />
+      <TextBlock Text="В любом режиме текущий список сохранится копией — его можно будет вернуть" Opacity="0.7" FontSize="12" Margin="28,0,0,0" />
     </StackPanel>
 
     <CheckBox x:Name="ApplySettingsBox" IsChecked="{Binding ApplySettings}" IsVisible="{Binding HasSettings}"

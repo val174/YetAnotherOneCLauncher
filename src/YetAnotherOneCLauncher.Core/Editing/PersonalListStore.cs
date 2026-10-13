@@ -81,6 +81,30 @@ public sealed class PersonalListStore : IDisposable
         }
     }
 
+    /// <summary>Записывает файл списка целиком (восстановление копии); прежняя версия — в <c>.bak</c>.</summary>
+    /// <returns>Записанный документ.</returns>
+    public async Task<V8iDocument> ReplaceAsync(byte[] content, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(content);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var original = await ReadBytesAsync(cancellationToken).ConfigureAwait(false);
+            var backupPath = original is not null ? BackupPath : null;
+            await AtomicFileWriter.WriteAllBytesAsync(FilePath, content, backupPath, cancellationToken).ConfigureAwait(false);
+            _backupMade |= backupPath is not null;
+            LastWrittenFingerprint = Fingerprint(content);
+            return content.Length == 0 ? new V8iDocument() : V8iDocument.Parse(content);
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    /// <summary>Текущее содержимое файла как есть; <c>null</c>, если файла нет.</summary>
+    public Task<byte[]?> ReadContentAsync(CancellationToken cancellationToken = default) => ReadBytesAsync(cancellationToken);
+
     public void Dispose() => _gate.Dispose();
 
     /// <summary>Читает текущее содержимое; <c>null</c>, если файла нет.</summary>

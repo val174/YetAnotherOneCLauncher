@@ -124,6 +124,17 @@ internal sealed class FakeDialogs : IDialogService
         return Task.FromResult(ImportConfirmer(import));
     }
 
+    /// <summary>Что «пользователь» сделает в окне «Восстановление списка баз»; <c>false</c> — отмена.</summary>
+    public Func<RestoreListViewModel, bool> BackupChooser { get; set; } = _ => false;
+
+    public List<RestoreListViewModel> RestoreForms { get; } = [];
+
+    public Task<bool> ChooseListBackupAsync(RestoreListViewModel restore)
+    {
+        RestoreForms.Add(restore);
+        return Task.FromResult(BackupChooser(restore));
+    }
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)

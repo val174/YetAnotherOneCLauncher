@@ -129,10 +129,16 @@ public sealed partial class MainWindowViewModel
         }
 
         var mode = import.Mode;
+        var (proceed, backup) = await BackupBeforeImportAsync(path, mode);
+        if (!proceed)
+        {
+            return;
+        }
+
         var added = new List<V8iSection>();
         ImportResult? result = null;
         var withSettings = 0;
-        await EditListAsync(
+        var imported = await EditListAsync(
             document =>
             {
                 // Правка может повториться, если файл списка меняли параллельно, — начинаем с чистого листа.
@@ -151,6 +157,13 @@ public sealed partial class MainWindowViewModel
                     _settings.RequestSave();
                 }
             });
+        if (imported)
+        {
+            OfferUndo(
+                backup,
+                path,
+                mode == ImportMode.Replace ? $"список заменён, записей: {result?.Added ?? 0}" : $"добавлено записей: {result?.Added ?? 0}");
+        }
     }
 
     private static string ImportMessage(ImportMode mode, ImportResult? result, int withSettings)

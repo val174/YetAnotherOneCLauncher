@@ -50,6 +50,9 @@ public interface IDialogService
 
     /// <summary>Окно «Загрузка списка баз» (файл JSON); <c>true</c> — загрузить.</summary>
     Task<bool> ConfirmImportAsync(ImportListViewModel import);
+
+    /// <summary>Окно «Восстановление списка баз»; <c>true</c> — восстановить выбранную копию.</summary>
+    Task<bool> ChooseListBackupAsync(RestoreListViewModel restore);
 }
 
 /// <summary>Выбор файлов и каталогов.</summary>
@@ -151,6 +154,9 @@ public sealed class DesktopUiServices : IDialogService, IFileDialogService, ICli
 
     public Task<bool> ConfirmImportAsync(ImportListViewModel import) =>
         Owner is { } owner ? new ImportListWindow(import).ShowDialog<bool>(owner) : Task.FromResult(false);
+
+    public Task<bool> ChooseListBackupAsync(RestoreListViewModel restore) =>
+        Owner is { } owner ? new RestoreListWindow(restore).ShowDialog<bool>(owner) : Task.FromResult(false);
 
     public async Task<string?> SaveFileAsync(string title, string suggestedName, string typeName, string extension)
     {

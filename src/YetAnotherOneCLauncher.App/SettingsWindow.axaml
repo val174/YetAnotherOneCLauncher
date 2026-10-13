@@ -138,6 +138,8 @@
             <StackPanel Orientation="Horizontal" Spacing="8" IsVisible="{Binding CanExchangeList}">
               <Button x:Name="SaveListJsonButton" Content="Сохранить в файл JSON…" Command="{Binding SaveListJsonCommand}" />
               <Button x:Name="LoadListJsonButton" Content="Загрузить из файла JSON…" Command="{Binding LoadListJsonCommand}" />
+              <Button x:Name="RestoreListButton" Content="Восстановить…" Command="{Binding RestoreListJsonCommand}"
+                      ToolTip.Tip="Вернуть список, каким он был до загрузки из файла" />
             </StackPanel>
             <TextBlock Classes="secondary" Text="Сохранять вместе со списком:" Margin="0,8,0,0" />
             <CheckBox x:Name="ExportLaunchParametersBox" IsChecked="{Binding ExportLaunchParameters}" Content="Параметры запуска баз и групп" />

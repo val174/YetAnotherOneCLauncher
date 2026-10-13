@@ -50,6 +50,7 @@ public sealed partial class MainWindowViewModel
             UpdateStatusText = UpdateStatusText,
             SaveList = HasPersonalList ? SaveWholeListJsonAsync : null,
             LoadList = HasPersonalList ? ImportListJsonAsync : null,
+            RestoreList = HasPersonalList ? RestoreListAsync : null,
         };
         if (await _dialogs.EditSettingsAsync(settings))
         {

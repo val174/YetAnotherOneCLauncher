@@ -246,7 +246,7 @@ public class ListExchangeTests
 
         var flyout = Assert.IsType<MenuFlyout>(menuButton.Flyout);
         Assert.Equal(
-            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…"],
+            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…", "Восстановить список…"],
             flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
         menuButton.Flyout!.ShowAt(menuButton);
         MainWindowTests.Render();
