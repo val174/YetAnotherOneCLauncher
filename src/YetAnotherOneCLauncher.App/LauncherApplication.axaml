@@ -30,6 +30,8 @@
       <StreamGeometry x:Key="LoadFileIconGeometry">M 3,1.5 L 10,1.5 L 13,4.5 L 13,14.5 L 3,14.5 Z M 8,12 L 8,6 M 5.5,8.5 L 8,6 L 10.5,8.5</StreamGeometry>
       <!-- Часы со стрелкой против часовой — вернуть прежнее. -->
       <StreamGeometry x:Key="HistoryIconGeometry">M 2.5,8 A 5.5,5.5 0 1 0 4.1,4.1 M 1.8,2.2 L 4.1,4.1 L 1.9,5.9 M 8,5 L 8,8.3 L 10.3,9.8</StreamGeometry>
+      <!-- Метка: ярлычок с отверстием (строка меток, подменю «Метки»). -->
+      <StreamGeometry x:Key="TagIconGeometry">M 1.8,1.8 L 7.6,1.8 L 14.2,8.4 L 8.4,14.2 L 1.8,7.6 Z M 5,3.9 A 1.1,1.1 0 1 1 4.99,3.9 Z</StreamGeometry>
       <StreamGeometry x:Key="EditIconGeometry">M 10.5,2.5 L 13.5,5.5 L 5.5,13.5 L 2,14 L 2.5,10.5 Z M 9,4 L 12,7</StreamGeometry>
       <!-- Стартер 1С: окно со списком баз. -->
       <StreamGeometry x:Key="StarterIconGeometry">M 1.5,2.5 L 14.5,2.5 L 14.5,13.5 L 1.5,13.5 Z M 1.5,5.5 L 14.5,5.5 M 4,8.3 L 12,8.3 M 4,11 L 10,11</StreamGeometry>
@@ -65,6 +67,14 @@
           <GeometryDrawing Brush="{StaticResource PuskLogoBrush}" Geometry="M 7.6,37.5 A 1.9,1.9 0 1 1 11.4,37.5 A 1.9,1.9 0 1 1 7.6,37.5 Z" />
         </DrawingGroup>
       </DrawingImage>
+      <!-- Образцы цветов меток (палитра, тон 400) — одинаковые в обеих темах. -->
+      <SolidColorBrush x:Key="TagGraySwatchBrush" Color="#888780" />
+      <SolidColorBrush x:Key="TagRedSwatchBrush" Color="#D85A30" />
+      <SolidColorBrush x:Key="TagAmberSwatchBrush" Color="#BA7517" />
+      <SolidColorBrush x:Key="TagGreenSwatchBrush" Color="#1D9E75" />
+      <SolidColorBrush x:Key="TagBlueSwatchBrush" Color="#378ADD" />
+      <SolidColorBrush x:Key="TagPurpleSwatchBrush" Color="#7F77DD" />
+      <SolidColorBrush x:Key="TagPinkSwatchBrush" Color="#D4537E" />
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Light">
           <SolidColorBrush x:Key="IconAddBrush" Color="#639922" />
@@ -100,6 +110,21 @@
           <SolidColorBrush x:Key="RowStripeSubtleBrush" Color="#06000000" />
           <SolidColorBrush x:Key="RowStripeModerateBrush" Color="#0B000000" />
           <SolidColorBrush x:Key="RowStripeStrongBrush" Color="#12000000" />
+          <!-- Метки баз: плашка, текст и рамка выбранной метки (палитра docs, 50/800; в тёмной теме — 800/100). -->
+          <SolidColorBrush x:Key="TagGrayBackgroundBrush" Color="#F1EFE8" />
+          <SolidColorBrush x:Key="TagGrayForegroundBrush" Color="#444441" />
+          <SolidColorBrush x:Key="TagRedBackgroundBrush" Color="#FAECE7" />
+          <SolidColorBrush x:Key="TagRedForegroundBrush" Color="#712B13" />
+          <SolidColorBrush x:Key="TagAmberBackgroundBrush" Color="#FAEEDA" />
+          <SolidColorBrush x:Key="TagAmberForegroundBrush" Color="#633806" />
+          <SolidColorBrush x:Key="TagGreenBackgroundBrush" Color="#E1F5EE" />
+          <SolidColorBrush x:Key="TagGreenForegroundBrush" Color="#085041" />
+          <SolidColorBrush x:Key="TagBlueBackgroundBrush" Color="#E6F1FB" />
+          <SolidColorBrush x:Key="TagBlueForegroundBrush" Color="#0C447C" />
+          <SolidColorBrush x:Key="TagPurpleBackgroundBrush" Color="#EEEDFE" />
+          <SolidColorBrush x:Key="TagPurpleForegroundBrush" Color="#3C3489" />
+          <SolidColorBrush x:Key="TagPinkBackgroundBrush" Color="#FBEAF0" />
+          <SolidColorBrush x:Key="TagPinkForegroundBrush" Color="#72243E" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Dark">
           <SolidColorBrush x:Key="IconAddBrush" Color="#97C459" />
@@ -130,6 +155,20 @@
           <SolidColorBrush x:Key="RowStripeSubtleBrush" Color="#0BFFFFFF" />
           <SolidColorBrush x:Key="RowStripeModerateBrush" Color="#13FFFFFF" />
           <SolidColorBrush x:Key="RowStripeStrongBrush" Color="#1CFFFFFF" />
+          <SolidColorBrush x:Key="TagGrayBackgroundBrush" Color="#444441" />
+          <SolidColorBrush x:Key="TagGrayForegroundBrush" Color="#D3D1C7" />
+          <SolidColorBrush x:Key="TagRedBackgroundBrush" Color="#712B13" />
+          <SolidColorBrush x:Key="TagRedForegroundBrush" Color="#F5C4B3" />
+          <SolidColorBrush x:Key="TagAmberBackgroundBrush" Color="#633806" />
+          <SolidColorBrush x:Key="TagAmberForegroundBrush" Color="#FAC775" />
+          <SolidColorBrush x:Key="TagGreenBackgroundBrush" Color="#085041" />
+          <SolidColorBrush x:Key="TagGreenForegroundBrush" Color="#9FE1CB" />
+          <SolidColorBrush x:Key="TagBlueBackgroundBrush" Color="#0C447C" />
+          <SolidColorBrush x:Key="TagBlueForegroundBrush" Color="#B5D4F4" />
+          <SolidColorBrush x:Key="TagPurpleBackgroundBrush" Color="#3C3489" />
+          <SolidColorBrush x:Key="TagPurpleForegroundBrush" Color="#CECBF6" />
+          <SolidColorBrush x:Key="TagPinkBackgroundBrush" Color="#72243E" />
+          <SolidColorBrush x:Key="TagPinkForegroundBrush" Color="#F4C0D1" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -193,6 +232,140 @@
     </Style>
     <Style Selector="Window.flatButtons Button.accent /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <!-- Метки баз (Controls/TagChip.cs): плашка-«таблетка», цвет — классом tagRed, tagBlue…; без класса — серая. -->
+    <Style Selector="Border.tagChip">
+      <Setter Property="CornerRadius" Value="10" />
+      <!-- Снизу отступ больше: строчные буквы (без выносных элементов) иначе кажутся прижатыми к низу. -->
+      <Setter Property="Padding" Value="8,0,8,2" />
+      <Setter Property="MinHeight" Value="21" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Background" Value="{DynamicResource TagGrayBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagGrayForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip TextBlock">
+      <Setter Property="FontSize" Value="13" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Foreground" Value="{DynamicResource TagGrayForegroundBrush}" />
+    </Style>
+    <!-- Выбранная в строке отбора — с рамкой цвета текста. -->
+    <Style Selector="Border.tagChip.selected">
+      <Setter Property="BorderThickness" Value="1.5" />
+      <Setter Property="Padding" Value="6.5,-1.5,6.5,0.5" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch">
+      <Setter Property="Width" Value="12" />
+      <Setter Property="Height" Value="12" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Fill" Value="{StaticResource TagGraySwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagGray">
+      <Setter Property="Background" Value="{DynamicResource TagGrayBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagGrayForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagGray TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagGrayForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagGray">
+      <Setter Property="Fill" Value="{StaticResource TagGraySwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagRed">
+      <Setter Property="Background" Value="{DynamicResource TagRedBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagRedForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagRed TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagRedForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagRed">
+      <Setter Property="Fill" Value="{StaticResource TagRedSwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagAmber">
+      <Setter Property="Background" Value="{DynamicResource TagAmberBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagAmberForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagAmber TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagAmberForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagAmber">
+      <Setter Property="Fill" Value="{StaticResource TagAmberSwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagGreen">
+      <Setter Property="Background" Value="{DynamicResource TagGreenBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagGreenForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagGreen TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagGreenForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagGreen">
+      <Setter Property="Fill" Value="{StaticResource TagGreenSwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagBlue">
+      <Setter Property="Background" Value="{DynamicResource TagBlueBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagBlueForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagBlue TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagBlueForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagBlue">
+      <Setter Property="Fill" Value="{StaticResource TagBlueSwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagPurple">
+      <Setter Property="Background" Value="{DynamicResource TagPurpleBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagPurpleForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagPurple TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagPurpleForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagPurple">
+      <Setter Property="Fill" Value="{StaticResource TagPurpleSwatchBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagPink">
+      <Setter Property="Background" Value="{DynamicResource TagPinkBackgroundBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource TagPinkForegroundBrush}" />
+    </Style>
+    <Style Selector="Border.tagChip.tagPink TextBlock">
+      <Setter Property="Foreground" Value="{DynamicResource TagPinkForegroundBrush}" />
+    </Style>
+    <Style Selector="Ellipse.tagSwatch.tagPink">
+      <Setter Property="Fill" Value="{StaticResource TagPinkSwatchBrush}" />
+    </Style>
+    <!-- Кнопка-метка строки отбора: без своего фона — фон у плашки. -->
+    <Style Selector="Button.tagFilter">
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="Margin" Value="0,2,6,2" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagFilter /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.tagFilter:pointerover Border.tagChip">
+      <Setter Property="Opacity" Value="0.8" />
+    </Style>
+    <!-- Крестик «снять метку» на плашке в свойствах. -->
+    <Style Selector="Button.tagRemove">
+      <Setter Property="Padding" Value="4,0,0,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="BorderThickness" Value="0" />
+      <Setter Property="Cursor" Value="Hand" />
+    </Style>
+    <Style Selector="Button.tagRemove /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <!-- Метка в строке списка: крестик «снять метку» — у метки под указателем. Место под него — из правого отступа
+         плашки, чтобы ширина почти не менялась (иначе метка у края строки то пропадала бы, то появлялась). -->
+    <Style Selector="Border.tagChip Button.tagRemove.onHover">
+      <Setter Property="IsVisible" Value="False" />
+      <Setter Property="Padding" Value="2,0,0,0" />
+    </Style>
+    <Style Selector="Border.tagChip:pointerover Button.tagRemove.onHover">
+      <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.tagChip.removable:pointerover">
+      <Setter Property="Padding" Value="8,0,3,2" />
     </Style>
     <Style Selector="Window">
       <Setter Property="Icon" Value="/Assets/app.ico" />

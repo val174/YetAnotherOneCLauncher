@@ -248,6 +248,9 @@ public sealed class UiSettings
     /// <summary>Зелёная точка справа от наименования у баз, открытых в 1С текущим пользователем.</summary>
     public bool HighlightRunningBases { get; set; } = true;
 
+    /// <summary>Строка меток под панелью инструментов (видна, если у баз есть метки).</summary>
+    public bool ShowTagBar { get; set; } = true;
+
     /// <summary>Чередование цвета строк списка баз и его заметность.</summary>
     public RowStripes RowStripes { get; set; } = RowStripes.Moderate;
 
@@ -339,6 +342,12 @@ public sealed class LauncherSettings
     public List<InfoBaseLaunchProfile> InfoBaseProfiles { get; set; } = [];
 
     public List<FolderLaunchProfile> FolderProfiles { get; set; } = [];
+
+    /// <summary>Метки баз: каталог (имя, цвет) — в порядке создания.</summary>
+    public List<TagDefinition> Tags { get; set; } = [];
+
+    /// <summary>Какие метки у каких баз.</summary>
+    public List<InfoBaseTagSet> InfoBaseTags { get; set; } = [];
 
     /// <summary>Свои шаблоны параметров — в дополнение к встроенным.</summary>
     public List<ParameterTemplate> ParameterTemplates { get; set; } = [];

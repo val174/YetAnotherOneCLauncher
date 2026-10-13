@@ -29,6 +29,21 @@ public sealed record InfoBaseListFile
     public List<ExportedFolderParameters> FolderParameters { get; init; } = [];
 
     public List<ExportedInfoBase> InfoBases { get; init; } = [];
+
+    /// <summary>Метки сохранённых баз: цвет и показ в строках. <c>null</c> — меток нет.</summary>
+    public List<ExportedTag>? Tags { get; init; }
+}
+
+/// <summary>Метка из каталога лаунчера.</summary>
+public sealed record ExportedTag
+{
+    public string Name { get; init; } = string.Empty;
+
+    /// <summary>Цвет: <c>red</c>, <c>blue</c> и т. д. (<see cref="Settings.TagColor"/>).</summary>
+    public string? Color { get; init; }
+
+    /// <summary><c>false</c> — метка не показывается в строках списка.</summary>
+    public bool? ShowInRow { get; init; }
 }
 
 /// <summary>Группа (папка) личного списка.</summary>
@@ -109,10 +124,13 @@ public sealed record ExportedLaunchSettings
 
     public string? EdtWorkspace { get; init; }
 
+    /// <summary>Метки базы.</summary>
+    public IReadOnlyList<string>? Tags { get; init; }
+
     [JsonIgnore]
     public bool IsEmpty =>
         Favorite is not true && Parameters is null && UserName is null && PlatformVersion is null
-        && EdtProjectId is null && EdtWorkspace is null;
+        && EdtProjectId is null && EdtWorkspace is null && Tags is not { Count: > 0 };
 }
 
 [JsonSourceGenerationOptions(

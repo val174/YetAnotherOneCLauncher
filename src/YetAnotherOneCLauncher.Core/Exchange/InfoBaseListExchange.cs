@@ -113,6 +113,7 @@ public static class InfoBaseListExchange
             Folders = folders,
             FolderParameters = folderParameters,
             InfoBases = bases,
+            Tags = ExportTags(bases, userData),
         };
     }
 
@@ -274,6 +275,7 @@ public static class InfoBaseListExchange
         ArgumentNullException.ThrowIfNull(added);
         ArgumentNullException.ThrowIfNull(userData);
         var addedBases = added.Where(s => !V8iSections.IsFolder(s)).Select(s => new InfoBase(s, Personal)).ToList();
+        ImportTags(file, userData);
         var count = 0;
         foreach (var exported in file.InfoBases)
         {
@@ -301,6 +303,11 @@ public static class InfoBaseListExchange
                 EdtProjectId = settings.EdtProjectId ?? profile.EdtProjectId,
                 EdtWorkspace = settings.EdtWorkspace ?? profile.EdtWorkspace,
             });
+            if (settings.Tags is { Count: > 0 } tags)
+            {
+                userData.SetTags(infoBase, [.. userData.TagsOf(infoBase), .. tags]);
+            }
+
             count++;
         }
 
@@ -313,6 +320,45 @@ public static class InfoBaseListExchange
         }
 
         return count;
+    }
+
+    /// <summary>Каталог меток — только тех, что есть у сохранённых баз.</summary>
+    private static List<ExportedTag>? ExportTags(List<ExportedInfoBase> bases, LauncherUserData? userData)
+    {
+        var used = bases.SelectMany(b => b.Launcher?.Tags ?? []).ToHashSet(TagNames.Comparer);
+        if (userData is null || used.Count == 0)
+        {
+            return null;
+        }
+
+        return
+        [
+            .. userData.TagCatalog().Where(t => used.Contains(t.Name)).Select(t => new ExportedTag
+            {
+                Name = t.Name,
+                Color = t.Color.ToString().ToLowerInvariant(),
+                ShowInRow = t.ShowInRow ? null : false,
+            }),
+        ];
+    }
+
+    /// <summary>Метки из файла попадают в каталог; цвет уже известной метки не меняется.</summary>
+    private static void ImportTags(InfoBaseListFile file, LauncherUserData userData)
+    {
+        foreach (var exported in file.Tags ?? [])
+        {
+            if (userData.Tag(exported.Name) is not null || TagNames.Normalize(exported.Name) is not { } name)
+            {
+                continue;
+            }
+
+            var color = Enum.TryParse<TagColor>(exported.Color, ignoreCase: true, out var parsed) && Enum.IsDefined(parsed) ? parsed : (TagColor?)null;
+            var tag = userData.EnsureTag(name, color)!;
+            if (exported.ShowInRow is false)
+            {
+                userData.SetTagAppearance(tag.Name, tag.Color, showInRow: false);
+            }
+        }
     }
 
     private static InfoBase? FindAdded(ExportedInfoBase exported, List<InfoBase> addedBases)
@@ -386,6 +432,7 @@ public static class InfoBaseListExchange
             PlatformVersion = options.BaseSettings ? NullIfBlank(userData.PlatformVersionOverride(infoBase)) : null,
             EdtProjectId = options.BaseSettings ? NullIfBlank(profile?.EdtProjectId) : null,
             EdtWorkspace = options.BaseSettings ? NullIfBlank(profile?.EdtWorkspace) : null,
+            Tags = options.BaseSettings && userData.TagsOf(infoBase) is { Count: > 0 } tags ? tags : null,
         };
         return settings.IsEmpty ? null : settings;
     }

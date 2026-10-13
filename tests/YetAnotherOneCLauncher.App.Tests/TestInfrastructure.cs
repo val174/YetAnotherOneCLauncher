@@ -135,6 +135,28 @@ internal sealed class FakeDialogs : IDialogService
         return Task.FromResult(BackupChooser(restore));
     }
 
+    /// <summary>Окно «Метки»: что сделать в нём и закрыть ли с «OK».</summary>
+    public Func<TagsEditorViewModel, bool> TagsEditor { get; set; } = _ => false;
+
+    public List<TagsEditorViewModel> TagsForms { get; } = [];
+
+    public Task<bool> EditTagsAsync(TagsEditorViewModel editor)
+    {
+        TagsForms.Add(editor);
+        return Task.FromResult(TagsEditor(editor));
+    }
+
+    /// <summary>Окно «Новая метка»: что ввести и закрыть ли с «Создать» (наименование проверяется, как в окне).</summary>
+    public Func<NewTagViewModel, bool> NewTagEditor { get; set; } = _ => false;
+
+    public List<NewTagViewModel> NewTagForms { get; } = [];
+
+    public Task<bool> CreateTagAsync(NewTagViewModel tag)
+    {
+        NewTagForms.Add(tag);
+        return Task.FromResult(NewTagEditor(tag) && tag.Validate());
+    }
+
     public AboutViewModel? ShownAbout { get; private set; }
 
     public Task ShowAboutAsync(AboutViewModel about)

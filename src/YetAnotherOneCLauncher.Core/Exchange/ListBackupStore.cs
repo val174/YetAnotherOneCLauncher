@@ -29,6 +29,11 @@ public sealed record ListBackupSettings
 
     public List<FolderLaunchProfile> FolderProfiles { get; init; } = [];
 
+    /// <summary>Каталог меток; <c>null</c> — копия сделана до появления меток (метки не трогаются).</summary>
+    public List<TagDefinition>? Tags { get; init; }
+
+    public List<InfoBaseTagSet>? InfoBaseTags { get; init; }
+
     public static ListBackupSettings From(LauncherSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
@@ -38,6 +43,8 @@ public sealed record ListBackupSettings
             PlatformOverrides = [.. settings.PlatformOverrides],
             InfoBaseProfiles = [.. settings.InfoBaseProfiles],
             FolderProfiles = [.. settings.FolderProfiles],
+            Tags = [.. settings.Tags],
+            InfoBaseTags = [.. settings.InfoBaseTags],
         };
     }
 
@@ -49,6 +56,11 @@ public sealed record ListBackupSettings
         settings.PlatformOverrides = [.. PlatformOverrides];
         settings.InfoBaseProfiles = [.. InfoBaseProfiles];
         settings.FolderProfiles = [.. FolderProfiles];
+        if (Tags is not null && InfoBaseTags is not null)
+        {
+            settings.Tags = [.. Tags];
+            settings.InfoBaseTags = [.. InfoBaseTags];
+        }
     }
 }
 

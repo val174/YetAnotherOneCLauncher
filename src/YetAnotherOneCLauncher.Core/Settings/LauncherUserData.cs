@@ -171,6 +171,151 @@ public sealed class LauncherUserData
         return result;
     }
 
+    /// <summary>Метка из каталога по имени (без учёта регистра).</summary>
+    public TagDefinition? Tag(string name) => Settings.Tags.Find(t => TagNames.Same(t.Name, name));
+
+    /// <summary>Каталог меток по наименованию.</summary>
+    public IReadOnlyList<TagDefinition> TagCatalog() =>
+        [.. Settings.Tags.OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)];
+
+    /// <summary>Метки базы в порядке каталога (по наименованию); имена — как в каталоге.</summary>
+    public IReadOnlyList<string> TagsOf(InfoBase infoBase)
+    {
+        var own = Settings.InfoBaseTags.Find(t => t.InfoBase.Matches(infoBase))?.Tags;
+        return own is null or { Count: 0 }
+            ? []
+            : [.. TagCatalog().Where(t => own.Contains(t.Name, TagNames.Comparer)).Select(t => t.Name)];
+    }
+
+    /// <summary>Создаёт метку, если её ещё нет; цвет новой — следующий по кругу.</summary>
+    /// <returns>Метка из каталога; <c>null</c> — имя пустое.</returns>
+    public TagDefinition? EnsureTag(string name, TagColor? color = null)
+    {
+        if (TagNames.Normalize(name) is not { } normalized)
+        {
+            return null;
+        }
+
+        if (Tag(normalized) is { } existing)
+        {
+            return existing;
+        }
+
+        var tag = new TagDefinition { Name = normalized, Color = color ?? NextTagColor() };
+        Settings.Tags.Add(tag);
+        return tag;
+    }
+
+    /// <summary>Цвет следующей новой метки: по кругу, кроме серого (его — для «архивных» меток — выбирают сами).</summary>
+    public TagColor NextTagColor()
+    {
+        var palette = Enum.GetValues<TagColor>();
+        return palette[1 + (Settings.Tags.Count % (palette.Length - 1))];
+    }
+
+    /// <summary>Ставит или снимает метку у базы; новая метка попадает в каталог.</summary>
+    public void SetTag(InfoBase infoBase, string name, bool on)
+    {
+        var tags = TagsOf(infoBase).ToList();
+        if (on)
+        {
+            if (EnsureTag(name) is { } tag && !tags.Contains(tag.Name, TagNames.Comparer))
+            {
+                tags.Add(tag.Name);
+            }
+        }
+        else
+        {
+            tags.RemoveAll(t => TagNames.Same(t, name));
+        }
+
+        SetTags(infoBase, tags);
+    }
+
+    /// <summary>Заменяет метки базы; неизвестные метки попадают в каталог, пустой набор удаляет запись.</summary>
+    public void SetTags(InfoBase infoBase, IEnumerable<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+        var tags = names.Select(n => EnsureTag(n)?.Name).OfType<string>().Distinct(TagNames.Comparer).ToList();
+        Settings.InfoBaseTags.RemoveAll(t => t.InfoBase.Matches(infoBase));
+        if (tags.Count > 0)
+        {
+            Settings.InfoBaseTags.Add(new InfoBaseTagSet { InfoBase = InfoBaseRef.From(infoBase), Tags = tags });
+        }
+    }
+
+    /// <summary>Меняет цвет метки и её показ в строках.</summary>
+    public void SetTagAppearance(string name, TagColor color, bool showInRow)
+    {
+        var index = Settings.Tags.FindIndex(t => TagNames.Same(t.Name, name));
+        if (index >= 0)
+        {
+            Settings.Tags[index] = Settings.Tags[index] with { Color = color, ShowInRow = showInRow };
+        }
+    }
+
+    /// <summary>
+    /// Переименовывает метку у всех баз. Если метка с новым именем уже есть, они объединяются (цвет — у той, что была).
+    /// </summary>
+    /// <returns><c>false</c> — метки нет или новое имя пустое.</returns>
+    public bool RenameTag(string oldName, string newName)
+    {
+        var index = Settings.Tags.FindIndex(t => TagNames.Same(t.Name, oldName));
+        if (index < 0 || TagNames.Normalize(newName) is not { } name)
+        {
+            return false;
+        }
+
+        var target = Settings.Tags.FindIndex(t => TagNames.Same(t.Name, name));
+        if (target >= 0 && target != index)
+        {
+            Settings.Tags.RemoveAt(index);
+            name = Settings.Tags[target > index ? target - 1 : target].Name;
+        }
+        else
+        {
+            Settings.Tags[index] = Settings.Tags[index] with { Name = name };
+        }
+
+        for (var i = 0; i < Settings.InfoBaseTags.Count; i++)
+        {
+            var set = Settings.InfoBaseTags[i];
+            if (set.Tags.Contains(oldName, TagNames.Comparer))
+            {
+                Settings.InfoBaseTags[i] = set with
+                {
+                    Tags = [.. set.Tags.Select(t => TagNames.Same(t, oldName) ? name : t).Distinct(TagNames.Comparer)],
+                };
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>Удаляет метку из каталога и у всех баз.</summary>
+    public void DeleteTag(string name)
+    {
+        Settings.Tags.RemoveAll(t => TagNames.Same(t.Name, name));
+        for (var i = Settings.InfoBaseTags.Count - 1; i >= 0; i--)
+        {
+            var set = Settings.InfoBaseTags[i];
+            if (!set.Tags.Contains(name, TagNames.Comparer))
+            {
+                continue;
+            }
+
+            var rest = set.Tags.Where(t => !TagNames.Same(t, name)).ToList();
+            if (rest.Count == 0)
+            {
+                Settings.InfoBaseTags.RemoveAt(i);
+            }
+            else
+            {
+                Settings.InfoBaseTags[i] = set with { Tags = rest };
+            }
+        }
+    }
+
     /// <summary>Свои и встроенные шаблоны: свои — первыми.</summary>
     public IReadOnlyList<ParameterTemplate> ParameterTemplates() => [.. Settings.ParameterTemplates, .. ParameterLibrary.BuiltIn];
 

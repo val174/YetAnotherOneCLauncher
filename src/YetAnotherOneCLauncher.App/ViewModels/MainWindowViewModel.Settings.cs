@@ -51,6 +51,7 @@ public sealed partial class MainWindowViewModel
             SaveList = HasPersonalList ? SaveWholeListJsonAsync : null,
             LoadList = HasPersonalList ? ImportListJsonAsync : null,
             RestoreList = HasPersonalList ? RestoreListAsync : null,
+            ManageTags = ManageTagsAsync,
         };
         if (await _dialogs.EditSettingsAsync(settings))
         {
