@@ -24,17 +24,42 @@ public sealed partial class MainWindowViewModel
             .ThenByDescending(i => i.Architecture == preferred)];
     }
 
-    /// <summary>Шаблоны из каталога шаблонов по умолчанию и из <c>ConfigurationTemplatesLocation</c> в 1cestart.cfg.</summary>
-    private async Task<IReadOnlyList<ConfigurationTemplate>> FindTemplatesAsync()
+    /// <summary>Кэш шаблонов (<c>templates-cache.json</c> в данных лаунчера).</summary>
+    internal TemplateCache? TemplateCache =>
+        field ??= _paths is null ? null : new TemplateCache(Path.Combine(_paths.AppDataDirectory, TemplateCache.FileName));
+
+    /// <summary>Каталоги шаблонов: по умолчанию и <c>ConfigurationTemplatesLocation</c> из 1cestart.cfg.</summary>
+    private List<string> TemplateRoots() =>
+        _paths is null ? [] : [_paths.DefaultTemplatesDirectory, .. _catalog?.StarterConfig.TemplateLocations ?? []];
+
+    /// <summary>
+    /// Шаблоны для формы — из кэша, без просмотра каталогов (их просматривает только «Обновить» на шаге выбора шаблона).
+    /// <c>null</c> — список ещё не обновляли.
+    /// </summary>
+    private async Task<TemplateCacheData?> LoadCachedTemplatesAsync() =>
+        TemplateCache is { } cache ? await cache.LoadAsync() : null;
+
+    /// <summary>«Обновить» на шаге выбора шаблона: просмотр каталогов шаблонов в фоне и запись в кэш.</summary>
+    private async Task<TemplateCacheData> RefreshTemplatesAsync()
     {
-        if (_paths is null)
+        var roots = TemplateRoots();
+        var found = await Task.Run(() => TemplateScanner.Scan(roots));
+        var data = TemplateCacheData.From(found, roots, DateTimeOffset.Now);
+        if (TemplateCache is { } cache)
         {
-            return [];
+            try
+            {
+                await cache.SaveAsync(data);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                // Кэш не записался — список всё равно показан; в следующий раз его снова нужно будет обновить.
+                LogTemplateCacheFailed(_logger, cache.FilePath, ex);
+            }
         }
 
-        var roots = new List<string> { _paths.DefaultTemplatesDirectory };
-        roots.AddRange(_catalog?.StarterConfig.TemplateLocations ?? []);
-        return await Task.Run(() => TemplateScanner.Scan(roots));
+        LogTemplatesRefreshed(_logger, found.Count, roots);
+        return data;
     }
 
     /// <summary>
@@ -102,4 +127,10 @@ public sealed partial class MainWindowViewModel
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Информационная база не создана (код {ExitCode}): {Output}")]
     private static partial void LogCreateFailed(ILogger logger, int exitCode, string output);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Список шаблонов обновлён: найдено {Count} в {Roots}")]
+    private static partial void LogTemplatesRefreshed(ILogger logger, int count, IReadOnlyList<string> roots);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Не удалось записать кэш шаблонов {Path}")]
+    private static partial void LogTemplateCacheFailed(ILogger logger, string path, Exception exception);
 }

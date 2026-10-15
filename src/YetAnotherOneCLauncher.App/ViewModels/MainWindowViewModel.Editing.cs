@@ -21,7 +21,7 @@ public sealed partial class MainWindowViewModel
     {
         // Новая база: добавить существующую, создать из шаблона или без конфигурации — выбор в форме.
         var editor = CreateBaseEditor(
-            new InfoBaseDraft { FolderPath = TargetFolderPath() }, isNew: true, existing: null, templates: await FindTemplatesAsync());
+            new InfoBaseDraft { FolderPath = TargetFolderPath() }, isNew: true, existing: null, canCreate: true, cachedTemplates: await LoadCachedTemplatesAsync());
         if (!await _dialogs.EditInfoBaseAsync(editor) || editor.Result is not { } draft)
         {
             return;
