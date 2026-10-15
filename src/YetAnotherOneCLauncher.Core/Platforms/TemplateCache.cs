@@ -46,7 +46,7 @@ public sealed record TemplateCacheData
     {
         ArgumentNullException.ThrowIfNull(roots);
         static HashSet<string> Set(IEnumerable<string> paths) =>
-            paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => Path.TrimEndingDirectorySeparator(p.Trim())).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            paths.Where(p => !string.IsNullOrWhiteSpace(p)).Select(p => p.Trim().TrimEnd('\\', '/')).ToHashSet(StringComparer.OrdinalIgnoreCase);
         return Set(Roots).SetEquals(Set(roots));
     }
 }

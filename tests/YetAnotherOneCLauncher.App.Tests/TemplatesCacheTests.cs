@@ -109,7 +109,8 @@ public class TemplatesCacheTests
     {
         var pending = new TaskCompletionSource<TemplateCacheData>();
         var cached = new ConfigurationTemplate("Торговля", "1.0", @"C:\t\1cv8.cf", null);
-        var files = new FakeFiles { OpenAnswer = @"C:\Мои\base.dt" };
+        // Путь — по правилам ОС: в Linux «\» не разделитель, и имя файла было бы всей строкой.
+        var files = new FakeFiles { OpenAnswer = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "Мои", "base.dt") };
         var editor = new InfoBaseEditorViewModel(new InfoBaseDraft(), [], isNew: true, files)
         {
             Creator = (_, _) => Task.FromResult<string?>(null),
