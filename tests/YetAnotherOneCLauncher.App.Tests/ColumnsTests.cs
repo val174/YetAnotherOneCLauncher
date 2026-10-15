@@ -47,7 +47,24 @@ public class ColumnsTests
 
         await fixture.ViewModel.LaunchEnterpriseCommand.ExecuteAsync(zup);
 
-        Assert.Matches(@"^\d\d\.\d\d\.\d{4} \d\d:\d\d$", fixture.Base("Зарплата и управление персоналом").LastLaunchShortText);
+        // «Сколько прошло» — в колонке и в свойствах; точные дата и время — в подсказке.
+        zup = fixture.Base("Зарплата и управление персоналом");
+        Assert.Equal("только что", zup.LastLaunchShortText);
+        Assert.Equal("только что (Предприятие)", zup.LastLaunchText);
+        Assert.Matches(@"^Последний запуск из лаунчера: \d\d\.\d\d\.\d{4} \d\d:\d\d$", zup.LastLaunchToolTip);
         Assert.Equal(LaunchMode.Enterprise, fixture.Settings.Settings.History.Single().Mode);
+
+        // Раз в минуту надписи пересчитываются; уведомление — только если текст изменился.
+        var launchedAt = fixture.Settings.Settings.History.Single().LaunchedAt;
+        var changed = new List<string?>();
+        zup.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        zup.RefreshRelativeTimes(launchedAt.AddSeconds(30));
+        Assert.Empty(changed);
+        zup.RefreshRelativeTimes(launchedAt.AddMinutes(5));
+        Assert.Equal("5 минут назад", zup.LastLaunchShortText);
+        Assert.Equal("5 минут назад (Предприятие)", zup.LastLaunchText);
+        zup.RefreshRelativeTimes(launchedAt.AddDays(3));
+        Assert.Equal("3 дня назад", zup.LastLaunchShortText);
+        Assert.Equal(4, changed.Count); // по два текста за два изменения
     }
 }

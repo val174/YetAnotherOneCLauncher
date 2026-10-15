@@ -2,6 +2,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using YetAnotherOneCLauncher.Core.Availability;
 using YetAnotherOneCLauncher.Core.Cache;
+using YetAnotherOneCLauncher.Core.Formatting;
 using YetAnotherOneCLauncher.Core.Launching;
 using YetAnotherOneCLauncher.Core.Model;
 using YetAnotherOneCLauncher.Core.Parsing;
@@ -13,6 +14,7 @@ namespace YetAnotherOneCLauncher.App.ViewModels;
 public sealed partial class InfoBaseViewModel : ObservableObject
 {
     private readonly LauncherUserData _userData;
+    private LaunchHistoryEntry? _lastLaunch;
 
     public InfoBaseViewModel(InfoBase infoBase, LauncherUserData userData)
     {
@@ -161,6 +163,10 @@ public sealed partial class InfoBaseViewModel : ObservableObject
     [ObservableProperty]
     public partial string LastLaunchText { get; private set; } = string.Empty;
 
+    /// <summary>Точные дата и время последнего запуска — подсказка к «5 минут назад».</summary>
+    [ObservableProperty]
+    public partial string? LastLaunchToolTip { get; private set; }
+
     [ObservableProperty]
     public partial int LaunchCount { get; private set; }
 
@@ -245,15 +251,26 @@ public sealed partial class InfoBaseViewModel : ObservableObject
             ? profile.PasswordKey is null ? user : user + " (пароль сохранён)"
             : "выбирается при входе";
 
-        var last = _userData.LastLaunch(InfoBase);
-        LastLaunchShortText = last is null
-            ? string.Empty
-            : last.LaunchedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm", CultureInfo.CurrentCulture);
-        LastLaunchText = last is null
-            ? "не запускалась из лаунчера"
-            : string.Create(
-                CultureInfo.CurrentCulture,
-                $"{last.LaunchedAt.ToLocalTime():dd.MM.yyyy HH:mm} ({(last.Mode == LaunchMode.Designer ? "Конфигуратор" : "Предприятие")})");
+        _lastLaunch = _userData.LastLaunch(InfoBase);
+        LastLaunchToolTip = _lastLaunch is null ? null : "Последний запуск из лаунчера: " + RelativeTime.Exact(_lastLaunch.LaunchedAt);
+        RefreshRelativeTimes(_userData.Time.GetUtcNow());
+    }
+
+    /// <summary>
+    /// «5 минут назад» в колонке и свойствах — заново на момент <paramref name="now"/> (раз в минуту, пока окно не свёрнуто).
+    /// Уведомление уходит, только если текст изменился.
+    /// </summary>
+    public void RefreshRelativeTimes(DateTimeOffset now)
+    {
+        if (_lastLaunch is not { } last)
+        {
+            LastLaunchShortText = string.Empty;
+            LastLaunchText = "не запускалась из лаунчера";
+            return;
+        }
+
+        LastLaunchShortText = RelativeTime.Format(last.LaunchedAt, now);
+        LastLaunchText = $"{LastLaunchShortText} ({(last.Mode == LaunchMode.Designer ? "Конфигуратор" : "Предприятие")})";
     }
 
     public override string ToString() => Name;

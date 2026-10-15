@@ -116,6 +116,7 @@
             <TextBlock Text="Выполняется обновление списка шаблонов" VerticalAlignment="Center" />
           </StackPanel>
           <TextBlock x:Name="TemplatesStatus" Classes="hint" Text="{Binding TemplatesStatusText}" IsVisible="{Binding !IsRefreshingTemplates}"
+                     ToolTip.Tip="{Binding TemplatesUpdatedToolTip}"
                      TextWrapping="Wrap" />
         </Panel>
         <!-- Если в шаблоне есть и конфигурация, и выгрузка — что создавать. -->

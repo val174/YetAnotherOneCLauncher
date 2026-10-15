@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using YetAnotherOneCLauncher.Core.Formatting;
 using YetAnotherOneCLauncher.Core.Platforms;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
@@ -101,7 +102,7 @@ public sealed partial class InfoBaseEditorViewModel
 
     /// <summary>Когда список шаблонов обновляли; <c>null</c> — ни разу (кэша нет).</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(TemplatesStatusText), nameof(ShowTemplatesNeverLoaded), nameof(ShowNoTemplatesFound))]
+    [NotifyPropertyChangedFor(nameof(TemplatesStatusText), nameof(TemplatesUpdatedToolTip), nameof(ShowTemplatesNeverLoaded), nameof(ShowNoTemplatesFound))]
     public partial DateTimeOffset? TemplatesUpdatedAt { get; set; }
 
     /// <summary>Каталоги шаблонов в 1cestart.cfg изменились после обновления списка.</summary>
@@ -115,11 +116,20 @@ public sealed partial class InfoBaseEditorViewModel
     [NotifyCanExecuteChangedFor(nameof(RefreshTemplatesCommand))]
     public partial bool IsRefreshingTemplates { get; set; }
 
-    /// <summary>Строка под поиском: когда обновлялся список.</summary>
+    /// <summary>Часы для «обновлён 5 минут назад»; подменяется в тестах.</summary>
+    public TimeProvider Time { get; init; } = TimeProvider.System;
+
+    /// <summary>Строка под поиском: когда обновлялся список («5 минут назад»; точное время — в подсказке).</summary>
     public string TemplatesStatusText => TemplatesUpdatedAt is not { } at
         ? "Список шаблонов ещё не загружался."
-        : $"Список обновлён {at.ToLocalTime():dd.MM.yyyy HH:mm}."
+        : $"Список обновлён {RelativeTime.Format(at, Time.GetUtcNow())}."
           + (TemplateRootsChanged ? " Каталоги шаблонов в настройках 1С изменились — обновите список." : string.Empty);
+
+    /// <summary>Точные дата и время обновления списка.</summary>
+    public string? TemplatesUpdatedToolTip => TemplatesUpdatedAt is { } at ? "Список шаблонов обновлён " + RelativeTime.Exact(at) : null;
+
+    /// <summary>«Обновлён 5 минут назад» — заново (окно формы вызывает раз в минуту, пока не свёрнуто).</summary>
+    public void RefreshTemplatesStatus() => OnPropertyChanged(nameof(TemplatesStatusText));
 
     /// <summary>Список ни разу не обновляли — подсказка нажать «Обновить».</summary>
     public bool ShowTemplatesNeverLoaded => !HasTemplates && TemplatesUpdatedAt is null && !IsRefreshingTemplates;

@@ -963,7 +963,8 @@
               <TextBlock Grid.Row="12" Classes="label" Text="Доступность" />
               <SelectableTextBlock Grid.Row="12" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.AvailabilityText}" />
               <TextBlock Grid.Row="13" Classes="label" Text="Последний запуск" />
-              <SelectableTextBlock Grid.Row="13" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}" />
+              <SelectableTextBlock Grid.Row="13" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LastLaunchText}"
+                                   ToolTip.Tip="{Binding SelectedInfoBase.LastLaunchToolTip, FallbackValue={x:Null}}" />
               <TextBlock Grid.Row="14" Classes="label" Text="Запусков" />
               <SelectableTextBlock Grid.Row="14" Grid.Column="1" Classes="value" Text="{Binding SelectedInfoBase.LaunchCount}" />
             </Grid>
@@ -1266,12 +1267,12 @@
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
-              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" ToolTip.Tip="{Binding Base.LastLaunchToolTip}" />
               <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
                 <TextBlock Classes="secondary" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                            Classes.missing="{Binding Base.IsPlatformMissing}" />
                 <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
-                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
+                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="{Binding Base.LastLaunchToolTip}"
                            IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <ItemsControl Classes="rowTags secondLine" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
               </StackPanel>
@@ -1343,12 +1344,12 @@
               <TextBlock Grid.Column="1" Classes="cell platform" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                          Classes.missing="{Binding Base.IsPlatformMissing}" />
               <TextBlock Grid.Column="2" Classes="cell mode" Text="{Binding Base.ClientShortText}" />
-              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" />
+              <TextBlock Grid.Column="3" Classes="cell date" Text="{Binding Base.LastLaunchShortText}" ToolTip.Tip="{Binding Base.LastLaunchToolTip}" />
               <StackPanel Grid.Row="1" Grid.ColumnSpan="4" Classes="rowDetails">
                 <TextBlock Classes="secondary" Text="{Binding Base.PlatformText}" ToolTip.Tip="{Binding Base.PlatformToolTip}"
                            Classes.missing="{Binding Base.IsPlatformMissing}" />
                 <TextBlock Classes="secondary" Text="{Binding Base.ClientShortText, StringFormat='·  {0}'}" ToolTip.Tip="Режим запуска" />
-                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="Последний запуск из лаунчера"
+                <TextBlock Classes="secondary" Text="{Binding Base.LastLaunchShortText, StringFormat='·  запуск {0}'}" ToolTip.Tip="{Binding Base.LastLaunchToolTip}"
                            IsVisible="{Binding Base.LastLaunchShortText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" />
                 <ItemsControl Classes="rowTags secondLine" ItemsSource="{Binding Base.RowTags}" IsVisible="{Binding Base.HasRowTags}" />
               </StackPanel>

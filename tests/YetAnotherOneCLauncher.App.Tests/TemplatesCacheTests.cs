@@ -134,6 +134,39 @@ public class TemplatesCacheTests
     }
 
     [Fact]
+    public async Task Status_shows_time_since_update_and_exact_time_in_tooltip()
+    {
+        var clock = new ManualClock(new DateTimeOffset(2026, 10, 15, 12, 0, 0, TimeSpan.Zero));
+        var editor = new InfoBaseEditorViewModel(new InfoBaseDraft(), [], isNew: true, new FakeFiles())
+        {
+            Creator = (_, _) => Task.FromResult<string?>(null),
+            TemplateRefresher = () => Task.FromResult(TemplateCacheData.From([], [], clock.Now)),
+            TemplatesUpdatedAt = clock.Now.AddHours(-2),
+            Time = clock,
+        };
+        Assert.Equal("Список обновлён 2 часа назад.", editor.TemplatesStatusText);
+        Assert.StartsWith("Список шаблонов обновлён ", editor.TemplatesUpdatedToolTip, StringComparison.Ordinal);
+
+        var changed = new List<string?>();
+        editor.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        clock.Now = clock.Now.AddDays(40);
+        editor.RefreshTemplatesStatus();
+        Assert.Contains(nameof(editor.TemplatesStatusText), changed);
+        Assert.Equal("Список обновлён 1 месяц назад.", editor.TemplatesStatusText);
+
+        await editor.RefreshTemplatesCommand.ExecuteAsync(null);
+        Assert.Equal("Список обновлён только что.", editor.TemplatesStatusText);
+    }
+
+    /// <summary>Часы, время которых задаёт тест.</summary>
+    private sealed class ManualClock(DateTimeOffset now) : TimeProvider
+    {
+        public DateTimeOffset Now { get; set; } = now;
+
+        public override DateTimeOffset GetUtcNow() => Now;
+    }
+
+    [Fact]
     public void Editing_existing_base_has_no_refresh()
     {
         var editor = new InfoBaseEditorViewModel(new InfoBaseDraft { Name = "А" }, [], isNew: false, new FakeFiles());

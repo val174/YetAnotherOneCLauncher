@@ -220,6 +220,7 @@ public sealed partial class MainWindowViewModel
             TemplatesUpdatedAt = cachedTemplates?.UpdatedAt,
             TemplateRootsChanged = cachedTemplates is not null && !cachedTemplates.SameRoots(TemplateRoots()),
             TemplateRefresher = canCreate ? RefreshTemplatesAsync : null,
+            Time = _settings.UserData.Time,
             // Проект 1C:EDT: связь из профиля базы и подсказка — проект, с которым базу связал сам EDT.
             EdtProjects = EdtEnabled ? EdtProjectChoices : [],
             EdtProjectChooser = names => _dialogs.ChooseAsync("Проект 1C:EDT", "Выберите проект 1C:EDT для этой базы:", names),
