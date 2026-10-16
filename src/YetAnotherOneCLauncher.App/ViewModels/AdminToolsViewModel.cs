@@ -33,7 +33,7 @@ public sealed record AdminToolIconChoice(string? Icon, string Title, AdminToolIc
 
 /// <summary>
 /// Вкладка настроек «Средства администрирования»: таблица «Инструменты» (имя, строка запуска, значок), добавление,
-/// изменение, удаление и порядок. Изменения применяются кнопкой «Сохранить» окна настроек.
+/// изменение, удаление и порядок (кнопки ↑ ↓, Alt+↑ ↓, перетаскивание, «Упорядочить»). Изменения применяются кнопкой «Сохранить» окна настроек.
 /// </summary>
 public sealed partial class AdminToolsViewModel : ObservableObject
 {
@@ -51,6 +51,15 @@ public sealed partial class AdminToolsViewModel : ObservableObject
         }
 
         NewIconView = AdminToolIconViewModel.For(null, string.Empty, null);
+        // Порядок меняется (добавили, удалили, переставили) — пересчитать доступность кнопок порядка.
+        Rows.CollectionChanged += (_, _) =>
+        {
+            MoveUpCommand.NotifyCanExecuteChanged();
+            MoveDownCommand.NotifyCanExecuteChanged();
+            SortByNameCommand.NotifyCanExecuteChanged();
+            SortByNameDescendingCommand.NotifyCanExecuteChanged();
+            SortByKindCommand.NotifyCanExecuteChanged();
+        };
     }
 
     public ObservableCollection<AdminToolRow> Rows { get; } = [];
@@ -208,6 +217,53 @@ public sealed partial class AdminToolsViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanMoveDown))]
     private void MoveDown() => Move(+1);
 
+    /// <summary>Упорядочить по имени, от А до Я (разово: дальше порядок можно менять вручную).</summary>
+    [RelayCommand(CanExecute = nameof(CanSort))]
+    private void SortByName() => Reorder(Rows.OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase));
+
+    /// <summary>Упорядочить по имени, от Я до А.</summary>
+    [RelayCommand(CanExecute = nameof(CanSort))]
+    private void SortByNameDescending() => Reorder(Rows.OrderByDescending(r => r.Name, StringComparer.CurrentCultureIgnoreCase));
+
+    /// <summary>Сначала программы, затем веб-сервисы; внутри — по имени.</summary>
+    [RelayCommand(CanExecute = nameof(CanSort))]
+    private void SortByKind() => Reorder(Rows
+        .OrderBy(r => AdminToolTarget.KindOf(r.Target) == AdminToolKind.WebService)
+        .ThenBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase));
+
+    /// <summary>Переставить строку на место <paramref name="index"/> (перетаскивание мышью).</summary>
+    public void MoveTo(AdminToolRow row, int index)
+    {
+        var from = Rows.IndexOf(row);
+        index = Math.Clamp(index, 0, Rows.Count - 1);
+        if (from < 0 || from == index)
+        {
+            return;
+        }
+
+        Rows.Move(from, index);
+        SelectedRow = row;
+    }
+
+    private bool CanSort() => Rows.Count > 1;
+
+    /// <summary>Строки — в заданном порядке; выделенная остаётся выделенной.</summary>
+    private void Reorder(IEnumerable<AdminToolRow> ordered)
+    {
+        var selected = SelectedRow;
+        var list = ordered.ToList();
+        for (var i = 0; i < list.Count; i++)
+        {
+            var from = Rows.IndexOf(list[i]);
+            if (from != i)
+            {
+                Rows.Move(from, i);
+            }
+        }
+
+        SelectedRow = selected;
+    }
+
     /// <summary>Выбрать программу для строки запуска.</summary>
     [RelayCommand]
     private async Task BrowseProgramAsync()
@@ -276,8 +332,6 @@ public sealed partial class AdminToolsViewModel : ObservableObject
         var index = Rows.IndexOf(row);
         Rows.Move(index, index + offset);
         SelectedRow = row;
-        MoveUpCommand.NotifyCanExecuteChanged();
-        MoveDownCommand.NotifyCanExecuteChanged();
     }
 
     private void ClearForm()
