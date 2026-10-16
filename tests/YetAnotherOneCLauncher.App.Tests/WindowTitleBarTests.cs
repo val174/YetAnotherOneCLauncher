@@ -44,7 +44,11 @@ public class WindowTitleBarTests
         {
             // Задача #31: у главного окна своей строки заголовка нет — заголовок окна это верхняя строка с панелью
             // команд, поиском и меню (высота области заголовка — её высота; пустые места перетаскивают окно).
-            var header = Assert.IsType<DockPanel>(root.Children[0]);
+            // Строка — на подложке во всю ширину (её роль тоже «заголовок»).
+            var band = Assert.IsType<Border>(root.Children[0]);
+            Assert.Equal("HeaderBand", band.Name);
+            Assert.Equal(WindowDecorationsElementRole.TitleBar, WindowDecorationProperties.GetElementRole(band));
+            var header = Assert.IsType<DockPanel>(band.Child);
             Assert.Equal("HeaderPanel", header.Name);
             Assert.Equal(header.Height, window.ExtendClientAreaTitleBarHeightHint);
             Assert.Equal(WindowDecorationsElementRole.TitleBar, WindowDecorationProperties.GetElementRole(header));

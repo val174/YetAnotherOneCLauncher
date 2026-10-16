@@ -47,6 +47,10 @@ public static class WindowTitleBar
     /// </summary>
     public static void ApplyMain(Window window, Control ownTitleBar) => Apply(window, mainWindow: true, ownTitleBar);
 
+    /// <summary>Ещё одна область, за которую перетаскивается окно (подложка вокруг строки-заголовка).</summary>
+    public static void MarkTitleBar(Control control) =>
+        WindowDecorationProperties.SetElementRole(control, WindowDecorationsElementRole.TitleBar);
+
     /// <summary>Элемент в строке-заголовке, который нажимается (кнопки, поле), а не перетаскивает окно.</summary>
     public static void MarkInteractive(Control control) =>
         WindowDecorationProperties.SetElementRole(control, WindowDecorationsElementRole.User);

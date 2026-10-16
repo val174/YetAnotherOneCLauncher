@@ -288,6 +288,7 @@ public partial class MainWindow : Window
     /// <summary>Кнопки и поле верхней строки нажимаются, а не перетаскивают окно (строка — заголовок окна).</summary>
     private void MarkHeaderInteractive()
     {
+        WindowTitleBar.MarkTitleBar(HeaderBand);
         foreach (var control in new Control[] { SideToolbarToggle, TopToolbarHost, SideToolbarHost, MenuButton, SearchBox })
         {
             WindowTitleBar.MarkInteractive(control);
