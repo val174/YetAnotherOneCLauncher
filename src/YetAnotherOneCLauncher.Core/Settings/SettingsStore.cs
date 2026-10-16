@@ -99,6 +99,11 @@ public sealed class SettingsStore
             settings.Ui.DarkShade = DarkShade.Graphite;
         }
 
+        if (!Enum.IsDefined(settings.Ui.ToolbarPlacement))
+        {
+            settings.Ui.ToolbarPlacement = ToolbarPlacement.Top;
+        }
+
         if (!Enum.IsDefined(settings.Ui.RowStripes))
         {
             settings.Ui.RowStripes = RowStripes.Moderate;

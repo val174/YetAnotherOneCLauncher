@@ -10,6 +10,7 @@
         MinWidth="600" MinHeight="360"
         c:ToolIcon.IconStyle="{Binding IconStyle}"
         Classes="flatToolbar flatButtons"
+        Classes.toolbarLeft="{Binding IsToolbarLeft}"
         Classes.stripeSubtle="{Binding IsStripeSubtle}"
         Classes.stripeModerate="{Binding IsStripeModerate}"
         Classes.stripeStrong="{Binding IsStripeStrong}">
@@ -317,6 +318,63 @@
     <Style Selector="Window.flatToolbar StackPanel#ToolbarButtons > Button:disabled /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="Transparent" />
     </Style>
+    <!-- Панель команд выделена (задача #31): сверху — подложкой со скруглённой рамкой, слева — полосой с чертой справа. -->
+    <Style Selector="Border.toolbarHost">
+      <Setter Property="Background" Value="{DynamicResource ToolbarBandBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ToolbarBandBorderBrush}" />
+      <Setter Property="BorderThickness" Value="1" />
+      <Setter Property="CornerRadius" Value="10" />
+      <Setter Property="Padding" Value="2" />
+    </Style>
+    <Style Selector="Border.sideToolbar">
+      <Setter Property="Background" Value="{DynamicResource ToolbarBandBrush}" />
+      <Setter Property="BorderBrush" Value="{DynamicResource ToolbarBandBorderBrush}" />
+      <Setter Property="BorderThickness" Value="0,1,1,0" />
+      <Setter Property="Padding" Value="5,6" />
+    </Style>
+    <!-- Направление панели — стилем (локальное значение стиль не переопределил бы): сверху — в строку. -->
+    <Style Selector="StackPanel#ToolbarButtons, StackPanel#ListFilterSegments">
+      <Setter Property="Orientation" Value="Horizontal" />
+    </Style>
+    <Style Selector="Window.toolbarLeft Border.toolbarSeparator">
+      <Setter Property="Width" Value="24" />
+      <Setter Property="Height" Value="1" />
+      <Setter Property="Margin" Value="0,6" />
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border#ListFilterThumb" x:DataType="vm:MainWindowViewModel">
+      <Setter Property="Margin" Value="{Binding ListFilterPosition, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
+    </Style>
+    <Style Selector="Window.toolbarLeft Border#ListFilterThumb" x:DataType="vm:MainWindowViewModel">
+      <Setter Property="Margin" Value="{Binding ListFilterPosition, Converter={x:Static c:ToolbarConverters.SwitchThumbOffsetVertical}}" />
+    </Style>
+    <!-- Кнопки верхней строки вне панели: скрыть/показать панель слева, меню ≡. -->
+    <Style Selector="Button.headerButton">
+      <Setter Property="Width" Value="36" />
+      <Setter Property="Height" Value="36" />
+      <Setter Property="Padding" Value="0" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="HorizontalContentAlignment" Value="Center" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+      <Setter Property="CornerRadius" Value="6" />
+      <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Button.headerButton > c|ToolIcon">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+    </Style>
+    <Style Selector="Button.headerButton /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector="Button.headerButton:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonHoverBrush}" />
+    </Style>
+    <Style Selector="Button.headerButton:pressed /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonPressedBrush}" />
+    </Style>
+    <Style Selector="Button.headerButton.checked /template/ ContentPresenter#PART_ContentPresenter">
+      <Setter Property="Background" Value="{DynamicResource FlatButtonCheckedBrush}" />
+    </Style>
     <!-- Кнопка-переключатель панели (строка меток): включённая — тоном акцента. -->
     <Style Selector="StackPanel#ToolbarButtons > Button.checked /template/ ContentPresenter#PART_ContentPresenter">
       <Setter Property="Background" Value="{DynamicResource FlatButtonCheckedBrush}" />
@@ -463,36 +521,53 @@
     <Style Selector="Window.stripeStrong TreeViewItem.stripe, Window.stripeStrong ListBoxItem.stripe">
       <Setter Property="Background" Value="{DynamicResource RowStripeStrongBrush}" />
     </Style>
+    <!-- Панель команд слева (задача #31) — после стилей плоской панели: у Avalonia побеждает последний стиль. -->
+    <!-- Панель слева: кнопки, черты и переключатель режимов — столбиком. -->
+    <Style Selector="Window.toolbarLeft StackPanel#ToolbarButtons, Window.toolbarLeft StackPanel#ListFilterSegments">
+      <Setter Property="Orientation" Value="Vertical" />
+    </Style>
+    <Style Selector="Window.toolbarLeft StackPanel#ToolbarButtons > Button">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+    </Style>
+    <!-- Слева кнопки компактнее: столбик должен помещаться в окно обычной высоты. -->
+    <Style Selector="Window.flatToolbar.toolbarLeft StackPanel#ToolbarButtons > Button">
+      <Setter Property="Width" Value="36" />
+      <Setter Property="Height" Value="36" />
+    </Style>
+    <Style Selector="Window.flatToolbar.toolbarLeft StackPanel#ToolbarButtons > Button > c|ToolIcon, Window.flatToolbar.toolbarLeft Panel.toolbarGlyph">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+    </Style>
+    <Style Selector="Window.flatToolbar.toolbarLeft RadioButton.segment">
+      <Setter Property="Width" Value="40" />
+      <Setter Property="Height" Value="34" />
+    </Style>
+    <Style Selector="Window.flatToolbar.toolbarLeft RadioButton.segment > c|ToolIcon">
+      <Setter Property="Width" Value="20" />
+      <Setter Property="Height" Value="20" />
+    </Style>
+    <Style Selector="Window.flatToolbar.toolbarLeft Border.switchThumb">
+      <Setter Property="Height" Value="34" />
+      <Setter Property="Width" Value="40" />
+      <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
   </Window.Styles>
 
   <DockPanel>
-    <!-- Верх: кнопки слева над списком баз, поле поиска справа — над панелью подробностей и её ширины (задаётся в коде). -->
-    <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Margin="8,8,12,4" LastChildFill="True">
-      <Panel x:Name="ToolbarPanel" DockPanel.Dock="Left" Margin="0,0,6,0">
-      <StackPanel x:Name="ToolbarButtons" Orientation="Horizontal" Spacing="6">
-        <!-- «Меню»: сохранение личного списка в файл JSON и загрузка из файлов JSON и .v8i. -->
-        <Button x:Name="MenuButton" ToolTip.Tip="Меню (сохранение и загрузка списка баз)">
-          <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconSettingsBrush}" Data="M 2,3.5 L 14,3.5 M 2,8 L 14,8 M 2,12.5 L 14,12.5" />
-          <Button.Flyout>
-            <MenuFlyout Placement="BottomEdgeAlignedLeft">
-              <MenuItem x:Name="ExportListJsonMenuItem" Header="Сохранить список в файл JSON…" Command="{Binding ExportListJsonCommand}"
-                        InputGesture="{Binding HotKeys.ExportListJson}">
-                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource SaveFileIconGeometry}" /></MenuItem.Icon>
-              </MenuItem>
-              <Separator />
-              <MenuItem x:Name="ImportListJsonMenuItem" Header="Загрузить список из файла JSON…" Command="{Binding ImportListJsonCommand}"
-                        InputGesture="{Binding HotKeys.ImportListJson}">
-                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource LoadFileIconGeometry}" /></MenuItem.Icon>
-              </MenuItem>
-              <MenuItem Header="Загрузить из файла .v8i…" Command="{Binding ImportCommand}" />
-              <Separator />
-              <MenuItem x:Name="RestoreListMenuItem" Header="Восстановить список…" Command="{Binding RestoreListCommand}">
-                <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource HistoryIconGeometry}" /></MenuItem.Icon>
-              </MenuItem>
-            </MenuFlyout>
-          </Button.Flyout>
-        </Button>
-        <Border Classes="toolbarSeparator" />
+    <!-- Верхняя строка — она же заголовок окна (задача #31): [скрыть/показать панель слева] [панель команд, если сверху]
+         … место для перетаскивания … [поиск] … [меню ≡] [место под кнопки окна]. Пустые места строки перетаскивают окно
+         (роль «заголовок» — в MainWindow.axaml.cs), двойной щелчок разворачивает. -->
+    <DockPanel x:Name="HeaderPanel" DockPanel.Dock="Top" Height="48" Margin="8,0,0,0" Background="Transparent" LastChildFill="True">
+      <!-- Кнопка скрытия панели команд слева (только при панели слева); включённая — подсвечена. -->
+      <Button x:Name="SideToolbarToggle" DockPanel.Dock="Left" Classes="headerButton" Classes.checked="{Binding ShowSideToolbar}"
+              IsVisible="{Binding IsToolbarLeft}" Command="{Binding ToggleSideToolbarCommand}" Margin="0,0,8,0"
+              ToolTip.Tip="Показать или скрыть панель команд">
+        <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="M 1.5,2.5 L 14.5,2.5 L 14.5,13.5 L 1.5,13.5 Z M 5.5,2.5 L 5.5,13.5" />
+      </Button>
+      <!-- Панель команд сверху: здесь; при панели слева код переносит её в SideToolbarHost. -->
+      <Border x:Name="TopToolbarHost" DockPanel.Dock="Left" Classes="toolbarHost" IsVisible="{Binding IsToolbarTop}" VerticalAlignment="Center">
+      <Panel x:Name="ToolbarPanel">
+      <StackPanel x:Name="ToolbarButtons" Spacing="6">
         <!-- Значок текущего вида: иерархия — дерево папок, строки — плоский список. -->
         <Button x:Name="ViewModeButton" Command="{Binding ToggleViewModeCommand}">
           <Panel Classes="toolbarGlyph">
@@ -561,8 +636,9 @@
           </Border.Resources>
           <Panel>
             <!-- Плашка под выбранным режимом — переезжает при переключении (тумблер). -->
-            <Border x:Name="ListFilterThumb" Classes="switchThumb" Margin="{Binding ListFilterPosition, Converter={x:Static c:ToolbarConverters.SwitchThumbOffset}}" />
-          <StackPanel Orientation="Horizontal">
+            <!-- Сдвиг плашки — стилем: сверху — по горизонтали, при панели слева — по вертикали. -->
+            <Border x:Name="ListFilterThumb" Classes="switchThumb" />
+          <StackPanel x:Name="ListFilterSegments">
             <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
                          ToolTip.Tip="Все базы">
               <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
@@ -626,8 +702,36 @@
         </Button>
       </StackPanel>
       </Panel>
+      </Border>
 
-      <TextBox x:Name="SearchBox" HorizontalAlignment="Right"
+      <!-- Место под системные кнопки окна (свернуть, развернуть, закрыть): ширину задаёт код по самим кнопкам. -->
+      <Panel x:Name="CaptionSpacer" DockPanel.Dock="Right" Width="12" />
+      <!-- «Меню»: сохранение личного списка в файл JSON и загрузка из файлов JSON и .v8i. -->
+      <Button x:Name="MenuButton" DockPanel.Dock="Right" Classes="headerButton" ToolTip.Tip="Меню (сохранение и загрузка списка баз)">
+        <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconSettingsBrush}" Data="M 2,3.5 L 14,3.5 M 2,8 L 14,8 M 2,12.5 L 14,12.5" />
+        <Button.Flyout>
+          <MenuFlyout Placement="BottomEdgeAlignedRight">
+            <MenuItem x:Name="ExportListJsonMenuItem" Header="Сохранить список в файл JSON…" Command="{Binding ExportListJsonCommand}"
+                      InputGesture="{Binding HotKeys.ExportListJson}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource SaveFileIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem x:Name="ImportListJsonMenuItem" Header="Загрузить список из файла JSON…" Command="{Binding ImportListJsonCommand}"
+                      InputGesture="{Binding HotKeys.ImportListJson}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource LoadFileIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Загрузить из файла .v8i…" Command="{Binding ImportCommand}" />
+            <Separator />
+            <MenuItem x:Name="RestoreListMenuItem" Header="Восстановить список…" Command="{Binding RestoreListCommand}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="{StaticResource HistoryIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+          </MenuFlyout>
+        </Button.Flyout>
+      </Button>
+
+      <!-- Поиск: сверху — у правого края (перед меню), слева — по центру строки; по бокам — место для перетаскивания. -->
+      <Grid x:Name="SearchHost" ColumnDefinitions="*,Auto,0" Margin="8,0">
+      <TextBox x:Name="SearchBox" Grid.Column="1" VerticalAlignment="Center"
                Text="{Binding SearchText}"
                PlaceholderText="{Binding HotKeys.FocusSearchSuffix, StringFormat='Поиск: имя, сервер, путь{0}'}"
                ToolTip.Tip="Поиск по имени, серверу и пути; можно набирать в любой раскладке">
@@ -636,38 +740,9 @@
                   Background="Transparent" Padding="8,0" ToolTip.Tip="Очистить (Esc, Ctrl+Q)" />
         </TextBox.InnerRightContent>
       </TextBox>
+      </Grid>
     </DockPanel>
 
-    <!-- Строка меток (задача #25): щелчок по метке — показать базы с ней; выбрано несколько — базы со всеми сразу. -->
-    <DockPanel x:Name="TagBar" DockPanel.Dock="Top" Margin="12,0,12,4" IsVisible="{Binding IsTagBarVisible}">
-      <c:ToolIcon DockPanel.Dock="Left" Width="16" Height="16" Margin="2,0,8,0" VerticalAlignment="Center"
-                  Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-        <Button x:Name="ClearTagFilterButton" Classes="bare" Content="Сбросить" Command="{Binding ClearTagFilterCommand}"
-                IsVisible="{Binding HasTagFilter}" Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
-                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" ToolTip.Tip="Снять отбор по меткам" />
-        <Button x:Name="ManageTagsButton" Classes="bare" Content="Метки…" Command="{Binding ManageTagsCommand}"
-                Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
-                ToolTip.Tip="Создать, переименовать, удалить метку, выбрать цвет" />
-      </StackPanel>
-      <ItemsControl x:Name="TagFilterList" ItemsSource="{Binding TagFilters}" VerticalAlignment="Center">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <WrapPanel />
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:TagFilterViewModel">
-            <Button Classes="tagFilter" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleTagFilterCommand}"
-                    CommandParameter="{Binding}" ToolTip.Tip="Показать базы с этой меткой (вместе с другими выбранными)">
-              <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Classes.selected="{Binding IsSelected}">
-                <TextBlock Text="{Binding Text}" />
-              </Border>
-            </Button>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </DockPanel>
 
     <!-- Низ: строка состояния и диагностика. -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
@@ -767,6 +842,42 @@
         <SelectableTextBlock Text="{Binding WarningsText}" TextWrapping="Wrap" FontSize="{StaticResource SmallFontSize}" />
       </ScrollViewer>
     </Border>
+
+    <!-- Панель команд слева (задача #31): та же панель, что сверху, — код переносит её сюда; от списка отделена чертой. -->
+    <Border x:Name="SideToolbarHost" DockPanel.Dock="Left" Classes="sideToolbar" IsVisible="{Binding IsSideToolbarVisible}">
+      <!-- В низком окне кнопки не помещаются — прокрутка колесом (полоса прокрутки не занимает место). -->
+      <ScrollViewer x:Name="SideToolbarScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" />
+    </Border>
+    <!-- Строка меток (задача #25): щелчок по метке — показать базы с ней; выбрано несколько — базы со всеми сразу. -->
+    <DockPanel x:Name="TagBar" DockPanel.Dock="Top" Margin="12,0,12,4" IsVisible="{Binding IsTagBarVisible}">
+      <c:ToolIcon DockPanel.Dock="Left" Width="16" Height="16" Margin="2,0,8,0" VerticalAlignment="Center"
+                  Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
+      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+        <Button x:Name="ClearTagFilterButton" Classes="bare" Content="Сбросить" Command="{Binding ClearTagFilterCommand}"
+                IsVisible="{Binding HasTagFilter}" Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
+                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" ToolTip.Tip="Снять отбор по меткам" />
+        <Button x:Name="ManageTagsButton" Classes="bare" Content="Метки…" Command="{Binding ManageTagsCommand}"
+                Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
+                ToolTip.Tip="Создать, переименовать, удалить метку, выбрать цвет" />
+      </StackPanel>
+      <ItemsControl x:Name="TagFilterList" ItemsSource="{Binding TagFilters}" VerticalAlignment="Center">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="vm:TagFilterViewModel">
+            <Button Classes="tagFilter" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleTagFilterCommand}"
+                    CommandParameter="{Binding}" ToolTip.Tip="Показать базы с этой меткой (вместе с другими выбранными)">
+              <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Classes.selected="{Binding IsSelected}">
+                <TextBlock Text="{Binding Text}" />
+              </Border>
+            </Button>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </DockPanel>
 
     <!-- Список баз, разделитель и панель подробностей. Ширину колонки панели задаёт код (MainWindow.axaml.cs). -->
     <Grid x:Name="BodyGrid" ColumnDefinitions="*,Auto,340">

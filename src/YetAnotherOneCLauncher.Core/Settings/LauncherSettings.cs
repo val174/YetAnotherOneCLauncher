@@ -178,6 +178,16 @@ public enum RowLaunchPlacement
     Left,
 }
 
+/// <summary>Где панель команд главного окна (задача #31).</summary>
+public enum ToolbarPlacement
+{
+    /// <summary>Сверху, в одной строке с поиском и кнопками окна (как раньше).</summary>
+    Top,
+
+    /// <summary>Слева, вертикально; кнопка в левом верхнем углу скрывает и показывает её.</summary>
+    Left,
+}
+
 public enum CatalogViewMode
 {
     Tree,
@@ -247,6 +257,12 @@ public sealed class UiSettings
 
     /// <summary>Зелёная точка справа от наименования у баз, открытых в 1С текущим пользователем.</summary>
     public bool HighlightRunningBases { get; set; } = true;
+
+    /// <summary>Где панель команд: сверху или слева.</summary>
+    public ToolbarPlacement ToolbarPlacement { get; set; } = ToolbarPlacement.Top;
+
+    /// <summary>Панель команд слева показана (кнопка в левом верхнем углу; сверху панель видна всегда).</summary>
+    public bool ShowSideToolbar { get; set; } = true;
 
     /// <summary>Строка меток под панелью инструментов (видна, если у баз есть метки).</summary>
     public bool ShowTagBar { get; set; } = true;

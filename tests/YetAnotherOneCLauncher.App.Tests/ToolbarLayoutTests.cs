@@ -1,0 +1,113 @@
+using Avalonia;
+using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
+using Avalonia.Layout;
+using YetAnotherOneCLauncher.Core.Settings;
+
+namespace YetAnotherOneCLauncher.App.Tests;
+
+/// <summary>Панель команд сверху или слева; верхняя строка — заголовок окна (задача #31).</summary>
+public class ToolbarLayoutTests
+{
+    private static double LeftEdge(Control control, Window window) => control.TranslatePoint(default, window)!.Value.X;
+
+    private static double RightEdge(Control control, Window window) => LeftEdge(control, window) + control.Bounds.Width;
+
+    [AvaloniaFact]
+    public async Task Top_layout_has_toolbar_in_header_search_and_menu_on_the_right()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await MainWindowTests.OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+
+        Assert.True(vm.IsToolbarTop);
+        Assert.Same(window.FindControl<Border>("TopToolbarHost"), window.FindControl<Panel>("ToolbarPanel")!.Parent);
+        Assert.False(window.FindControl<Border>("SideToolbarHost")!.IsVisible);
+        Assert.False(window.FindControl<Button>("SideToolbarToggle")!.IsVisible); // кнопки «скрыть панель» сверху нет
+        Assert.Equal(Orientation.Horizontal, window.FindControl<StackPanel>("ToolbarButtons")!.Orientation);
+        var search = window.FindControl<TextBox>("SearchBox")!;
+        var menu = window.FindControl<Button>("MenuButton")!;
+        Assert.True(LeftEdge(search, window) > RightEdge(window.FindControl<Border>("TopToolbarHost")!, window) + 40); // место для перетаскивания
+        Assert.True(LeftEdge(menu, window) > RightEdge(search, window));
+        Assert.Equal(48, window.FindControl<DockPanel>("HeaderPanel")!.Bounds.Height);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Left_layout_moves_toolbar_to_side_centers_search_and_toggle_hides_it()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await MainWindowTests.OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        var side = window.FindControl<Border>("SideToolbarHost")!;
+        var toolbar = window.FindControl<Panel>("ToolbarPanel")!;
+
+        vm.ToolbarPlacementIndex = (int)ToolbarPlacement.Left;
+        MainWindowTests.Render();
+
+        Assert.Equal(ToolbarPlacement.Left, fixture.Settings.Settings.Ui.ToolbarPlacement);
+        Assert.Contains("toolbarLeft", window.Classes);
+        Assert.Same(window.FindControl<ScrollViewer>("SideToolbarScroll"), toolbar.Parent);
+        Assert.True(side.IsVisible);
+        Assert.False(window.FindControl<Border>("TopToolbarHost")!.IsVisible);
+        Assert.Equal(Orientation.Vertical, window.FindControl<StackPanel>("ToolbarButtons")!.Orientation);
+        Assert.Equal(Orientation.Vertical, window.FindControl<StackPanel>("ListFilterSegments")!.Orientation);
+        Assert.True(toolbar.Bounds.Height > toolbar.Bounds.Width); // столбиком
+        var add = window.FindControl<Button>("AddButton")!;
+        var delete = window.FindControl<Button>("DeleteButton")!;
+        Assert.True(delete.TranslatePoint(default, window)!.Value.Y > add.TranslatePoint(default, window)!.Value.Y);
+
+        // Поиск — по центру строки: пустого места слева и справа поровну (± кнопка скрытия слева и меню справа).
+        var search = window.FindControl<TextBox>("SearchBox")!;
+        var host = window.FindControl<Grid>("SearchHost")!;
+        var leftGap = LeftEdge(search, window) - LeftEdge(host, window);
+        var rightGap = RightEdge(host, window) - RightEdge(search, window);
+        Assert.Equal(leftGap, rightGap, tolerance: 1.5);
+
+        // Плашка переключателя режимов едет вниз.
+        vm.IsFavoritesMode = true;
+        MainWindowTests.Render();
+        Assert.True(window.FindControl<Border>("ListFilterThumb")!.Margin.Top > 0);
+        MainWindowTests.Snapshot(window, "55-toolbar-left");
+
+        var toggle = window.FindControl<Button>("SideToolbarToggle")!;
+        Assert.True(toggle.IsVisible);
+        Assert.Contains("checked", toggle.Classes);
+        toggle.Command!.Execute(null);
+        MainWindowTests.Render();
+        Assert.False(side.IsVisible);
+        Assert.DoesNotContain("checked", toggle.Classes);
+        Assert.False(fixture.Settings.Settings.Ui.ShowSideToolbar);
+        MainWindowTests.Snapshot(window, "55-toolbar-left-hidden");
+
+        // Обратно сверху — панель снова в верхней строке, видна (скрывается только слева).
+        vm.ToolbarPlacementIndex = (int)ToolbarPlacement.Top;
+        MainWindowTests.Render();
+        Assert.Same(window.FindControl<Border>("TopToolbarHost"), toolbar.Parent);
+        Assert.True(toolbar.IsEffectivelyVisible);
+        Assert.Equal(Orientation.Horizontal, window.FindControl<StackPanel>("ToolbarButtons")!.Orientation);
+        Assert.Equal(0, window.FindControl<Border>("ListFilterThumb")!.Margin.Top);
+        MainWindowTests.Snapshot(window, "55-toolbar-top");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Settings_window_offers_placement()
+    {
+        var settings = new ViewModels.SettingsViewModel(new ViewModels.SettingsValues { ToolbarPlacementIndex = 1 });
+        var window = new SettingsWindow(settings);
+        window.Show();
+        window.FindControl<TabControl>("Tabs")!.SelectedItem = window.FindControl<TabItem>("AppearanceTab");
+        MainWindowTests.Render();
+
+        var box = window.FindControl<ComboBox>("ToolbarPlacementBox")!;
+        Assert.Equal(1, box.SelectedIndex);
+        Assert.Equal(["Сверху", "Слева"], settings.ToolbarPlacementNames);
+        Assert.False(settings.IsAppearanceDirty);
+        settings.ToolbarPlacementIndex = 0;
+        Assert.True(settings.IsAppearanceDirty);
+        Assert.Equal(0, settings.Result.ToolbarPlacementIndex);
+        MainWindowTests.Snapshot(window, "55-settings-toolbar-placement");
+        window.Close();
+    }
+}

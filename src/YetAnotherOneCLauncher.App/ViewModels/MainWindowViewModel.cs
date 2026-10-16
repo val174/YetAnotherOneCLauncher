@@ -161,6 +161,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RowStripesIndex = (int)ui.RowStripes;
         HighlightRunning = ui.HighlightRunningBases;
         ShowTagBar = ui.ShowTagBar;
+        ToolbarPlacementIndex = (int)ui.ToolbarPlacement;
+        ShowSideToolbar = ui.ShowSideToolbar;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         // Прежняя настройка «Адрес сервиса ПУСК» — теперь инструмент в «Средствах администрирования».

@@ -1,4 +1,6 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Chrome;
+using Avalonia.Input;
 using Avalonia.Headless.XUnit;
 using Avalonia.LogicalTree;
 using YetAnotherOneCLauncher.App.Controls;
@@ -30,24 +32,42 @@ public class WindowTitleBarTests
         };
         window.Title = "Заголовок формы";
 
+        var main = name == nameof(MainWindow);
         Assert.True(window.ExtendClientAreaToDecorationsHint);
-        Assert.Equal(WindowTitleBar.Height, window.ExtendClientAreaTitleBarHeightHint);
         // Своя рамка по краю окна (системная в светлой теме не видна поверх белого); у развёрнутого её нет.
         var frame = Assert.IsType<Border>(window.Content);
         Assert.Equal((WindowTitleBar.FrameName, new Avalonia.Thickness(1)), (frame.Name, frame.BorderThickness));
         window.WindowState = WindowState.Maximized;
         Assert.Equal(default, frame.BorderThickness);
         var root = Assert.IsType<DockPanel>(frame.Child);
-        var bar = Assert.IsType<Border>(root.Children[0]);
-        Assert.Equal(WindowTitleBar.Name, bar.Name);
-        Assert.Equal(Dock.Top, DockPanel.GetDock(bar));
-        Assert.Single(bar.GetLogicalDescendants().OfType<Image>());
-        Assert.Equal("Заголовок формы", bar.GetLogicalDescendants().OfType<TextBlock>().Single().Text);
-        Assert.Equal(2, root.Children.Count); // под заголовком — прежнее содержимое формы
+        if (main)
+        {
+            // Задача #31: у главного окна своей строки заголовка нет — заголовок окна это верхняя строка с панелью
+            // команд, поиском и меню (высота области заголовка — её высота; пустые места перетаскивают окно).
+            var header = Assert.IsType<DockPanel>(root.Children[0]);
+            Assert.Equal("HeaderPanel", header.Name);
+            Assert.Equal(header.Height, window.ExtendClientAreaTitleBarHeightHint);
+            Assert.Equal(WindowDecorationsElementRole.TitleBar, WindowDecorationProperties.GetElementRole(header));
+            foreach (var interactive in new[] { "MenuButton", "SearchBox", "TopToolbarHost", "SideToolbarToggle" })
+            {
+                Assert.Equal(WindowDecorationsElementRole.User, WindowDecorationProperties.GetElementRole(window.FindControl<Control>(interactive)!));
+            }
+
+            Assert.DoesNotContain(root.GetLogicalDescendants().OfType<Border>(), b => b.Name == WindowTitleBar.Name);
+        }
+        else
+        {
+            Assert.Equal(WindowTitleBar.Height, window.ExtendClientAreaTitleBarHeightHint);
+            var bar = Assert.IsType<Border>(root.Children[0]);
+            Assert.Equal(WindowTitleBar.Name, bar.Name);
+            Assert.Equal(Dock.Top, DockPanel.GetDock(bar));
+            Assert.Single(bar.GetLogicalDescendants().OfType<Image>());
+            Assert.Equal("Заголовок формы", bar.GetLogicalDescendants().OfType<TextBlock>().Single().Text);
+            Assert.Equal(2, root.Children.Count); // под заголовком — прежнее содержимое формы
+        }
 
         // У вспомогательных окон из кнопок заголовка — только «Закрыть» (проверено в живом окне: кнопки рисует Avalonia
         // в WindowDrawnDecorations рядом с окном, в headless их нет); главное окно сворачивается и разворачивается.
-        var main = name == nameof(MainWindow);
         Assert.Equal(main, window.CanMinimize);
         Assert.Equal(main, window.CanMaximize);
         Assert.NotEqual(main, window.Classes.Contains(WindowTitleBar.AuxiliaryClass)); // по классу стили приложения убирают эти кнопки

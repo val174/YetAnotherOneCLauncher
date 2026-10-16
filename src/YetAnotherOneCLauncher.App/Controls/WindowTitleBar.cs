@@ -38,10 +38,30 @@ public static class WindowTitleBar
     /// без продления в заголовок (например, в тестах) — 0.
     /// У вспомогательных окон (<paramref name="mainWindow"/> = false) в заголовке только кнопка «Закрыть».
     /// </summary>
-    public static void Apply(Window window, bool mainWindow = false)
+    public static void Apply(Window window, bool mainWindow = false) => Apply(window, mainWindow, ownTitleBar: null);
+
+    /// <summary>
+    /// Главное окно (задача #31): своей строки заголовка нет — её роль у верхней строки окна <paramref name="ownTitleBar"/>
+    /// (панель команд, поиск, меню); пустые места в ней перетаскивают окно, кнопки окна рисуются справа поверх неё.
+    /// Элементы строки, которые должны нажиматься, помечаются <see cref="MarkInteractive"/>.
+    /// </summary>
+    public static void ApplyMain(Window window, Control ownTitleBar) => Apply(window, mainWindow: true, ownTitleBar);
+
+    /// <summary>Элемент в строке-заголовке, который нажимается (кнопки, поле), а не перетаскивает окно.</summary>
+    public static void MarkInteractive(Control control) =>
+        WindowDecorationProperties.SetElementRole(control, WindowDecorationsElementRole.User);
+
+    private static void Apply(Window window, bool mainWindow, Control? ownTitleBar)
     {
         window.ExtendClientAreaToDecorationsHint = true;
-        window.ExtendClientAreaTitleBarHeightHint = Height;
+        window.ExtendClientAreaTitleBarHeightHint = ownTitleBar is { Height: > 0 } ? ownTitleBar.Height : Height;
+        if (ownTitleBar is not null)
+        {
+            WindowDecorationProperties.SetElementRole(ownTitleBar, WindowDecorationsElementRole.TitleBar);
+            ApplyFrame(window);
+            return;
+        }
+
         if (!mainWindow)
         {
             window.Classes.Add(FlatButtonsClass); // у главного окна класс задан в разметке
@@ -81,8 +101,18 @@ public static class WindowTitleBar
             root.Children.Add(content);
         }
 
-        // Своя рамка по краю окна: системная в светлой теме почти белая и не видна, когда окно лежит поверх белого
-        // (вспомогательное — над списком баз главного), а заголовок того же цвета, что и окно под ним. У развёрнутого — нет.
+        window.Content = root;
+        ApplyFrame(window);
+    }
+
+    /// <summary>
+    /// Своя рамка по краю окна: системная в светлой теме почти белая и не видна, когда окно лежит поверх белого
+    /// (вспомогательное — над списком баз главного), а заголовок того же цвета, что и окно под ним. У развёрнутого — нет.
+    /// </summary>
+    private static void ApplyFrame(Window window)
+    {
+        var root = (Control?)window.Content;
+        window.Content = null;
         var frame = new Border { Name = FrameName, Child = root };
         frame.Bind(Border.BorderBrushProperty, frame.GetResourceObservable("SystemControlForegroundBaseLowBrush"));
         void UpdateFrame() => frame.BorderThickness =

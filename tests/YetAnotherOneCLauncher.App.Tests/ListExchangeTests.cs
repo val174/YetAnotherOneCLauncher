@@ -235,14 +235,17 @@ public class ListExchangeTests
     }
 
     [AvaloniaFact]
-    public async Task Menu_button_is_first_and_context_menu_has_json_item()
+    public async Task Menu_button_is_in_header_and_context_menu_has_json_item()
     {
         using var fixture = new ViewModelFixture();
         var window = await MainWindowTests.OpenAsync(fixture);
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
         var menuButton = window.FindControl<Button>("MenuButton")!;
-        Assert.Same(menuButton, panel.Children[0]);
-        Assert.Contains("toolbarSeparator", panel.Children[1].Classes);
+        // Задача #31: меню — в верхней строке справа (перед кнопками окна), а не на панели команд.
+        Assert.Same(window.FindControl<DockPanel>("HeaderPanel"), menuButton.Parent);
+        Assert.Equal(Dock.Right, DockPanel.GetDock(menuButton));
+        Assert.DoesNotContain(menuButton, panel.Children);
+        Assert.Equal("ViewModeButton", panel.Children[0].Name);
 
         var flyout = Assert.IsType<MenuFlyout>(menuButton.Flyout);
         Assert.Equal(
