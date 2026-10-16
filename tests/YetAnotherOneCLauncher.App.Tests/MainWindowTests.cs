@@ -904,7 +904,7 @@ public class MainWindowTests
         Assert.Contains("flatToolbar", window.Classes);
         Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
         Assert.True(thumb.IsVisible);
-        Assert.Equal(4, separators.Count(s => s.IsVisible));
+        Assert.Equal(3, separators.Count(s => s.IsVisible));
         Snapshot(window, "16a-style2-flat");
 
         vm.IconStyleIndex = 0;

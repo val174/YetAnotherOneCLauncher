@@ -781,37 +781,6 @@
     </Border>
 
 
-    <!-- Строка меток (задача #25): щелчок по метке — показать базы с ней; выбрано несколько — базы со всеми сразу. -->
-    <DockPanel x:Name="TagBar" DockPanel.Dock="Top" Margin="12,0,12,4" IsVisible="{Binding IsTagBarVisible}">
-      <c:ToolIcon DockPanel.Dock="Left" Width="16" Height="16" Margin="2,0,8,0" VerticalAlignment="Center"
-                  Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
-      <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-        <Button x:Name="ClearTagFilterButton" Classes="bare" Content="Сбросить" Command="{Binding ClearTagFilterCommand}"
-                IsVisible="{Binding HasTagFilter}" Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
-                Foreground="{DynamicResource SystemControlHighlightAccentBrush}" ToolTip.Tip="Снять отбор по меткам" />
-        <Button x:Name="ManageTagsButton" Classes="bare" Content="Метки…" Command="{Binding ManageTagsCommand}"
-                Background="Transparent" Padding="6,2" FontSize="{StaticResource SmallFontSize}"
-                ToolTip.Tip="Создать, переименовать, удалить метку, выбрать цвет" />
-      </StackPanel>
-      <ItemsControl x:Name="TagFilterList" ItemsSource="{Binding TagFilters}" VerticalAlignment="Center">
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <WrapPanel />
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-        <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="vm:TagFilterViewModel">
-            <Button Classes="tagFilter" Command="{Binding $parent[Window].((vm:MainWindowViewModel)DataContext).ToggleTagFilterCommand}"
-                    CommandParameter="{Binding}" ToolTip.Tip="Показать базы с этой меткой (вместе с другими выбранными)">
-              <Border Classes="tagChip" c:TagChip.Color="{Binding Color}" Classes.selected="{Binding IsSelected}">
-                <TextBlock Text="{Binding Text}" />
-              </Border>
-            </Button>
-          </DataTemplate>
-        </ItemsControl.ItemTemplate>
-      </ItemsControl>
-    </DockPanel>
-
     <!-- Низ: строка состояния и диагностика. -->
     <Border DockPanel.Dock="Bottom" Padding="8,4" BorderThickness="0,1,0,0" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}">
       <DockPanel>
