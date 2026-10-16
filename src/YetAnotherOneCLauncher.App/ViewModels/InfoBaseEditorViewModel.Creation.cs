@@ -134,6 +134,12 @@ public sealed partial class InfoBaseEditorViewModel
             return;
         }
 
+        if (ShowTemplatePage && IsSelectedTemplateMissing)
+        {
+            Errors = MissingTemplateText;
+            return;
+        }
+
         Errors = string.Empty;
         Page = EditorPage.Form;
         if (IsCreateMode)

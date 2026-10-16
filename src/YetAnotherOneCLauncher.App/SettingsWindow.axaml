@@ -172,8 +172,8 @@
       <TabItem x:Name="AppearanceTab" Header="{Binding AppearanceHeader}">
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
         <StackPanel Margin="0,0,12,8">
-          <!-- Тема и стиль значков — в одну строку. -->
-          <Grid ColumnDefinitions="*,16,*">
+          <!-- Тема, стиль значков и место панели команд главного окна (задача #31) — в одну строку. -->
+          <Grid ColumnDefinitions="*,16,*,16,*">
             <StackPanel>
               <TextBlock Classes="fieldLabel" Text="Тема" Margin="0,4,0,4" />
               <ComboBox x:Name="ThemeBox" ItemsSource="{Binding ThemeNames}" SelectedIndex="{Binding ThemeIndex}" HorizontalAlignment="Stretch" />
@@ -182,6 +182,12 @@
               <TextBlock Classes="fieldLabel" Text="Стиль значков" Margin="0,4,0,4" />
               <ComboBox x:Name="IconStyleBox" ItemsSource="{Binding IconStyleNames}" SelectedIndex="{Binding IconStyleIndex}"
                         HorizontalAlignment="Stretch" />
+            </StackPanel>
+            <!-- Сверху — в строке с поиском и кнопками окна; слева — вертикально, со своей кнопкой «скрыть». -->
+            <StackPanel Grid.Column="4">
+              <TextBlock Classes="fieldLabel" Text="Панель команд" Margin="0,4,0,4" />
+              <ComboBox x:Name="ToolbarPlacementBox" ItemsSource="{Binding ToolbarPlacementNames}" SelectedIndex="{Binding ToolbarPlacementIndex}"
+                        HorizontalAlignment="Stretch" ToolTip.Tip="{Binding ToolbarPlacementHint}" />
             </StackPanel>
           </Grid>
           <!-- Оттенки тем: слева — светлой, справа — тёмной; под каждым — как выглядит окно. -->

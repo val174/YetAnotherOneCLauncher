@@ -31,6 +31,7 @@ public sealed partial class MainWindowViewModel
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
         RowLaunchPlacementIndex = RowLaunchPlacementIndex,
+        ToolbarPlacementIndex = ToolbarPlacementIndex,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HighlightRunning = HighlightRunning,
@@ -80,6 +81,7 @@ public sealed partial class MainWindowViewModel
         ShowDetails = values.ShowDetails;
         ShowRowLaunchButtons = values.ShowRowLaunchButtons;
         RowLaunchPlacementIndex = values.RowLaunchPlacementIndex;
+        ToolbarPlacementIndex = values.ToolbarPlacementIndex;
         ShowSideLaunchButtons = values.ShowSideLaunchButtons;
         TwoLineRows = values.TwoLineRows;
         HighlightRunning = values.HighlightRunning;

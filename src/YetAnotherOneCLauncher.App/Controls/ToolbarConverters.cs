@@ -15,4 +15,11 @@ public static class ToolbarConverters
     /// </summary>
     public static FuncValueConverter<int, Thickness> SwitchThumbOffset { get; } =
         new(position => new Thickness(position * SwitchSegmentWidth, 0, 0, 0));
+
+    /// <summary>Высота сегмента тумблера (как в стилях MainWindow.axaml) — при панели команд слева сегменты идут столбиком.</summary>
+    public const double SwitchSegmentHeight = 34;
+
+    /// <summary>Сдвиг плашки тумблера вниз — при панели команд слева.</summary>
+    public static FuncValueConverter<int, Thickness> SwitchThumbOffsetVertical { get; } =
+        new(position => new Thickness(0, position * SwitchSegmentHeight, 0, 0));
 }

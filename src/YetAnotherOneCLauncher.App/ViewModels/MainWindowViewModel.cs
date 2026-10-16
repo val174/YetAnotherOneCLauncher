@@ -161,6 +161,8 @@ public sealed partial class MainWindowViewModel : ObservableObject
         RowStripesIndex = (int)ui.RowStripes;
         HighlightRunning = ui.HighlightRunningBases;
         ShowTagBar = ui.ShowTagBar;
+        ToolbarPlacementIndex = (int)ui.ToolbarPlacement;
+        ShowSideToolbar = ui.ShowSideToolbar;
         UseThickClientForFileBases = settings.Settings.Launch.UseThickClientForFileBasesByDefault;
         CheckAvailability = settings.Settings.Network.CheckAvailability;
         // Прежняя настройка «Адрес сервиса ПУСК» — теперь инструмент в «Средствах администрирования».
@@ -629,6 +631,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         if (_starterDefaultVersion is not null)
         {
             PlatformsText += $"{Environment.NewLine}Версия по умолчанию (1cestart.cfg): {_starterDefaultVersion}";
+        }
+    }
+
+    /// <summary>«5 минут назад» у баз — заново (главное окно вызывает раз в минуту, пока оно развёрнуто).</summary>
+    public void RefreshRelativeTimes()
+    {
+        var now = _settings.UserData.Time.GetUtcNow();
+        foreach (var infoBase in _bases)
+        {
+            infoBase.RefreshRelativeTimes(now);
         }
     }
 

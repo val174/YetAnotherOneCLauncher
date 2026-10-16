@@ -1,6 +1,7 @@
 using System.Net;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.LogicalTree;
 using Avalonia.Media;
@@ -270,6 +271,111 @@ public class AdminToolsTests
         Assert.Equal(["Автоматически", .. BuiltInToolIcon.All.Select(i => i.Title), "Загрузить свой…"], headers);
         Assert.True(menu.Items.OfType<MenuItem>().First().IsChecked); // у нового — автоматически
         Assert.Contains("ПУСК", headers);
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public void Sort_buttons_reorder_once_and_keep_selection()
+    {
+        var tools = new AdminToolsViewModel(
+        [
+            new AdminTool { Name = "журнал", Target = "https://logs.example/" },
+            new AdminTool { Name = "Блокнот", Target = "notepad.exe" },
+            new AdminTool { Name = "Альфа", Target = "https://alpha.example/" },
+            new AdminTool { Name = "Консоль", Target = "mmc.exe" },
+        ]);
+        string[] Names() => [.. tools.Rows.Select(r => r.Name)];
+        tools.SelectedRow = tools.Rows[1];
+
+        tools.SortByNameCommand.Execute(null);
+        Assert.Equal(["Альфа", "Блокнот", "журнал", "Консоль"], Names()); // без учёта регистра
+        Assert.Equal("Блокнот", tools.SelectedRow!.Name);
+        tools.SortByNameDescendingCommand.Execute(null);
+        Assert.Equal(["Консоль", "журнал", "Блокнот", "Альфа"], Names());
+        tools.SortByKindCommand.Execute(null);
+        Assert.Equal(["Блокнот", "Консоль", "Альфа", "журнал"], Names()); // программы, затем веб-сервисы
+        Assert.Equal(4, tools.Tools.Count);
+
+        // Разово: после упорядочивания порядок меняется и вручную.
+        tools.MoveTo(tools.Rows[3], 0);
+        Assert.Equal(["журнал", "Блокнот", "Консоль", "Альфа"], Names());
+        Assert.Equal("журнал", tools.SelectedRow!.Name);
+
+        // Одну строку упорядочивать нечего.
+        var single = new AdminToolsViewModel([new AdminTool { Name = "А", Target = "a.exe" }]);
+        Assert.False(single.SortByNameCommand.CanExecute(null));
+        single.NewName = "Б";
+        single.NewTarget = "b.exe";
+        single.ApplyCommand.Execute(null);
+        Assert.True(single.SortByNameCommand.CanExecute(null));
+    }
+
+    [AvaloniaFact]
+    public void Rows_are_reordered_by_drag_and_alt_arrows()
+    {
+        var form = new SettingsViewModel(new SettingsValues
+        {
+            AdminTools =
+            [
+                new AdminTool { Name = "Первый", Target = "one.exe" },
+                new AdminTool { Name = "Второй", Target = "two.exe" },
+                new AdminTool { Name = "Третий", Target = "https://three.example/" },
+            ],
+        });
+        var tools = form.AdminTools;
+        string[] Names() => [.. tools.Rows.Select(r => r.Name)];
+        var window = new SettingsWindow(form);
+        window.Show();
+        var tabs = window.FindControl<TabControl>("Tabs")!;
+        tabs.SelectedItem = window.FindControl<TabItem>("AdminToolsTab");
+        MainWindowTests.Render();
+        var view = window.FindControl<AdminToolsView>("AdminToolsView")!;
+        var list = view.FindControl<ListBox>("RowsList")!;
+        var indicator = view.FindControl<Border>("DropIndicator")!;
+        Point Center(int index)
+        {
+            var item = list.ContainerFromIndex(index)!;
+            return item.TranslatePoint(new Point(120, item.Bounds.Height / 2), window)!.Value;
+        }
+
+        // Первую строку — под третью: черта видна, пока тянем.
+        var start = Center(0);
+        var end = Center(2) + new Point(0, 8);
+        window.MouseDown(start, Avalonia.Input.MouseButton.Left);
+        window.MouseMove(start + new Point(0, 10), Avalonia.Input.RawInputModifiers.LeftMouseButton); // кнопка зажата
+        window.MouseMove(end, Avalonia.Input.RawInputModifiers.LeftMouseButton);
+        MainWindowTests.Render();
+        Assert.True(indicator.IsVisible);
+        MainWindowTests.Snapshot(window, "41-admin-tools-drag");
+        window.MouseUp(end, Avalonia.Input.MouseButton.Left);
+        MainWindowTests.Render();
+        Assert.False(indicator.IsVisible);
+        Assert.Equal(["Второй", "Третий", "Первый"], Names());
+        Assert.Equal("Первый", tools.SelectedRow!.Name);
+
+        // Простой щелчок без движения порядок не меняет.
+        window.MouseDown(Center(0), Avalonia.Input.MouseButton.Left);
+        window.MouseUp(Center(0), Avalonia.Input.MouseButton.Left);
+        Assert.Equal(["Второй", "Третий", "Первый"], Names());
+        Assert.Equal("Второй", tools.SelectedRow!.Name);
+
+        // Alt+↓ / Alt+↑ в таблице.
+        list.Focus();
+        window.KeyPress(Avalonia.Input.Key.Down, Avalonia.Input.RawInputModifiers.Alt, Avalonia.Input.PhysicalKey.ArrowDown, null);
+        Assert.Equal(["Третий", "Второй", "Первый"], Names());
+        MainWindowTests.Render(); // фокус — снова на переставленной строке
+        window.KeyPress(Avalonia.Input.Key.Up, Avalonia.Input.RawInputModifiers.Alt, Avalonia.Input.PhysicalKey.ArrowUp, null);
+        Assert.Equal(["Второй", "Третий", "Первый"], Names());
+
+        // «Упорядочить» — меню из трёх способов.
+        var sort = Assert.IsType<MenuFlyout>(view.FindControl<Button>("SortButton")!.Flyout);
+        Assert.Equal(
+            ["По имени (А → Я)", "По имени (Я → А)", "Сначала программы, затем веб-сервисы"],
+            sort.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        sort.ShowAt(view.FindControl<Button>("SortButton")!);
+        MainWindowTests.Render();
+        MainWindowTests.Snapshot(window, "41-admin-tools-sort");
+        sort.Hide();
         window.Close();
     }
 

@@ -8,7 +8,8 @@ namespace YetAnotherOneCLauncher.App;
 
 /// <summary>
 /// Вкладка «Средства администрирования» окна настроек. В полях ввода: Enter — добавить или применить изменение,
-/// Esc — отменить изменение. В таблице: F2 или двойной щелчок — изменить, Del — удалить.
+/// Esc — отменить изменение. В таблице: F2 или двойной щелчок — изменить, Del — удалить, Alt+↑ / Alt+↓ и перетаскивание —
+/// порядок (AdminToolsView.Reorder.cs).
 /// Кнопка значка открывает меню: «Автоматически», встроенные значки, «Загрузить свой…».
 /// </summary>
 public partial class AdminToolsView : UserControl
@@ -33,6 +34,7 @@ public partial class AdminToolsView : UserControl
             box.AddHandler(KeyDownEvent, OnFormKeyDown, RoutingStrategies.Tunnel);
         }
 
+        InitReorder();
         RowsList.KeyDown += (_, e) =>
         {
             if (Tools is not { } tools)

@@ -18,12 +18,16 @@
       <Setter Property="FontFamily" Value="Consolas, DejaVu Sans Mono, monospace" />
       <Setter Property="TextTrimming" Value="CharacterEllipsis" />
     </Style>
+    <Style Selector="TextBlock.grip">
+      <Setter Property="Opacity" Value="0.4" />
+      <Setter Property="Cursor" Value="SizeNorthSouth" />
+    </Style>
     <Style Selector="c|ToolIcon.buttonIcon">
       <Setter Property="Margin" Value="0,0,6,0" />
     </Style>
   </UserControl.Styles>
 
-  <!-- Колонки таблицы и полей ввода совпадают: «Имя» — 220, «Строка запуска» — остальное, «Значок» — 190. -->
+  <!-- Колонки таблицы и полей ввода совпадают: «Имя» (в таблице — с ⋮⋮ слева) — 220, «Строка запуска» — остальное, «Значок» — 190. -->
   <DockPanel>
     <!-- Кнопки правки (сохранение — кнопкой окна настроек). -->
     <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Spacing="8" Margin="0,12,0,0">
@@ -44,6 +48,21 @@
       </Button>
       <Button x:Name="MoveDownButton" Command="{Binding MoveDownCommand}" ToolTip.Tip="Ниже" VerticalAlignment="Stretch">
         <c:ToolIcon Classes="buttonIcon" Margin="0" Data="{StaticResource DownIconGeometry}" />
+      </Button>
+      <!-- Разово упорядочить: строки переставляются, дальше порядок можно менять вручную. -->
+      <Button x:Name="SortButton" ToolTip.Tip="Упорядочить инструменты" VerticalAlignment="Stretch" Margin="8,0,0,0">
+        <StackPanel Orientation="Horizontal">
+          <c:ToolIcon Classes="buttonIcon" Data="M 5,13.5 L 5,2.5 M 2,5.5 L 5,2.5 L 8,5.5 M 11,2.5 L 11,13.5 M 8,10.5 L 11,13.5 L 14,10.5" />
+          <TextBlock Text="Упорядочить" VerticalAlignment="Center" />
+          <TextBlock Text="▾" Margin="6,0,0,0" VerticalAlignment="Center" />
+        </StackPanel>
+        <Button.Flyout>
+          <MenuFlyout Placement="TopEdgeAlignedLeft">
+            <MenuItem x:Name="SortByNameMenuItem" Header="По имени (А → Я)" Command="{Binding SortByNameCommand}" />
+            <MenuItem x:Name="SortByNameDescendingMenuItem" Header="По имени (Я → А)" Command="{Binding SortByNameDescendingCommand}" />
+            <MenuItem x:Name="SortByKindMenuItem" Header="Сначала программы, затем веб-сервисы" Command="{Binding SortByKindCommand}" />
+          </MenuFlyout>
+        </Button.Flyout>
       </Button>
     </StackPanel>
 
@@ -87,10 +106,10 @@
       <TextBlock Classes="secondary"
                  Text="Веб-сервисы и программы для администрирования. Значок подбирается сам: у программы — её значок, у сервиса — значок сайта; его можно заменить встроенным или своим." />
     </StackPanel>
-    <Grid DockPanel.Dock="Top" ColumnDefinitions="220,*,190" Margin="12,0,12,4">
-      <TextBlock Classes="columnHeader" Text="Имя" />
-      <TextBlock Grid.Column="1" Classes="columnHeader" Text="Строка запуска" />
-      <TextBlock Grid.Column="2" Classes="columnHeader" Text="Значок" Margin="8,0,0,0" />
+    <Grid DockPanel.Dock="Top" ColumnDefinitions="20,200,*,190" Margin="12,0,12,4">
+      <TextBlock Grid.Column="1" Classes="columnHeader" Text="Имя" />
+      <TextBlock Grid.Column="2" Classes="columnHeader" Text="Строка запуска" />
+      <TextBlock Grid.Column="3" Classes="columnHeader" Text="Значок" Margin="8,0,0,0" />
     </Grid>
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
       <Panel>
@@ -100,10 +119,12 @@
                  ScrollViewer.HorizontalScrollBarVisibility="Disabled" Background="Transparent">
           <ListBox.ItemTemplate>
             <DataTemplate DataType="vm:AdminToolRow">
-              <Grid ColumnDefinitions="220,*,190" Background="Transparent">
-                <TextBlock Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
-                <TextBlock Grid.Column="1" Classes="target" Text="{Binding Target}" VerticalAlignment="Center" ToolTip.Tip="{Binding Target}" />
-                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0">
+              <!-- ⋮⋮ — строку можно перетащить (за любое место строки). -->
+              <Grid ColumnDefinitions="20,200,*,190" Background="Transparent">
+                <TextBlock Classes="grip" Text="⋮⋮" VerticalAlignment="Center" ToolTip.Tip="Перетащите, чтобы изменить порядок" />
+                <TextBlock Grid.Column="1" Text="{Binding Name}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" Margin="0,0,12,0" />
+                <TextBlock Grid.Column="2" Classes="target" Text="{Binding Target}" VerticalAlignment="Center" ToolTip.Tip="{Binding Target}" />
+                <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" Margin="8,0,0,0">
                   <c:AdminToolIconView Icon="{Binding Icon}" />
                   <TextBlock Text="{Binding IconText}" VerticalAlignment="Center" FontSize="{StaticResource SmallFontSize}" Opacity="0.65"
                              TextTrimming="CharacterEllipsis" />
@@ -112,6 +133,9 @@
             </DataTemplate>
           </ListBox.ItemTemplate>
         </ListBox>
+        <!-- Куда встанет перетаскиваемая строка (положение задаёт код). -->
+        <Border x:Name="DropIndicator" Height="2" VerticalAlignment="Top" Margin="8,0" IsVisible="False" IsHitTestVisible="False"
+                Background="{DynamicResource SystemControlHighlightAccentBrush}" />
       </Panel>
     </Border>
   </DockPanel>

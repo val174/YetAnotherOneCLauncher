@@ -9,6 +9,7 @@ using YetAnotherOneCLauncher.App.Services;
 using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 using YetAnotherOneCLauncher.Core.Settings;
+using YetAnotherOneCLauncher.Platform.Windows;
 
 namespace YetAnotherOneCLauncher.App;
 
@@ -33,6 +34,15 @@ public partial class MainWindow : Window
     private const double MinListWidth = 280;
     private const double MinSearchWidth = 200;
 
+    /// <summary>Поле поиска по центру верхней строки (панель команд слева).</summary>
+    private const double CenteredSearchWidth = 360;
+
+    /// <summary>Сколько пустого места в верхней строке оставить для перетаскивания окна.</summary>
+    private const double MinDragWidth = 48;
+
+    /// <summary>Отступ меню от кнопок окна (и от края окна, если кнопок нет).</summary>
+    private const double MinCaptionGap = 8;
+
     private PointerPressedEventArgs? _dragStart;
 
     // Перетаскивание границы колонки: какая колонка, где нажали и какой была ширина.
@@ -44,13 +54,15 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-        WindowTitleBar.Apply(this, mainWindow: true);
+        WindowTitleBar.ApplyMain(this, HeaderPanel);
+        MarkHeaderInteractive();
     }
 
     public MainWindow(MainWindowViewModel viewModel)
     {
         InitializeComponent();
-        WindowTitleBar.Apply(this, mainWindow: true);
+        WindowTitleBar.ApplyMain(this, HeaderPanel);
+        MarkHeaderInteractive();
         DataContext = viewModel;
         RestorePlacement(viewModel.WindowPlacement);
 
@@ -87,6 +99,19 @@ public partial class MainWindow : Window
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
         Closed += (_, _) => viewModel.StopRunningWatch();
+
+        // «5 минут назад» в списке и свойствах — раз в минуту, только пока окно видно и не свёрнуто: свёрнутое
+        // (или в трее) таймер не будит; при разворачивании надписи сразу догоняют время.
+        _relativeTimeTimer.Tick += (_, _) => viewModel.RefreshRelativeTimes();
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WindowStateProperty || e.Property == IsVisibleProperty)
+            {
+                UpdateRelativeTimeTimer(viewModel);
+            }
+        };
+        Opened += (_, _) => UpdateRelativeTimeTimer(viewModel);
+        Closed += (_, _) => _relativeTimeTimer.Stop();
         InitTray(viewModel);
 
         // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
@@ -112,16 +137,46 @@ public partial class MainWindow : Window
         AddTagButton.Flyout!.Opened += (_, _) => TagPicker.Activate();
         viewModel.TagPicker.Picked += (_, _) => AddTagButton.Flyout?.Hide();
 
+        // Контекстное меню списка: подменю «Порядок» недоступно, если недоступны все его пункты (недавние, избранное).
+        ICommand[] orderCommands = [viewModel.MoveUpCommand, viewModel.MoveDownCommand, viewModel.SortFolderByNameCommand];
+        void UpdateOrderMenu() => OrderMenu.IsEnabled = orderCommands.Any(c => c.CanExecute(null));
+        foreach (var command in orderCommands)
+        {
+            command.CanExecuteChanged += (_, _) => UpdateOrderMenu();
+        }
+
+        UpdateOrderMenu();
+
         // Кнопка ▶ в строке (кнопки слева от наименования): меню режимов запуска этой базы.
         AddHandler(Button.ClickEvent, OnRowLaunchMenuClick);
 
         HeaderPanel.SizeChanged += (_, _) => FitSearchBox();
-        ToolbarPanel.SizeChanged += (_, _) => FitSearchBox();
+        SearchHost.SizeChanged += (_, _) => FitSearchBox();
         DetailsSplitter.DragDelta += (_, _) => FitSearchBox(DetailsColumn.ActualWidth);
         DetailsSplitter.DragCompleted += (_, _) =>
         {
             viewModel.DetailsWidth = DetailsColumn.ActualWidth;
             ApplyDetailsLayout(); // ширина могла упереться в пределы
+        };
+
+        // Раскладка (задача #31): панель команд сверху или слева; верхняя строка — заголовок окна.
+        ApplyToolbarPlacement(viewModel);
+        InitToolbarOverflow();
+        viewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(MainWindowViewModel.IsToolbarLeft))
+            {
+                ApplyToolbarPlacement(viewModel);
+            }
+        };
+        Opened += (_, _) => UpdateCaptionSpacer();
+        SizeChanged += (_, _) => UpdateCaptionSpacer();
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WindowStateProperty)
+            {
+                Dispatcher.UIThread.Post(UpdateCaptionSpacer, DispatcherPriority.Loaded);
+            }
         };
     }
 
@@ -241,9 +296,72 @@ public partial class MainWindow : Window
         FitSearchBox();
     }
 
+    /// <summary>Кнопки и поле верхней строки нажимаются, а не перетаскивают окно (строка — заголовок окна).</summary>
+    private void MarkHeaderInteractive()
+    {
+        WindowTitleBar.MarkTitleBar(HeaderBand);
+        foreach (var control in new Control[] { SideToolbarToggle, TopToolbarHost, SideToolbarHost, ThemeButton, MenuButton, SearchBox })
+        {
+            WindowTitleBar.MarkInteractive(control);
+        }
+    }
+
     /// <summary>
-    /// Поле поиска — над правой панелью: левый край — вровень с её содержимым, правее разделителя.
-    /// Без панели ширина та же, что была бы у панели. Если места не хватает, поле сужается, но не уже <see cref="MinSearchWidth"/>.
+    /// Панель команд — сверху (в верхней строке) или слева (полоса вдоль края): панель одна, переносится между ними.
+    /// Поиск сверху — у правого края строки, слева — по центру.
+    /// </summary>
+    private void ApplyToolbarPlacement(MainWindowViewModel vm)
+    {
+        if (vm.IsToolbarLeft && ToolbarFrame.Parent != SideToolbarHost)
+        {
+            TopToolbarHost.Child = null;
+            SideToolbarHost.Child = ToolbarFrame;
+        }
+        else if (!vm.IsToolbarLeft && ToolbarFrame.Parent != TopToolbarHost)
+        {
+            SideToolbarHost.Child = null;
+            TopToolbarHost.Child = ToolbarFrame;
+        }
+
+        ((MenuFlyout)ToolbarOverflowButton.Flyout!).Placement =
+            vm.IsToolbarLeft ? PlacementMode.RightEdgeAlignedBottom : PlacementMode.BottomEdgeAlignedLeft;
+
+        SearchHost.ColumnDefinitions[2].Width = vm.IsToolbarLeft ? GridLength.Star : new GridLength(0);
+        FitSearchBox();
+    }
+
+    /// <summary>
+    /// Место под кнопки окна (свернуть, развернуть, закрыть) у правого края верхней строки — меню и поиск не должны под них
+    /// заходить. В Windows их рисует система (ширину сообщает DWM), в Linux — Avalonia (кнопки — в дереве окна).
+    /// Без продления окна в заголовок (тесты, часть Linux) кнопок нет.
+    /// </summary>
+    private void UpdateCaptionSpacer()
+    {
+        double width;
+        if (TryGetPlatformHandle()?.Handle is { } handle && WindowCaption.TryGetButtonsWidth(handle, out var pixels))
+        {
+            width = pixels / RenderScaling;
+        }
+        else
+        {
+            var left = this.GetVisualDescendants()
+                .OfType<Button>()
+                .Where(b => b.Name is "PART_MinimizeButton" or "PART_MaximizeButton" or "PART_CloseButton" && b.IsEffectivelyVisible && b.Bounds.Width > 0)
+                .Select(b => b.TranslatePoint(default, this))
+                .Where(p => p is not null)
+                .Select(p => p!.Value.X)
+                .DefaultIfEmpty(Bounds.Width)
+                .Min();
+            width = Bounds.Width - left;
+        }
+
+        CaptionSpacer.Width = width + MinCaptionGap;
+        FitSearchBox();
+    }
+
+    /// <summary>
+    /// Ширина поиска: сверху — как у правой панели (поле над ней), слева — <see cref="CenteredSearchWidth"/>. В узком окне
+    /// поле сужается (но не уже <see cref="MinSearchWidth"/>): по бокам остаётся место, за которое перетаскивают окно.
     /// </summary>
     private void FitSearchBox(double? detailsWidth = null)
     {
@@ -252,11 +370,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        var panelWidth = detailsWidth ?? vm.DetailsWidth;
-        // Правый край поля — у отступа верхней строки от края окна, левый — там же, где начинается содержимое панели
-        // (линия разделителя плюс внутренний отступ панели): поле не заходит за разделитель.
-        var target = panelWidth - HeaderPanel.Margin.Right - DetailsBorder.Padding.Left;
-        var available = HeaderPanel.Bounds.Width - ToolbarPanel.Bounds.Width - ToolbarPanel.Margin.Right;
+        var target = vm.IsToolbarLeft
+            ? CenteredSearchWidth
+            : (detailsWidth ?? vm.DetailsWidth) - DetailsBorder.Padding.Left;
+        var available = SearchHost.Bounds.Width - (vm.IsToolbarLeft ? 2 * MinDragWidth : MinDragWidth);
         SearchBox.Width = available > 0 ? Math.Max(Math.Min(target, available), Math.Min(MinSearchWidth, available)) : target;
     }
 
@@ -378,6 +495,27 @@ public partial class MainWindow : Window
                 (container ?? list).Focus(NavigationMethod.Directional);
             },
             DispatcherPriority.Background);
+    }
+
+    private readonly DispatcherTimer _relativeTimeTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+
+    private void UpdateRelativeTimeTimer(MainWindowViewModel viewModel)
+    {
+        var active = IsVisible && WindowState != WindowState.Minimized;
+        if (active == _relativeTimeTimer.IsEnabled)
+        {
+            return;
+        }
+
+        if (active)
+        {
+            viewModel.RefreshRelativeTimes();
+            _relativeTimeTimer.Start();
+        }
+        else
+        {
+            _relativeTimeTimer.Stop();
+        }
     }
 
     private static void Execute(ICommand command)
