@@ -302,16 +302,19 @@ public partial class MainWindow : Window
     /// </summary>
     private void ApplyToolbarPlacement(MainWindowViewModel vm)
     {
-        if (vm.IsToolbarLeft && ToolbarPanel.Parent != SideToolbarClip)
+        if (vm.IsToolbarLeft && ToolbarFrame.Parent != SideToolbarHost)
         {
             TopToolbarHost.Child = null;
-            SideToolbarClip.Children.Add(ToolbarPanel);
+            SideToolbarHost.Child = ToolbarFrame;
         }
-        else if (!vm.IsToolbarLeft && ToolbarPanel.Parent != TopToolbarHost)
+        else if (!vm.IsToolbarLeft && ToolbarFrame.Parent != TopToolbarHost)
         {
-            SideToolbarClip.Children.Clear();
-            TopToolbarHost.Child = ToolbarPanel;
+            SideToolbarHost.Child = null;
+            TopToolbarHost.Child = ToolbarFrame;
         }
+
+        ((MenuFlyout)ToolbarOverflowButton.Flyout!).Placement =
+            vm.IsToolbarLeft ? PlacementMode.RightEdgeAlignedBottom : PlacementMode.BottomEdgeAlignedLeft;
 
         SearchHost.ColumnDefinitions[2].Width = vm.IsToolbarLeft ? GridLength.Star : new GridLength(0);
         FitSearchBox();

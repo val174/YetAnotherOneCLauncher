@@ -8,8 +8,8 @@ using YetAnotherOneCLauncher.App.ViewModels;
 namespace YetAnotherOneCLauncher.App;
 
 /// <summary>
-/// Панель команд слева в низком окне (задача #31): видны только кнопки, которые помещаются целиком; остальные — в меню «…»
-/// под последней видимой. Сверху панель не переполняется (кнопки — в строке, поиск сжимается).
+/// Панель команд в узком (сверху) или низком (слева) окне, задача #31: видны только кнопки, которые помещаются
+/// целиком; остальные — в меню «…» после последней видимой. Сверху поиск сначала сжимается до наименьшей ширины.
 /// </summary>
 public partial class MainWindow
 {
@@ -22,6 +22,7 @@ public partial class MainWindow
     private void InitToolbarOverflow()
     {
         SideToolbarHost.SizeChanged += (_, _) => UpdateToolbarOverflow();
+        HeaderPanel.SizeChanged += (_, _) => UpdateToolbarOverflow();
         // Кнопки появляются и прячутся (метки, проекты EDT), меняется стиль значков — пересчитать после раскладки.
         ToolbarButtons.LayoutUpdated += (_, _) => UpdateToolbarOverflow();
         var menu = (MenuFlyout)ToolbarOverflowButton.Flyout!;
@@ -29,46 +30,72 @@ public partial class MainWindow
         menu.Opening += (_, _) => FillToolbarOverflow();
     }
 
-    private void UpdateToolbarOverflow()
+    /// <summary>
+    /// Сколько места у панели вдоль неё: слева — высота полосы; сверху — ширина строки за вычетом кнопок справа
+    /// и поиска наименьшей ширины с местом для перетаскивания окна. Панель скрыта — 0 (не переполняется).
+    /// </summary>
+    private double ToolbarAvailableLength(bool left)
     {
-        var start = -1;
-        var visibleHeight = double.NaN;
-        if (ToolbarPanel.Parent == SideToolbarClip && SideToolbarHost.IsVisible)
+        if (left)
         {
-            var available = SideToolbarHost.Bounds.Height - SideToolbarHost.Padding.Top - SideToolbarHost.Padding.Bottom;
-            var items = ToolbarButtons.Children;
-            var bottom = items.Where(c => c.IsVisible).Select(c => c.Bounds.Bottom + c.Margin.Bottom).DefaultIfEmpty(0).Max();
-            if (available > 0 && bottom > available)
-            {
-                // Место под «…»: кнопка и отступ над ней.
-                var limit = available - ToolbarOverflowButton.Height - ToolbarOverflowButton.Margin.Top;
-                var last = -1;
-                for (var i = 0; i < items.Count; i++)
-                {
-                    if (items[i].IsVisible && items[i].Bounds.Bottom <= limit)
-                    {
-                        last = i;
-                    }
-                }
-
-                // Черта между группами в конце видимой части не нужна.
-                while (last >= 0 && (!items[last].IsVisible || IsSeparator(items[last])))
-                {
-                    last--;
-                }
-
-                start = last + 1;
-                visibleHeight = last >= 0 ? items[last].Bounds.Bottom : 0;
-            }
+            return SideToolbarHost.IsVisible
+                ? SideToolbarHost.Bounds.Height - SideToolbarHost.Padding.Top - SideToolbarHost.Padding.Bottom
+                : 0;
         }
 
-        if (start == _toolbarOverflowStart && (start < 0 || SideToolbarClip.Height.Equals(visibleHeight)))
+        var others = HeaderPanel.Children
+            .Where(c => c.IsVisible && c != TopToolbarHost && c != SearchHost)
+            .Sum(c => c.Bounds.Width + c.Margin.Left + c.Margin.Right);
+        return HeaderPanel.Bounds.Width - others - SearchHost.Margin.Left - SearchHost.Margin.Right - MinSearchWidth - MinDragWidth
+            - TopToolbarHost.Padding.Left - TopToolbarHost.Padding.Right;
+    }
+
+    private void UpdateToolbarOverflow()
+    {
+        var left = ToolbarFrame.Parent == SideToolbarHost;
+        double End(Control c) => left ? c.Bounds.Bottom : c.Bounds.Right;
+
+        var start = -1;
+        var visibleLength = double.NaN;
+        var available = ToolbarAvailableLength(left);
+        var items = ToolbarButtons.Children;
+        var end = items.Where(c => c.IsVisible).Select(c => End(c) + (left ? c.Margin.Bottom : c.Margin.Right)).DefaultIfEmpty(0).Max();
+        if (available > 0 && end > available)
+        {
+            // Место под «…»: кнопка и отступ перед ней.
+            var limit = available - (left
+                ? ToolbarOverflowButton.Height + ToolbarOverflowButton.Margin.Top
+                : ToolbarOverflowButton.Width + ToolbarOverflowButton.Margin.Left);
+            var last = -1;
+            for (var i = 0; i < items.Count; i++)
+            {
+                if (items[i].IsVisible && End(items[i]) <= limit)
+                {
+                    last = i;
+                }
+            }
+
+            // Черта между группами в конце видимой части не нужна.
+            while (last >= 0 && (!items[last].IsVisible || IsSeparator(items[last])))
+            {
+                last--;
+            }
+
+            start = last + 1;
+            visibleLength = last >= 0 ? End(items[last]) : 0;
+        }
+
+        var (length, other) = left
+            ? (ToolbarClip.Height, ToolbarClip.Width)
+            : (ToolbarClip.Width, ToolbarClip.Height);
+        if (start == _toolbarOverflowStart && length.Equals(visibleLength) && double.IsNaN(other))
         {
             return;
         }
 
         _toolbarOverflowStart = start;
-        SideToolbarClip.Height = visibleHeight;
+        ToolbarClip.Height = left ? visibleLength : double.NaN;
+        ToolbarClip.Width = left ? double.NaN : visibleLength;
         ToolbarOverflowButton.IsVisible = start >= 0;
     }
 
