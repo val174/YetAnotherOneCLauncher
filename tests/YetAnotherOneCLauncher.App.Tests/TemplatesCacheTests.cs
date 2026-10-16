@@ -72,7 +72,8 @@ public class TemplatesCacheTests
         await OnTemplatePageAsync(fixture, editor =>
         {
             editor.SelectedTemplateNode = editor.TemplateGroups[0];
-            WaitFor(() => editor.IsSelectedTemplateMissing);
+            // Проверка файла — в фоне: ждём и признак, и сообщение.
+            WaitFor(() => editor.IsSelectedTemplateMissing && editor.Errors.Length > 0);
             Assert.Contains("больше нет", editor.Errors, StringComparison.Ordinal);
             Assert.Contains(cf, editor.Errors, StringComparison.Ordinal);
             Assert.Contains("Нажмите «Обновить»", editor.Errors, StringComparison.Ordinal);

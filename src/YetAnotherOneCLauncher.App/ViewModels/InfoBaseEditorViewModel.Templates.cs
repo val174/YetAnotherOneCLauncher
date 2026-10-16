@@ -293,8 +293,9 @@ public sealed partial class InfoBaseEditorViewModel
 
         MissingTemplateText = $"Шаблона «{template}» больше нет: не найден файл {file}. "
                               + (CanRefreshTemplates ? "Нажмите «Обновить», чтобы обновить список шаблонов, или выберите другой." : "Выберите другой шаблон.");
-        IsSelectedTemplateMissing = true;
+        // Сначала сообщение, потом признак: кто ждёт признака, сразу видит и текст.
         Errors = MissingTemplateText;
+        IsSelectedTemplateMissing = true;
     }
 
     [RelayCommand]
