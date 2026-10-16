@@ -151,6 +151,7 @@ public partial class MainWindow : Window
 
         // Раскладка (задача #31): панель команд сверху или слева; верхняя строка — заголовок окна.
         ApplyToolbarPlacement(viewModel);
+        InitToolbarOverflow();
         viewModel.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(MainWindowViewModel.IsToolbarLeft))
@@ -301,14 +302,14 @@ public partial class MainWindow : Window
     /// </summary>
     private void ApplyToolbarPlacement(MainWindowViewModel vm)
     {
-        if (vm.IsToolbarLeft && ToolbarPanel.Parent != SideToolbarScroll)
+        if (vm.IsToolbarLeft && ToolbarPanel.Parent != SideToolbarClip)
         {
             TopToolbarHost.Child = null;
-            SideToolbarScroll.Content = ToolbarPanel;
+            SideToolbarClip.Children.Add(ToolbarPanel);
         }
         else if (!vm.IsToolbarLeft && ToolbarPanel.Parent != TopToolbarHost)
         {
-            SideToolbarScroll.Content = null;
+            SideToolbarClip.Children.Clear();
             TopToolbarHost.Child = ToolbarPanel;
         }
 

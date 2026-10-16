@@ -47,7 +47,7 @@ public class ToolbarLayoutTests
 
         Assert.Equal(ToolbarPlacement.Left, fixture.Settings.Settings.Ui.ToolbarPlacement);
         Assert.Contains("toolbarLeft", window.Classes);
-        Assert.Same(window.FindControl<ScrollViewer>("SideToolbarScroll"), toolbar.Parent);
+        Assert.Same(window.FindControl<Panel>("SideToolbarClip"), toolbar.Parent);
         Assert.True(side.IsVisible);
         Assert.False(window.FindControl<Border>("TopToolbarHost")!.IsVisible);
         Assert.Equal(Orientation.Vertical, window.FindControl<StackPanel>("ToolbarButtons")!.Orientation);
@@ -88,6 +88,57 @@ public class ToolbarLayoutTests
         Assert.Equal(Orientation.Horizontal, window.FindControl<StackPanel>("ToolbarButtons")!.Orientation);
         Assert.Equal(0, window.FindControl<Border>("ListFilterThumb")!.Margin.Top);
         MainWindowTests.Snapshot(window, "55-toolbar-top");
+        window.Close();
+    }
+
+    [AvaloniaFact]
+    public async Task Left_toolbar_in_low_window_moves_extra_buttons_to_overflow_menu()
+    {
+        using var fixture = new ViewModelFixture();
+        var window = await MainWindowTests.OpenAsync(fixture);
+        var vm = fixture.ViewModel;
+        var overflow = window.FindControl<Button>("ToolbarOverflowButton")!;
+        var clip = window.FindControl<Panel>("SideToolbarClip")!;
+        var side = window.FindControl<Border>("SideToolbarHost")!;
+        double Top(Control c) => c.TranslatePoint(default, window)!.Value.Y;
+
+        vm.ToolbarPlacementIndex = (int)ToolbarPlacement.Left;
+        window.Height = 900;
+        MainWindowTests.Render();
+        Assert.False(overflow.IsVisible); // всё помещается
+        Assert.True(double.IsNaN(clip.Height));
+
+        window.Height = 400;
+        MainWindowTests.Render();
+        MainWindowTests.Render();
+        Assert.True(overflow.IsVisible);
+        // Видимы только целые кнопки; «…» — под последней видимой и внутри полосы.
+        var buttons = window.FindControl<StackPanel>("ToolbarButtons")!.Children;
+        Assert.All(buttons.Where(c => c.Bounds.Bottom <= clip.Height), c => Assert.True(c.Bounds.Bottom <= clip.Bounds.Height));
+        Assert.DoesNotContain("toolbarSeparator", buttons.Last(c => c.Bounds.Bottom <= clip.Height).Classes);
+        Assert.True(Top(overflow) >= Top(clip) + clip.Bounds.Height);
+        Assert.True(Top(overflow) + overflow.Bounds.Height <= Top(side) + side.Bounds.Height);
+        MainWindowTests.Snapshot(window, "56-toolbar-left-overflow");
+
+        var menu = Assert.IsType<MenuFlyout>(overflow.Flyout);
+        menu.ShowAt(overflow);
+        MainWindowTests.Render();
+        var items = menu.Items.OfType<MenuItem>().ToList();
+        Assert.Equal(["Показать плоским списком", "Развернуть все папки", "Свернуть все папки"], items.TakeLast(3).Select(i => (string)i.Header!));
+        Assert.All(items, i => Assert.NotNull(i.Icon));
+        Assert.IsNotType<Separator>(menu.Items[0]);
+        Assert.IsNotType<Separator>(menu.Items[^1]);
+        MainWindowTests.Snapshot(window, "56-toolbar-left-overflow-menu");
+        items[^3].Command!.Execute(items[^3].CommandParameter);
+        menu.Hide();
+        Assert.False(vm.IsTreeMode);
+
+        // Окно снова высокое — меню «…» не нужно.
+        window.Height = 900;
+        MainWindowTests.Render();
+        MainWindowTests.Render();
+        Assert.False(overflow.IsVisible);
+        Assert.True(double.IsNaN(clip.Height));
         window.Close();
     }
 

@@ -576,7 +576,7 @@
       <Border x:Name="TopToolbarHost" DockPanel.Dock="Left" Classes="toolbarHost" IsVisible="{Binding IsToolbarTop}" VerticalAlignment="Center">
       <Panel x:Name="ToolbarPanel">
       <StackPanel x:Name="ToolbarButtons" Spacing="6">
-        <Button x:Name="AddButton" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}">
+        <Button x:Name="AddButton" AutomationProperties.Name="Добавить" ToolTip.Tip="Добавить" IsEnabled="{Binding CanEditList}">
           <c:ToolIcon StrokeThickness="1.5" Brush="{DynamicResource IconAddBrush}" Data="M 8,2 L 8,14 M 2,8 L 14,8" />
           <Button.Flyout>
             <MenuFlyout Placement="BottomEdgeAlignedRight">
@@ -592,12 +592,12 @@
           </Button.Flyout>
         </Button>
         <!-- Карандаш: та же команда, что «Изменить…» в контекстном меню и F2. -->
-        <Button x:Name="EditButton" Command="{Binding EditCommand}"
+        <Button x:Name="EditButton" AutomationProperties.Name="Изменить" Command="{Binding EditCommand}"
                 ToolTip.Tip="{Binding HotKeys.EditSuffix, StringFormat='Изменить базу или переименовать папку{0}'}">
           <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource EditIconGeometry}" />
         </Button>
         <!-- Корзина: та же команда, что «Удалить» в контекстном меню и Del. -->
-        <Button x:Name="DeleteButton" Command="{Binding DeleteCommand}"
+        <Button x:Name="DeleteButton" AutomationProperties.Name="Удалить" Command="{Binding DeleteCommand}"
                 ToolTip.Tip="{Binding HotKeys.DeleteSuffix, StringFormat='Удалить из списка{0}'}">
           <c:ToolIcon Brush="{DynamicResource IconDeleteBrush}"
                       Data="M 2,4 L 14,4 M 6,4 L 6,1.8 L 10,1.8 L 10,4 M 3.6,4 L 4.5,14.5 L 11.5,14.5 L 12.4,4 M 6.5,6.8 L 6.5,12 M 9.5,6.8 L 9.5,12" />
@@ -619,25 +619,25 @@
             <!-- Сдвиг плашки — стилем: сверху — по горизонтали, при панели слева — по вертикали. -->
             <Border x:Name="ListFilterThumb" Classes="switchThumb" />
           <StackPanel x:Name="ListFilterSegments">
-            <RadioButton x:Name="AllBasesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
+            <RadioButton x:Name="AllBasesButton" AutomationProperties.Name="Все базы" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsAllBasesMode}"
                          ToolTip.Tip="Все базы">
               <c:ToolIcon Brush="{DynamicResource IconAllBasesBrush}"
                           Data="M 2.5,3.5 A 5.5,2 0 1 0 13.5,3.5 A 5.5,2 0 1 0 2.5,3.5 M 2.5,3.5 L 2.5,12.5 A 5.5,2 0 0 0 13.5,12.5 L 13.5,3.5 M 2.5,8 A 5.5,2 0 0 0 13.5,8" />
             </RadioButton>
             <!-- Только проекты 1C:EDT: есть, если проекты включены в настройках и найдены в EDT Start. -->
-            <RadioButton x:Name="EdtProjectsButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter"
+            <RadioButton x:Name="EdtProjectsButton" AutomationProperties.Name="Проекты 1C:EDT" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter"
                          IsChecked="{Binding IsEdtProjectsMode}" IsVisible="{Binding IsEdtModeAvailable}" ToolTip.Tip="{Binding HotKeys.ShowEdtProjectsSuffix, StringFormat='Проекты 1C:EDT{0}'}">
               <Panel>
                 <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DesignerIconGeometry}" />
                 <Image Source="{Binding EdtIcon}" Width="22" Height="22" RenderOptions.BitmapInterpolationMode="HighQuality" />
               </Panel>
             </RadioButton>
-            <RadioButton x:Name="RecentButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsRecentMode}"
+            <RadioButton x:Name="RecentButton" AutomationProperties.Name="Недавние базы" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsRecentMode}"
                          ToolTip.Tip="Недавние базы: последние запуски, свежие сверху">
               <c:ToolIcon Brush="{DynamicResource IconRecentBrush}"
                           Data="M 8,1.8 A 6.2,6.2 0 1 1 7.99,1.8 Z M 8,4.6 L 8,8 L 10.6,9.6" />
             </RadioButton>
-            <RadioButton x:Name="FavoritesButton" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsFavoritesMode}"
+            <RadioButton x:Name="FavoritesButton" AutomationProperties.Name="Избранные базы" Classes="segment" Theme="{StaticResource {x:Type ToggleButton}}" GroupName="ListFilter" IsChecked="{Binding IsFavoritesMode}"
                          ToolTip.Tip="Избранные базы">
               <c:ToolIcon Brush="{DynamicResource IconFavoriteBrush}" Data="{StaticResource StarIconGeometry}" />
             </RadioButton>
@@ -645,17 +645,17 @@
           </Panel>
         </Border>
         <!-- Строка меток под панелью: есть, если у баз есть метки; включённая — подсвечена. -->
-        <Button x:Name="TagBarButton" Command="{Binding ToggleTagBarCommand}" IsVisible="{Binding HasTags}" Classes.checked="{Binding ShowTagBar}"
+        <Button x:Name="TagBarButton" AutomationProperties.Name="Строка меток" Command="{Binding ToggleTagBarCommand}" IsVisible="{Binding HasTags}" Classes.checked="{Binding ShowTagBar}"
                 ToolTip.Tip="Метки: показать или скрыть строку отбора по меткам">
           <c:ToolIcon Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource TagIconGeometry}" />
         </Button>
         <Border Classes="toolbarSeparator" />
-        <Button x:Name="ReloadButton" Command="{Binding ReloadCommand}"
+        <Button x:Name="ReloadButton" AutomationProperties.Name="Обновить списки" Command="{Binding ReloadCommand}"
                 ToolTip.Tip="{Binding HotKeys.ReloadSuffix, StringFormat='Обновить: перечитать списки баз и платформы{0}'}">
           <c:ToolIcon StrokeThickness="1.4" Brush="{DynamicResource IconRefreshBrush}"
                       Data="M 13.5,8 A 5.5,5.5 0 1 1 11.9,4.1 M 12.4,1.2 L 12.4,4.6 L 9,4.6" />
         </Button>
-        <Button x:Name="ClusterConsoleButton" Command="{Binding OpenClusterConsoleCommand}"
+        <Button x:Name="ClusterConsoleButton" AutomationProperties.Name="Средства администрирования" Command="{Binding OpenClusterConsoleCommand}"
                 ToolTip.Tip="Средства администрирования: инструменты и консоль кластера серверов 1С">
           <c:ToolIcon Brush="{DynamicResource IconClusterBrush}" Data="{StaticResource ClusterIconGeometry}" />
         </Button>
@@ -677,12 +677,12 @@
         </Button>
         <!-- Только для дерева: «Развернуть все» — стопка папок с минусом, «Свернуть все» — с плюсом.
              В списке и при поиске недоступны (видны бледными) — остальные кнопки не сдвигаются. -->
-        <Button x:Name="ExpandAllButton" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}"
+        <Button x:Name="ExpandAllButton" AutomationProperties.Name="Развернуть все папки" Command="{Binding ExpandAllCommand}" IsEnabled="{Binding ShowTree}"
                 ToolTip.Tip="Развернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5" />
         </Button>
-        <Button x:Name="CollapseAllButton" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}"
+        <Button x:Name="CollapseAllButton" AutomationProperties.Name="Свернуть все папки" Command="{Binding CollapseAllCommand}" IsEnabled="{Binding ShowTree}"
                 ToolTip.Tip="Свернуть все папки">
           <c:ToolIcon Brush="{DynamicResource IconFolderBrush}"
                       Data="M 4.5,1.5 L 14.5,1.5 L 14.5,11.5 M 1.5,4.5 L 11.5,4.5 L 11.5,14.5 L 1.5,14.5 Z M 4,9.5 L 9,9.5 M 6.5,7 L 6.5,12" />
@@ -855,8 +855,19 @@
 
     <!-- Панель команд слева (задача #31): та же панель, что сверху, — код переносит её сюда; от списка отделена чертой. -->
     <Border x:Name="SideToolbarHost" DockPanel.Dock="Left" Classes="sideToolbar" IsVisible="{Binding IsSideToolbarVisible}">
-      <!-- В низком окне кнопки не помещаются — прокрутка колесом (полоса прокрутки не занимает место). -->
-      <ScrollViewer x:Name="SideToolbarScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Disabled" />
+      <!-- В низком окне кнопки, которые не помещаются целиком, уходят в меню «…» под последней видимой
+           (MainWindow.ToolbarOverflow.cs: высоту видимой части задаёт код). -->
+      <StackPanel>
+        <Panel x:Name="SideToolbarClip" ClipToBounds="True" />
+        <Button x:Name="ToolbarOverflowButton" Classes="headerButton" HorizontalAlignment="Center" Margin="0,4,0,0" IsVisible="False"
+                ToolTip.Tip="Ещё команды">
+          <c:ToolIcon Brush="{DynamicResource IconSettingsBrush}"
+                      SolidData="M 3.3,8 A 1.3,1.3 0 1 1 3.29,8 Z M 8,8 A 1.3,1.3 0 1 1 7.99,8 Z M 12.7,8 A 1.3,1.3 0 1 1 12.69,8 Z" />
+          <Button.Flyout>
+            <MenuFlyout Placement="RightEdgeAlignedBottom" />
+          </Button.Flyout>
+        </Button>
+      </StackPanel>
     </Border>
     <!-- Строка меток (задача #25): щелчок по метке — показать базы с ней; выбрано несколько — базы со всеми сразу. -->
     <DockPanel x:Name="TagBar" DockPanel.Dock="Top" Margin="12,8,12,4" IsVisible="{Binding IsTagBarVisible}">
