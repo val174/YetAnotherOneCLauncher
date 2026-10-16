@@ -598,14 +598,16 @@ public class MainWindowTests
         double RightEdge(Control c) => c.TranslatePoint(new Point(c.Bounds.Width, 0), window)!.Value.X;
 
         Assert.Equal(360, window.FindControl<Grid>("BodyGrid")!.ColumnDefinitions[2].ActualWidth);
-        // Кнопки слева; поле поиска — до правого края окна, над панелью подробностей и её ширины.
+        // Панель команд слева в верхней строке (она же заголовок окна); поле поиска — перед меню ≡, ширины панели подробностей.
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!;
+        var menu = window.FindControl<Button>("MenuButton")!;
+        var theme = window.FindControl<Button>("ThemeButton")!; // слева от меню ≡
         double LeftEdge(Control c) => c.TranslatePoint(default, window)!.Value.X;
-        Assert.Equal(8, LeftEdge(toolbar), tolerance: 1.5);
+        Assert.Equal(8, LeftEdge(window.FindControl<Border>("TopToolbarHost")!), tolerance: 1.5);
         Assert.True(LeftEdge(search) > RightEdge(toolbar));
-        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
-        Assert.Equal(RightEdge(splitter) + 12, LeftEdge(search), tolerance: 1.5); // правее разделителя, вровень с содержимым панели
-        Assert.Equal(LeftEdge(search), LeftEdge(window.FindControl<StackPanel>("LaunchButtons")!), tolerance: 1.5); // кнопки запуска — у левой границы панели
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
+        Assert.True(RightEdge(theme) < LeftEdge(menu)); // тема — слева от меню ≡
+        Assert.Equal(360 - 12, search.Bounds.Width, tolerance: 1.5); // ширины содержимого панели подробностей
 
         var launch = window.FindControl<Button>("LaunchEnterpriseButton")!;
         var launchWidth = launch.Bounds.Width;
@@ -621,9 +623,7 @@ public class MainWindowTests
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
         Assert.Equal(launchWidth, launch.Bounds.Width, tolerance: 0.5); // кнопки запуска не растут вместе с панелью
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
-        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
-        Assert.Equal(RightEdge(splitter) + 12, LeftEdge(search), tolerance: 1.5); // правее разделителя, вровень с содержимым панели
-        Assert.Equal(LeftEdge(search), LeftEdge(window.FindControl<StackPanel>("LaunchButtons")!), tolerance: 1.5); // кнопки — у левой границы панели, вровень с полем поиска
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
         Snapshot(window, "11-details-wide");
 
         // Свойства скрыты — кнопки запуска остаются на месте, ширина колонки и поиска прежние.
@@ -634,7 +634,7 @@ public class MainWindowTests
         Assert.False(window.FindControl<Panel>("PropertiesPanel")!.IsEffectivelyVisible);
         Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
         Assert.Equal(treeRight, RightEdge(tree), tolerance: 1.5);
-        Assert.Equal(window.Bounds.Width - 12, RightEdge(search), tolerance: 1.5);
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
         Assert.Equal(searchWidth, search.Bounds.Width, tolerance: 0.5);
         Snapshot(window, "09b-properties-hidden");
         window.Close();
@@ -755,11 +755,60 @@ public class MainWindowTests
             Assert.IsType<ToolIcon>(items[header].Icon);
         }
 
-        // Каталоги кэша — одним подменю.
+        // «Перейти»: каталог базы (только у файловых), каталог проекта 1C:EDT (только у проектов), каталоги кэша — подменю «Кэш».
+        var goTo = items["Перейти"];
+        var goToItems = goTo.Items.OfType<MenuItem>().ToDictionary(i => (string)i.Header!);
+        Assert.Equal(new[] { "Каталог базы", "Каталог проекта", "Кэш" }, goToItems.Keys);
         Assert.Equal(
             new[] { "Программный кэш", "Пользовательский кэш" },
-            items["Открыть каталог кэша"].Items.OfType<MenuItem>().Select(i => (string)i.Header!));
-        Assert.DoesNotContain(items.Keys, h => h.StartsWith("Открыть каталог программного", StringComparison.Ordinal));
+            goToItems["Кэш"].Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        Assert.DoesNotContain(items.Keys, h => h.StartsWith("Открыть каталог", StringComparison.Ordinal));
+        Assert.False(items["Изменить как текст…"].IsVisible); // скрыт, команда осталась
+
+        string[] VisibleGoTo() => [.. goToItems.Values.Where(i => i.IsVisible).Select(i => (string)i.Header!)];
+        vm.IsTreeMode = true;
+        Render();
+        var bases = vm.TreeItems.SelectMany(n => n is FolderNodeViewModel f ? f.Children.Prepend(n) : [n]).ToList();
+        // Привязки пунктов работают у открытого меню.
+        menu.Open(window.GetVisualDescendants().OfType<Panel>().First(p => p.ContextMenu == menu));
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии"); // файловая
+        Render();
+        Assert.True(goTo.IsVisible);
+        Assert.Equal(["Каталог базы", "Кэш"], VisibleGoTo());
+        goTo.Open();
+        Render();
+        Snapshot(window, "58-context-go-to");
+        goTo.Close();
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().First(n => !n.Base.IsFileBase); // серверная
+        Render();
+        Assert.True(goTo.IsVisible);
+        Assert.Equal(["Кэш"], VisibleGoTo());
+        vm.SelectedTreeItem = bases.OfType<FolderNodeViewModel>().First(); // папка — переходить некуда
+        Render();
+        Assert.False(goTo.IsVisible);
+        menu.Close();
+
+        // «Порядок»: выше, ниже и упорядочить папку — одним подменю; все недоступны (недавние, избранное) — недоступно и оно.
+        var order = items["Порядок"];
+        Assert.Equal(["Выше", "Ниже", "По наименованию"], order.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        Assert.IsType<Separator>(order.Items[2]);
+        Assert.DoesNotContain(items.Keys, h => h is "Выше" or "Ниже" || h.StartsWith("Упорядочить", StringComparison.Ordinal));
+        var listPanel = window.GetVisualDescendants().OfType<Panel>().First(p => p.ContextMenu == menu);
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии");
+        menu.Open(listPanel);
+        Render();
+        Assert.True(order.IsEnabled);
+        order.Open();
+        Render();
+        Snapshot(window, "59-context-order");
+        menu.Close();
+        vm.IsRecentMode = true; // в недавних порядок не меняется
+        vm.SelectedTreeItem = null;
+        Render();
+        menu.Open(listPanel);
+        Render();
+        Assert.False(order.IsEnabled);
+        menu.Close();
         window.Close();
     }
 
@@ -770,15 +819,15 @@ public class MainWindowTests
         var window = await OpenAsync(fixture);
         var vm = fixture.ViewModel;
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
-        // Сначала — «Меню», вид списка/дерева, затем правка списка и переключатель режимов.
-        Assert.Equal(
-            new[] { "MenuButton", "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "EditButton", "DeleteButton" },
-            toolbar.Take(7).Select(b => b.Name));
+        // Сначала — правка списка и переключатель режимов, в конце — вид списка/дерева; тема и «Меню» (с настройками) —
+        // в верхней строке справа (задача #31).
+        Assert.Equal(new[] { "AddButton", "EditButton", "DeleteButton" }, toolbar.Take(3).Select(b => b.Name));
+        Assert.Equal(new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton" }, toolbar.TakeLast(3).Select(b => b.Name));
+        Assert.DoesNotContain(toolbar, b => b.Name is "ThemeButton" or "SettingsButton");
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
         // Черты между группами («Стиль 1») не в счёт.
         var items = panel.Children.Where(c => !c.Classes.Contains("toolbarSeparator")).ToList();
         Assert.Equal(items.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, items.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
-        Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;
         var expected = new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
@@ -855,7 +904,7 @@ public class MainWindowTests
         Assert.Contains("flatToolbar", window.Classes);
         Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
         Assert.True(thumb.IsVisible);
-        Assert.Equal(4, separators.Count(s => s.IsVisible));
+        Assert.Equal(3, separators.Count(s => s.IsVisible));
         Snapshot(window, "16a-style2-flat");
 
         vm.IconStyleIndex = 0;
@@ -863,8 +912,9 @@ public class MainWindowTests
         Assert.Equal(IconStyle.Flat, fixture.Settings.Settings.Ui.IconStyle);
         Assert.Equal((40, 40), (add.Bounds.Width, add.Bounds.Height));
         Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
-        Assert.Equal(26, window.FindControl<Button>("ThemeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width);
-        Assert.Equal(4, separators.Count(s => s.IsVisible)); // меню | вид | правка | режимы | сервис
+        Assert.Equal(26, window.FindControl<Button>("ViewModeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width);
+        Assert.Equal(22, window.FindControl<Button>("ThemeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width); // как меню ≡
+        Assert.Equal(3, separators.Count(s => s.IsVisible)); // правка | режимы | сервис | вид (тема и меню — в верхней строке справа)
         Assert.Equal(Avalonia.Media.Brushes.Transparent, add.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First().Background);
 
         // Тумблер: плашка под выбранным режимом, переезжает при переключении.

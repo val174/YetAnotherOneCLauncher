@@ -55,6 +55,9 @@ public sealed record SettingsValues
 
     public int RowLaunchPlacementIndex { get; init; }
 
+    /// <summary>Панель команд: 0 — сверху, 1 — слева (<see cref="ToolbarPlacement"/>).</summary>
+    public int ToolbarPlacementIndex { get; init; }
+
     public bool ShowSideLaunchButtons { get; init; } = true;
 
     public bool TwoLineRows { get; init; }
@@ -140,6 +143,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowDetails = original.ShowDetails;
         ShowRowLaunchButtons = original.ShowRowLaunchButtons;
         RowLaunchPlacementIndex = original.RowLaunchPlacementIndex;
+        ToolbarPlacementIndex = original.ToolbarPlacementIndex;
         ShowSideLaunchButtons = original.ShowSideLaunchButtons;
         TwoLineRows = original.TwoLineRows;
         HighlightRunning = original.HighlightRunning;
@@ -166,6 +170,9 @@ public sealed partial class SettingsViewModel : ObservableObject
 
     /// <summary>В порядке <see cref="RowLaunchPlacement"/>.</summary>
     public IReadOnlyList<string> RowLaunchPlacementNames { get; } = ["Справа, у края колонки наименования", "Слева от наименования"];
+
+    /// <summary>В порядке <see cref="ToolbarPlacement"/>.</summary>
+    public IReadOnlyList<string> ToolbarPlacementNames { get; } = ["Сверху", "Слева"];
 
     /// <summary>В порядке <see cref="RowStripes"/>.</summary>
     public IReadOnlyList<string> RowStripesNames { get; } = ["Не использовать", "Едва заметно", "Умеренно", "Заметно"];
@@ -289,6 +296,14 @@ public sealed partial class SettingsViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(RowLaunchHint))]
     public partial int RowLaunchPlacementIndex { get; set; }
 
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ToolbarPlacementHint))]
+    public partial int ToolbarPlacementIndex { get; set; }
+
+    public string ToolbarPlacementHint => ToolbarPlacementIndex == (int)ToolbarPlacement.Left
+        ? "Кнопки — вертикально вдоль левого края; кнопка в левом верхнем углу скрывает и показывает панель."
+        : "Кнопки — в верхней строке, рядом с поиском.";
+
     public string RowLaunchHint => RowLaunchPlacementIndex == (int)RowLaunchPlacement.Left
         ? "Одна кнопка ▶ в каждой строке, видна всегда: щелчок открывает меню — 1С: Предприятие, Конфигуратор или запуск с параметрами."
         : "Появляются у строки под указателем мыши и у выделенной.";
@@ -342,6 +357,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         || ShowDetails != _original.ShowDetails
         || ShowRowLaunchButtons != _original.ShowRowLaunchButtons
         || RowLaunchPlacementIndex != _original.RowLaunchPlacementIndex
+        || ToolbarPlacementIndex != _original.ToolbarPlacementIndex
         || ShowSideLaunchButtons != _original.ShowSideLaunchButtons
         || TwoLineRows != _original.TwoLineRows
         || HighlightRunning != _original.HighlightRunning
@@ -390,6 +406,7 @@ public sealed partial class SettingsViewModel : ObservableObject
         ShowDetails = ShowDetails,
         ShowRowLaunchButtons = ShowRowLaunchButtons,
         RowLaunchPlacementIndex = RowLaunchPlacementIndex,
+        ToolbarPlacementIndex = ToolbarPlacementIndex,
         ShowSideLaunchButtons = ShowSideLaunchButtons,
         TwoLineRows = TwoLineRows,
         HighlightRunning = HighlightRunning,

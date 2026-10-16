@@ -177,7 +177,7 @@ public class ListRestoreTests
         using var fixture = new ViewModelFixture();
         var window = await MainWindowTests.OpenAsync(fixture);
         var menu = Assert.IsType<MenuFlyout>(window.FindControl<Button>("MenuButton")!.Flyout);
-        Assert.Equal("Восстановить список…", menu.Items.OfType<MenuItem>().Last().Header);
+        Assert.Contains(menu.Items.OfType<MenuItem>().Single(i => (string?)i.Header == "Список баз").Items.OfType<MenuItem>(), i => (string?)i.Header == "Восстановить…");
         Assert.False(window.FindControl<Border>("RestoreBanner")!.IsVisible);
 
         await ImportJsonAsync(fixture, NewBaseJson, replace: false);

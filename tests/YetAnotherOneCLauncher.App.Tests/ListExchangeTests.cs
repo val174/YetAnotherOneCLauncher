@@ -235,20 +235,34 @@ public class ListExchangeTests
     }
 
     [AvaloniaFact]
-    public async Task Menu_button_is_first_and_context_menu_has_json_item()
+    public async Task Menu_button_is_in_header_and_context_menu_has_json_item()
     {
         using var fixture = new ViewModelFixture();
         var window = await MainWindowTests.OpenAsync(fixture);
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
         var menuButton = window.FindControl<Button>("MenuButton")!;
-        Assert.Same(menuButton, panel.Children[0]);
-        Assert.Contains("toolbarSeparator", panel.Children[1].Classes);
+        // Задача #31: меню — в верхней строке справа (перед кнопками окна), а не на панели команд.
+        Assert.Same(window.FindControl<DockPanel>("HeaderPanel"), menuButton.Parent);
+        Assert.Equal(Dock.Right, DockPanel.GetDock(menuButton));
+        Assert.DoesNotContain(menuButton, panel.Children);
+        Assert.Equal("AddButton", panel.Children[0].Name);
+        // Тема — тоже в верхней строке, слева от меню; «Настройки» — пункт меню.
+        var theme = window.FindControl<Button>("ThemeButton")!;
+        Assert.Same(menuButton.Parent, theme.Parent);
+        Assert.Equal(Dock.Right, DockPanel.GetDock(theme));
+        Assert.Null(window.FindControl<Button>("SettingsButton"));
 
         var flyout = Assert.IsType<MenuFlyout>(menuButton.Flyout);
+        // В меню ≡ — подменю «Список баз» (всё о списке целиком) и «Настройки…».
+        Assert.Equal(["Список баз", "Настройки…"], flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        var listMenu = flyout.Items.OfType<MenuItem>().First();
         Assert.Equal(
-            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…", "Восстановить список…"],
-            flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+            ["Сохранить в файл JSON…", "Загрузить из файла JSON…", "Загрузить из файла .v8i…", "Восстановить…"],
+            listMenu.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
         menuButton.Flyout!.ShowAt(menuButton);
+        MainWindowTests.Render();
+        listMenu.Open();
+        Assert.All(listMenu.Items.OfType<MenuItem>(), i => Assert.NotNull(i.Command)); // привязки — у открытого меню
         MainWindowTests.Render();
         MainWindowTests.Snapshot(window, "50-menu-json");
         menuButton.Flyout.Hide();
