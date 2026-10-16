@@ -1228,14 +1228,22 @@
           <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" InputGesture="{Binding HotKeys.Delete}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource DeleteIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Выше" Command="{Binding MoveUpCommand}" InputGesture="{Binding HotKeys.MoveUp}">
-            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource UpIconGeometry}" /></MenuItem.Icon>
+          <!-- «Порядок»: место записи в списке. Все пункты недоступны (недавние, избранное) — недоступно и подменю (MainWindow.axaml.cs). -->
+          <MenuItem x:Name="OrderMenu" Header="Порядок">
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="M 5,13.5 L 5,2.5 M 2,5.5 L 5,2.5 L 8,5.5 M 11,2.5 L 11,13.5 M 8,10.5 L 11,13.5 L 14,10.5" /></MenuItem.Icon>
+            <MenuItem Header="Выше" Command="{Binding MoveUpCommand}" InputGesture="{Binding HotKeys.MoveUp}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource UpIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem Header="Ниже" Command="{Binding MoveDownCommand}" InputGesture="{Binding HotKeys.MoveDown}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DownIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="По наименованию" Command="{Binding SortFolderByNameCommand}"
+                      ToolTip.Tip="Записи внутри выбранной папки (у базы — её папки) — по алфавиту, сначала папки. Порядок сохраняется в списке баз.">
+              <!-- Строки, короче и короче: упорядочено. -->
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" StrokeThickness="1.5" Brush="{DynamicResource IconSettingsBrush}" Data="M 2,3.5 L 14,3.5 M 2,8 L 10,8 M 2,12.5 L 6,12.5" /></MenuItem.Icon>
+            </MenuItem>
           </MenuItem>
-          <MenuItem Header="Ниже" Command="{Binding MoveDownCommand}" InputGesture="{Binding HotKeys.MoveDown}">
-            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource DownIconGeometry}" /></MenuItem.Icon>
-          </MenuItem>
-          <MenuItem Header="Упорядочить папку по наименованию" Command="{Binding SortFolderByNameCommand}"
-                    ToolTip.Tip="Записи внутри выбранной папки (у базы — её папки) — по алфавиту, сначала папки. Порядок сохраняется в списке баз." />
           <MenuItem Header="Скопировать в личный список" Command="{Binding CopyToPersonalCommand}" />
           <Separator />
           <MenuItem Header="Новая база…" Command="{Binding AddBaseCommand}" InputGesture="{Binding HotKeys.AddBase}">

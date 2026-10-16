@@ -137,6 +137,16 @@ public partial class MainWindow : Window
         AddTagButton.Flyout!.Opened += (_, _) => TagPicker.Activate();
         viewModel.TagPicker.Picked += (_, _) => AddTagButton.Flyout?.Hide();
 
+        // Контекстное меню списка: подменю «Порядок» недоступно, если недоступны все его пункты (недавние, избранное).
+        ICommand[] orderCommands = [viewModel.MoveUpCommand, viewModel.MoveDownCommand, viewModel.SortFolderByNameCommand];
+        void UpdateOrderMenu() => OrderMenu.IsEnabled = orderCommands.Any(c => c.CanExecute(null));
+        foreach (var command in orderCommands)
+        {
+            command.CanExecuteChanged += (_, _) => UpdateOrderMenu();
+        }
+
+        UpdateOrderMenu();
+
         // Кнопка ▶ в строке (кнопки слева от наименования): меню режимов запуска этой базы.
         AddHandler(Button.ClickEvent, OnRowLaunchMenuClick);
 

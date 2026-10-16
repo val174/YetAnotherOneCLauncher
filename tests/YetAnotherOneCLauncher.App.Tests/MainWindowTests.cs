@@ -787,6 +787,28 @@ public class MainWindowTests
         Render();
         Assert.False(goTo.IsVisible);
         menu.Close();
+
+        // «Порядок»: выше, ниже и упорядочить папку — одним подменю; все недоступны (недавние, избранное) — недоступно и оно.
+        var order = items["Порядок"];
+        Assert.Equal(["Выше", "Ниже", "По наименованию"], order.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        Assert.IsType<Separator>(order.Items[2]);
+        Assert.DoesNotContain(items.Keys, h => h is "Выше" or "Ниже" || h.StartsWith("Упорядочить", StringComparison.Ordinal));
+        var listPanel = window.GetVisualDescendants().OfType<Panel>().First(p => p.ContextMenu == menu);
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии");
+        menu.Open(listPanel);
+        Render();
+        Assert.True(order.IsEnabled);
+        order.Open();
+        Render();
+        Snapshot(window, "59-context-order");
+        menu.Close();
+        vm.IsRecentMode = true; // в недавних порядок не меняется
+        vm.SelectedTreeItem = null;
+        Render();
+        menu.Open(listPanel);
+        Render();
+        Assert.False(order.IsEnabled);
+        menu.Close();
         window.Close();
     }
 
