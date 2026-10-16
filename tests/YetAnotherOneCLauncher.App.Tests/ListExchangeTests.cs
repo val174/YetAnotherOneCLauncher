@@ -253,10 +253,16 @@ public class ListExchangeTests
         Assert.Null(window.FindControl<Button>("SettingsButton"));
 
         var flyout = Assert.IsType<MenuFlyout>(menuButton.Flyout);
+        // В меню ≡ — подменю «Список баз» (всё о списке целиком) и «Настройки…».
+        Assert.Equal(["Список баз", "Настройки…"], flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        var listMenu = flyout.Items.OfType<MenuItem>().First();
         Assert.Equal(
-            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…", "Восстановить список…", "Настройки…"],
-            flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+            ["Сохранить в файл JSON…", "Загрузить из файла JSON…", "Загрузить из файла .v8i…", "Восстановить…"],
+            listMenu.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
         menuButton.Flyout!.ShowAt(menuButton);
+        MainWindowTests.Render();
+        listMenu.Open();
+        Assert.All(listMenu.Items.OfType<MenuItem>(), i => Assert.NotNull(i.Command)); // привязки — у открытого меню
         MainWindowTests.Render();
         MainWindowTests.Snapshot(window, "50-menu-json");
         menuButton.Flyout.Hide();
