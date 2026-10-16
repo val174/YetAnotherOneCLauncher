@@ -31,6 +31,11 @@ public class CreateInfoBaseTests
 
             // Шаг 2 — шаблон: без выбора дальше не пускает.
             Assert.True(editor.ShowTemplatePage);
+            // Каталоги шаблонов при открытии формы не просматриваются — только по «Обновить».
+            Assert.Empty(editor.TemplateGroups);
+            Assert.True(editor.ShowTemplatesNeverLoaded);
+            editor.RefreshTemplatesCommand.ExecuteAsync(null).GetAwaiter().GetResult();
+            Assert.False(editor.ShowTemplatesNeverLoaded);
             Assert.Equal("Выбор шаблона информационной базы", editor.Title);
             Assert.Equal("Далее >", editor.AcceptText);
             editor.NextCommand.Execute(null);
@@ -165,6 +170,7 @@ public class CreateInfoBaseTests
         {
             Creator = (_, _) => Task.FromResult<string?>(null),
             CreationPlatforms = [ViewModelFixture.Installations[0]],
+            TemplateFileExists = _ => true,
             FoundTemplates =
             [
                 new ConfigurationTemplate("Бухгалтерия/Бухгалтерия предприятия", "3.0.150.20", @"C:\tmplts\1c\Acc\3_0_150_20\1cv8.cf", @"C:\tmplts\1c\Acc\3_0_150_20\1cv8.dt"),
@@ -216,7 +222,7 @@ public class CreateInfoBaseTests
     }
 
     /// <summary>Версия шаблона «Торговля/Новая розница» в каталоге шаблонов: .cf и, если нужно, демо-база .dt.</summary>
-    private static (string Cf, string? Dt) AddTemplate(ViewModelFixture fixture, string folder, string version, bool withDump)
+    internal static (string Cf, string? Dt) AddTemplate(ViewModelFixture fixture, string folder, string version, bool withDump)
     {
         var directory = Directory.CreateDirectory(Path.Combine(fixture.TemplatesRoot, "1c", "Retail", folder)).FullName;
         var manifest = $"Vendor=Фирма \"1С\"\r\nVersion={version}\r\n[Config1]\r\nCatalog=Торговля/Новая розница\r\nSource=1cv8.cf\r\n";

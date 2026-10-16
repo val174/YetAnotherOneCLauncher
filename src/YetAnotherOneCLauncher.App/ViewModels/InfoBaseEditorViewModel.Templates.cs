@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using YetAnotherOneCLauncher.Core.Formatting;
 using YetAnotherOneCLauncher.Core.Platforms;
 
 namespace YetAnotherOneCLauncher.App.ViewModels;
@@ -73,9 +74,13 @@ public sealed class TemplateItemViewModel(ConfigurationTemplate template) : Temp
 public sealed partial class InfoBaseEditorViewModel
 {
     private readonly List<ConfigurationTemplate> _templates = [];
-    private string? _autoName;
 
-    /// <summary>Найденные шаблоны (каталоги шаблонов 1С): задаёт главное окно.</summary>
+    /// <summary>Шаблоны, выбранные файлом («Выбрать файл…»): при обновлении списка остаются.</summary>
+    private readonly List<ConfigurationTemplate> _browsedTemplates = [];
+    private string? _autoName;
+    private int _existenceCheck;
+
+    /// <summary>Шаблоны из кэша (каталоги шаблонов 1С при последнем «Обновить»): задаёт главное окно.</summary>
     public IReadOnlyList<ConfigurationTemplate> FoundTemplates
     {
         init
@@ -84,6 +89,97 @@ public sealed partial class InfoBaseEditorViewModel
             RebuildTemplateTree();
         }
     }
+
+    /// <summary>
+    /// «Обновить»: просмотр каталогов шаблонов в фоне (и запись в кэш) — задаёт главное окно; <c>null</c> — кнопки нет.
+    /// </summary>
+    public Func<Task<TemplateCacheData>>? TemplateRefresher { get; init; }
+
+    /// <summary>Есть ли файл шаблона (проверка выбранного шаблона из кэша); подменяется в тестах.</summary>
+    public Func<string, bool> TemplateFileExists { get; init; } = File.Exists;
+
+    public bool CanRefreshTemplates => TemplateRefresher is not null;
+
+    /// <summary>Когда список шаблонов обновляли; <c>null</c> — ни разу (кэша нет).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TemplatesStatusText), nameof(TemplatesUpdatedToolTip), nameof(ShowTemplatesNeverLoaded), nameof(ShowNoTemplatesFound))]
+    public partial DateTimeOffset? TemplatesUpdatedAt { get; set; }
+
+    /// <summary>Каталоги шаблонов в 1cestart.cfg изменились после обновления списка.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(TemplatesStatusText))]
+    public partial bool TemplateRootsChanged { get; set; }
+
+    /// <summary>Идёт обновление списка: вращающееся кольцо и «Выполняется обновление списка шаблонов».</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowTemplatesNeverLoaded), nameof(ShowNoTemplatesFound), nameof(ShowNoTemplateMatches))]
+    [NotifyCanExecuteChangedFor(nameof(RefreshTemplatesCommand))]
+    public partial bool IsRefreshingTemplates { get; set; }
+
+    /// <summary>Часы для «обновлён 5 минут назад»; подменяется в тестах.</summary>
+    public TimeProvider Time { get; init; } = TimeProvider.System;
+
+    /// <summary>Строка под поиском: когда обновлялся список («5 минут назад»; точное время — в подсказке).</summary>
+    public string TemplatesStatusText => TemplatesUpdatedAt is not { } at
+        ? "Список шаблонов ещё не загружался."
+        : $"Список обновлён {RelativeTime.Format(at, Time.GetUtcNow())}."
+          + (TemplateRootsChanged ? " Каталоги шаблонов в настройках 1С изменились — обновите список." : string.Empty);
+
+    /// <summary>Точные дата и время обновления списка.</summary>
+    public string? TemplatesUpdatedToolTip => TemplatesUpdatedAt is { } at ? "Список шаблонов обновлён " + RelativeTime.Exact(at) : null;
+
+    /// <summary>«Обновлён 5 минут назад» — заново (окно формы вызывает раз в минуту, пока не свёрнуто).</summary>
+    public void RefreshTemplatesStatus() => OnPropertyChanged(nameof(TemplatesStatusText));
+
+    /// <summary>Список ни разу не обновляли — подсказка нажать «Обновить».</summary>
+    public bool ShowTemplatesNeverLoaded => !HasTemplates && TemplatesUpdatedAt is null && !IsRefreshingTemplates;
+
+    /// <summary>Обновляли, но в каталогах шаблонов ничего нет.</summary>
+    public bool ShowNoTemplatesFound => !HasTemplates && TemplatesUpdatedAt is not null && !IsRefreshingTemplates;
+
+    /// <summary>Выбранного шаблона больше нет на диске (удалён или перенесён после обновления списка).</summary>
+    [ObservableProperty]
+    public partial bool IsSelectedTemplateMissing { get; set; }
+
+    [RelayCommand(CanExecute = nameof(CanStartTemplatesRefresh))]
+    private async Task RefreshTemplatesAsync()
+    {
+        if (TemplateRefresher is null)
+        {
+            return;
+        }
+
+        IsRefreshingTemplates = true;
+        try
+        {
+            var data = await TemplateRefresher();
+            var selectedPath = SelectedTemplate?.Path;
+            _templates.Clear();
+            _templates.AddRange(_browsedTemplates);
+            _templates.AddRange(data.ToTemplates());
+            TemplatesUpdatedAt = data.UpdatedAt;
+            TemplateRootsChanged = false;
+            RebuildTemplateTree();
+            if (selectedPath is not null)
+            {
+                if (_templates.FirstOrDefault(t => string.Equals(t.Path, selectedPath, StringComparison.OrdinalIgnoreCase)) is { } again)
+                {
+                    SelectTemplate(again);
+                }
+                else
+                {
+                    SelectedTemplateNode = null;
+                    SelectedTemplate = null;
+                }
+            }
+        }
+        finally
+        {
+            IsRefreshingTemplates = false;
+        }
+    }
+
+    private bool CanStartTemplatesRefresh() => TemplateRefresher is not null && !IsRefreshingTemplates;
 
     /// <summary>Конфигурации, подходящие под поиск; внутри — версии, новые первыми.</summary>
     public ObservableCollection<TemplateGroupViewModel> TemplateGroups { get; } = [];
@@ -123,6 +219,8 @@ public sealed partial class InfoBaseEditorViewModel
         {
             Errors = string.Empty;
         }
+
+        _ = CheckSelectedTemplateAsync();
 
         // Название по умолчанию — последний уровень дерева шаблонов («Бухгалтерия предприятия»), пока его не меняли.
         if (value is not null && (string.IsNullOrWhiteSpace(Name) || Name == _autoName))
@@ -164,7 +262,41 @@ public sealed partial class InfoBaseEditorViewModel
         ? string.Empty
         : $"{SelectedTemplate} — {(SelectedTemplate.HasBoth ? (UseDemoData ? "демонстрационная база (.dt)" : "конфигурация (.cf)") : SelectedTemplate.Contents)}";
 
-    partial void OnUseDemoDataChanged(bool value) => OnPropertyChanged(nameof(SelectedTemplateText));
+    partial void OnUseDemoDataChanged(bool value)
+    {
+        OnPropertyChanged(nameof(SelectedTemplateText));
+        _ = CheckSelectedTemplateAsync();
+    }
+
+    /// <summary>Сообщение «шаблона больше нет» — его же «Далее» показывает снова.</summary>
+    public string MissingTemplateText { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// Выбранный шаблон взят из кэша — файла могло уже не стать. Проверка в фоне (каталог шаблонов бывает в сети);
+    /// нет файла — сообщение в форме, «Далее» не пускает.
+    /// </summary>
+    private async Task CheckSelectedTemplateAsync()
+    {
+        var check = ++_existenceCheck;
+        IsSelectedTemplateMissing = false;
+        if (SelectedTemplate is not { } template || SelectedTemplateFile is not { } file)
+        {
+            return;
+        }
+
+        var exists = TemplateFileExists;
+        var found = await Task.Run(() => exists(file));
+        if (check != _existenceCheck || found)
+        {
+            return;
+        }
+
+        MissingTemplateText = $"Шаблона «{template}» больше нет: не найден файл {file}. "
+                              + (CanRefreshTemplates ? "Нажмите «Обновить», чтобы обновить список шаблонов, или выберите другой." : "Выберите другой шаблон.");
+        // Сначала сообщение, потом признак: кто ждёт признака, сразу видит и текст.
+        Errors = MissingTemplateText;
+        IsSelectedTemplateMissing = true;
+    }
 
     [RelayCommand]
     private async Task BrowseTemplateAsync()
@@ -172,6 +304,7 @@ public sealed partial class InfoBaseEditorViewModel
         if (await _files.OpenFileAsync("Шаблон информационной базы", "Конфигурация или выгрузка 1С", ["*.cf", "*.dt"]) is { } path)
         {
             var template = ConfigurationTemplate.FromFile(path);
+            _browsedTemplates.Insert(0, template);
             _templates.Insert(0, template);
             TemplateSearch = string.Empty;
             RebuildTemplateTree();
@@ -219,6 +352,8 @@ public sealed partial class InfoBaseEditorViewModel
 
         OnPropertyChanged(nameof(HasTemplates));
         OnPropertyChanged(nameof(ShowNoTemplateMatches));
+        OnPropertyChanged(nameof(ShowTemplatesNeverLoaded));
+        OnPropertyChanged(nameof(ShowNoTemplatesFound));
         if (selected is not null && TemplateGroups.SelectMany(g => g.Items).FirstOrDefault(i => i.Template == selected) is { } node)
         {
             SelectedTemplateNode = node;

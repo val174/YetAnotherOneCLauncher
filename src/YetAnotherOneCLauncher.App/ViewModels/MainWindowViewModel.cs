@@ -632,6 +632,16 @@ public sealed partial class MainWindowViewModel : ObservableObject
         }
     }
 
+    /// <summary>«5 минут назад» у баз — заново (главное окно вызывает раз в минуту, пока оно развёрнуто).</summary>
+    public void RefreshRelativeTimes()
+    {
+        var now = _settings.UserData.Time.GetUtcNow();
+        foreach (var infoBase in _bases)
+        {
+            infoBase.RefreshRelativeTimes(now);
+        }
+    }
+
     /// <summary>Показать каталог (после загрузки или правки) и выделить запись по ключу.</summary>
     private void ShowCatalog(InfoBaseCatalog catalog, string? selectionKey)
     {

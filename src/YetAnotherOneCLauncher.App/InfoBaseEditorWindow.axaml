@@ -31,6 +31,27 @@
       <Setter Property="Margin" Value="0,3" />
       <Setter Property="HorizontalAlignment" Value="Stretch" />
     </Style>
+    <!-- Вращающееся кольцо: идёт обновление списка шаблонов. -->
+    <Style Selector="Arc.spinner">
+      <Setter Property="Width" Value="16" />
+      <Setter Property="Height" Value="16" />
+      <Setter Property="StartAngle" Value="0" />
+      <Setter Property="SweepAngle" Value="270" />
+      <Setter Property="StrokeThickness" Value="2" />
+      <Setter Property="StrokeLineCap" Value="Round" />
+      <Setter Property="Stroke" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
+      <Setter Property="RenderTransform" Value="rotate(0deg)" />
+      <Style.Animations>
+        <Animation Duration="0:0:0.9" IterationCount="INFINITE">
+          <KeyFrame Cue="0%">
+            <Setter Property="RotateTransform.Angle" Value="0" />
+          </KeyFrame>
+          <KeyFrame Cue="100%">
+            <Setter Property="RotateTransform.Angle" Value="360" />
+          </KeyFrame>
+        </Animation>
+      </Style.Animations>
+    </Style>
   </Window.Styles>
 
   <DockPanel Margin="16">
@@ -80,11 +101,24 @@
 
       <!-- Страница 2 (из шаблона): дерево «конфигурация → версии», поиск, свой файл; .cf или демо-база .dt. -->
       <DockPanel x:Name="TemplatePage" IsVisible="{Binding ShowTemplatePage}" Height="460">
-        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,8">
+        <DockPanel DockPanel.Dock="Top" Margin="0,0,0,4">
           <Button x:Name="BrowseTemplateButton" DockPanel.Dock="Right" Content="Выбрать файл…" Command="{Binding BrowseTemplateCommand}"
                   Margin="8,0,0,0" ToolTip.Tip="Файл конфигурации (.cf) или выгрузки (.dt) не из каталога шаблонов" />
+          <Button x:Name="RefreshTemplatesButton" DockPanel.Dock="Right" Content="Обновить" Command="{Binding RefreshTemplatesCommand}"
+                  IsVisible="{Binding CanRefreshTemplates}" Margin="8,0,0,0"
+                  ToolTip.Tip="Заново просмотреть каталоги шаблонов 1С (по умолчанию и из настроек стартера) — в фоне" />
           <TextBox x:Name="TemplateSearchBox" Text="{Binding TemplateSearch}" PlaceholderText="Поиск: имя конфигурации или версия" />
         </DockPanel>
+        <!-- Когда обновлялся список; во время обновления — кольцо и надпись. -->
+        <Panel DockPanel.Dock="Top" Margin="0,0,0,8" IsVisible="{Binding CanRefreshTemplates}">
+          <StackPanel x:Name="TemplatesRefreshing" Orientation="Horizontal" Spacing="8" IsVisible="{Binding IsRefreshingTemplates}">
+            <Arc Classes="spinner" VerticalAlignment="Center" />
+            <TextBlock Text="Выполняется обновление списка шаблонов" VerticalAlignment="Center" />
+          </StackPanel>
+          <TextBlock x:Name="TemplatesStatus" Classes="hint" Text="{Binding TemplatesStatusText}" IsVisible="{Binding !IsRefreshingTemplates}"
+                     ToolTip.Tip="{Binding TemplatesUpdatedToolTip}"
+                     TextWrapping="Wrap" />
+        </Panel>
         <!-- Если в шаблоне есть и конфигурация, и выгрузка — что создавать. -->
         <StackPanel x:Name="TemplateKindChoice" DockPanel.Dock="Bottom" Spacing="4" Margin="0,8,0,0" IsVisible="{Binding ShowTemplateKindChoice}">
           <TextBlock Text="В шаблоне есть конфигурация и демонстрационная база. Создать:" />
@@ -116,7 +150,9 @@
               </DataTemplate>
             </TreeView.DataTemplates>
           </TreeView>
-          <TextBlock Classes="hint" IsVisible="{Binding !HasTemplates}" VerticalAlignment="Top"
+          <TextBlock x:Name="TemplatesNeverLoadedText" Classes="hint" IsVisible="{Binding ShowTemplatesNeverLoaded}" VerticalAlignment="Top" TextWrapping="Wrap"
+                     Text="Список шаблонов ещё не загружен: нажмите «Обновить» — лаунчер найдёт шаблоны в каталогах шаблонов 1С. Или выберите файл конфигурации (.cf) или выгрузки (.dt)." />
+          <TextBlock x:Name="NoTemplatesFoundText" Classes="hint" IsVisible="{Binding ShowNoTemplatesFound}" VerticalAlignment="Top" TextWrapping="Wrap"
                      Text="В каталогах шаблонов 1С шаблоны не найдены — выберите файл конфигурации (.cf) или выгрузки (.dt)." />
           <TextBlock Classes="hint" IsVisible="{Binding ShowNoTemplateMatches}" VerticalAlignment="Top"
                      Text="Ничего не найдено." />

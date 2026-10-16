@@ -87,6 +87,19 @@ public partial class MainWindow : Window
 
         Closing += (_, _) => viewModel.WindowPlacement = CapturePlacement();
         Closed += (_, _) => viewModel.StopRunningWatch();
+
+        // «5 минут назад» в списке и свойствах — раз в минуту, только пока окно видно и не свёрнуто: свёрнутое
+        // (или в трее) таймер не будит; при разворачивании надписи сразу догоняют время.
+        _relativeTimeTimer.Tick += (_, _) => viewModel.RefreshRelativeTimes();
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WindowStateProperty || e.Property == IsVisibleProperty)
+            {
+                UpdateRelativeTimeTimer(viewModel);
+            }
+        };
+        Opened += (_, _) => UpdateRelativeTimeTimer(viewModel);
+        Closed += (_, _) => _relativeTimeTimer.Stop();
         InitTray(viewModel);
 
         // Панель подробностей: ширина — из настроек, меняется разделителем; поле поиска над ней следует за шириной.
@@ -378,6 +391,27 @@ public partial class MainWindow : Window
                 (container ?? list).Focus(NavigationMethod.Directional);
             },
             DispatcherPriority.Background);
+    }
+
+    private readonly DispatcherTimer _relativeTimeTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+
+    private void UpdateRelativeTimeTimer(MainWindowViewModel viewModel)
+    {
+        var active = IsVisible && WindowState != WindowState.Minimized;
+        if (active == _relativeTimeTimer.IsEnabled)
+        {
+            return;
+        }
+
+        if (active)
+        {
+            viewModel.RefreshRelativeTimes();
+            _relativeTimeTimer.Start();
+        }
+        else
+        {
+            _relativeTimeTimer.Stop();
+        }
     }
 
     private static void Execute(ICommand command)

@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Threading;
 using YetAnotherOneCLauncher.App.Controls;
 using YetAnotherOneCLauncher.App.ViewModels;
 
@@ -52,6 +53,33 @@ public partial class InfoBaseEditorWindow : Window
         // Пока платформа создаёт базу, окно не закрывается: результат нужно дождаться.
         Closing += (_, e) => e.Cancel |= viewModel.IsBusy;
         Opened += (_, _) => FocusPage(viewModel);
+
+        // «Список обновлён 5 минут назад» — раз в минуту, пока окно не свёрнуто.
+        var statusTimer = new DispatcherTimer { Interval = TimeSpan.FromMinutes(1) };
+        statusTimer.Tick += (_, _) => viewModel.RefreshTemplatesStatus();
+        void UpdateStatusTimer()
+        {
+            var active = IsVisible && WindowState != WindowState.Minimized;
+            if (active && !statusTimer.IsEnabled)
+            {
+                viewModel.RefreshTemplatesStatus();
+                statusTimer.Start();
+            }
+            else if (!active)
+            {
+                statusTimer.Stop();
+            }
+        }
+
+        PropertyChanged += (_, e) =>
+        {
+            if (e.Property == WindowStateProperty || e.Property == IsVisibleProperty)
+            {
+                UpdateStatusTimer();
+            }
+        };
+        Opened += (_, _) => UpdateStatusTimer();
+        Closed += (_, _) => statusTimer.Stop();
     }
 
     /// <summary>Фокус — на первое поле текущего шага.</summary>

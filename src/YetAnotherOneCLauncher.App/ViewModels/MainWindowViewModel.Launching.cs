@@ -200,9 +200,10 @@ public sealed partial class MainWindowViewModel
     }
 
     /// <summary>Форма базы: кнопка «…» у дополнительных параметров открывает окно «Параметры запуска».</summary>
-    /// <param name="templates">Для новой базы — найденные шаблоны; тогда в форме можно и создать базу.</param>
+    /// <param name="canCreate">Новая база: в форме можно и создать базу (из шаблона или без конфигурации).</param>
+    /// <param name="cachedTemplates">Шаблоны из кэша; <c>null</c> — список ещё не обновляли.</param>
     private InfoBaseEditorViewModel CreateBaseEditor(
-        InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing, IReadOnlyList<ConfigurationTemplate>? templates = null) =>
+        InfoBaseDraft draft, bool isNew, InfoBaseViewModel? existing, bool canCreate = false, TemplateCacheData? cachedTemplates = null) =>
         new(draft, AllFolderPaths(), isNew, _files)
         {
             PlatformVersions = PlatformVersionChoices(),
@@ -210,11 +211,16 @@ public sealed partial class MainWindowViewModel
             GroupChooser = _dialogs.ChooseGroupAsync,
             GroupNamePrompt = parent => _dialogs.PromptAsync(
                 "Новая группа", parent == FolderPaths.Root ? "Имя группы:" : $"Имя группы внутри «{parent.TrimStart('/')}»:", string.Empty),
-            Creator = isNew && templates is not null ? CreateInfoBaseAsync : null,
+            Creator = isNew && canCreate ? CreateInfoBaseAsync : null,
             // Названия других баз: совпадать с ними название не должно (у изменяемой — кроме её самой).
             ExistingNames = OtherBaseNames(existing),
             CreationPlatforms = isNew ? CreationPlatforms() : [],
-            FoundTemplates = templates ?? [],
+            // Шаблоны — из кэша; каталоги просматривает только «Обновить» на шаге выбора шаблона.
+            FoundTemplates = cachedTemplates?.ToTemplates() ?? [],
+            TemplatesUpdatedAt = cachedTemplates?.UpdatedAt,
+            TemplateRootsChanged = cachedTemplates is not null && !cachedTemplates.SameRoots(TemplateRoots()),
+            TemplateRefresher = canCreate ? RefreshTemplatesAsync : null,
+            Time = _settings.UserData.Time,
             // Проект 1C:EDT: связь из профиля базы и подсказка — проект, с которым базу связал сам EDT.
             EdtProjects = EdtEnabled ? EdtProjectChoices : [],
             EdtProjectChooser = names => _dialogs.ChooseAsync("Проект 1C:EDT", "Выберите проект 1C:EDT для этой базы:", names),

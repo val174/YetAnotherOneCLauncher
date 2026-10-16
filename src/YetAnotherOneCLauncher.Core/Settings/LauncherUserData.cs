@@ -22,6 +22,9 @@ public sealed class LauncherUserData
 
     public LauncherSettings Settings { get; }
 
+    /// <summary>Часы: время запусков и «сколько прошло».</summary>
+    public TimeProvider Time => _time;
+
     public bool IsFavorite(InfoBase infoBase) => Settings.Favorites.Exists(f => f.Matches(infoBase));
 
     /// <returns>Новое состояние: <c>true</c> — база в избранном.</returns>
