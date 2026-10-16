@@ -289,7 +289,7 @@ public partial class MainWindow : Window
     private void MarkHeaderInteractive()
     {
         WindowTitleBar.MarkTitleBar(HeaderBand);
-        foreach (var control in new Control[] { SideToolbarToggle, TopToolbarHost, SideToolbarHost, MenuButton, SearchBox })
+        foreach (var control in new Control[] { SideToolbarToggle, TopToolbarHost, SideToolbarHost, ThemeButton, MenuButton, SearchBox })
         {
             WindowTitleBar.MarkInteractive(control);
         }

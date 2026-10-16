@@ -601,10 +601,12 @@ public class MainWindowTests
         // Панель команд слева в верхней строке (она же заголовок окна); поле поиска — перед меню ≡, ширины панели подробностей.
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!;
         var menu = window.FindControl<Button>("MenuButton")!;
+        var theme = window.FindControl<Button>("ThemeButton")!; // слева от меню ≡
         double LeftEdge(Control c) => c.TranslatePoint(default, window)!.Value.X;
         Assert.Equal(8, LeftEdge(window.FindControl<Border>("TopToolbarHost")!), tolerance: 1.5);
         Assert.True(LeftEdge(search) > RightEdge(toolbar));
-        Assert.Equal(LeftEdge(menu) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед меню ≡
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
+        Assert.True(RightEdge(theme) < LeftEdge(menu)); // тема — слева от меню ≡
         Assert.Equal(360 - 12, search.Bounds.Width, tolerance: 1.5); // ширины содержимого панели подробностей
 
         var launch = window.FindControl<Button>("LaunchEnterpriseButton")!;
@@ -621,7 +623,7 @@ public class MainWindowTests
         Assert.Equal(460, fixture.ViewModel.DetailsWidth, tolerance: 1);
         Assert.Equal(launchWidth, launch.Bounds.Width, tolerance: 0.5); // кнопки запуска не растут вместе с панелью
         Assert.Equal(460, fixture.Settings.Settings.Ui.DetailsWidth, tolerance: 1);
-        Assert.Equal(LeftEdge(menu) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед меню ≡
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
         Snapshot(window, "11-details-wide");
 
         // Свойства скрыты — кнопки запуска остаются на месте, ширина колонки и поиска прежние.
@@ -632,7 +634,7 @@ public class MainWindowTests
         Assert.False(window.FindControl<Panel>("PropertiesPanel")!.IsEffectivelyVisible);
         Assert.True(window.FindControl<StackPanel>("LaunchButtons")!.IsEffectivelyVisible);
         Assert.Equal(treeRight, RightEdge(tree), tolerance: 1.5);
-        Assert.Equal(LeftEdge(menu) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед меню ≡
+        Assert.Equal(LeftEdge(theme) - 8, RightEdge(search), tolerance: 1.5); // поиск — перед кнопкой темы
         Assert.Equal(searchWidth, search.Bounds.Width, tolerance: 0.5);
         Snapshot(window, "09b-properties-hidden");
         window.Close();
@@ -768,15 +770,15 @@ public class MainWindowTests
         var window = await OpenAsync(fixture);
         var vm = fixture.ViewModel;
         var toolbar = window.FindControl<Panel>("ToolbarPanel")!.Children.OfType<StackPanel>().Single().Children.OfType<Button>().ToList();
-        // Сначала — вид списка/дерева, затем правка списка и переключатель режимов; «Меню» — в верхней строке справа (задача #31).
-        Assert.Equal(
-            new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton", "AddButton", "EditButton", "DeleteButton" },
-            toolbar.Take(6).Select(b => b.Name));
+        // Сначала — правка списка и переключатель режимов, в конце — вид списка/дерева; тема и «Меню» (с настройками) —
+        // в верхней строке справа (задача #31).
+        Assert.Equal(new[] { "AddButton", "EditButton", "DeleteButton" }, toolbar.Take(3).Select(b => b.Name));
+        Assert.Equal(new[] { "ViewModeButton", "ExpandAllButton", "CollapseAllButton" }, toolbar.TakeLast(3).Select(b => b.Name));
+        Assert.DoesNotContain(toolbar, b => b.Name is "ThemeButton" or "SettingsButton");
         var panel = window.FindControl<StackPanel>("ToolbarButtons")!;
         // Черты между группами («Стиль 1») не в счёт.
         var items = panel.Children.Where(c => !c.Classes.Contains("toolbarSeparator")).ToList();
         Assert.Equal(items.IndexOf(window.FindControl<Button>("DeleteButton")!) + 1, items.IndexOf(window.FindControl<Border>("ListFilterSwitch")!));
-        Assert.Equal("ThemeButton", toolbar[^2].Name);
 
         var theme = window.FindControl<Button>("ThemeButton")!;
         var expected = new[] { ThemeMode.Light, ThemeMode.Dark, ThemeMode.System };
@@ -861,8 +863,9 @@ public class MainWindowTests
         Assert.Equal(IconStyle.Flat, fixture.Settings.Settings.Ui.IconStyle);
         Assert.Equal((40, 40), (add.Bounds.Width, add.Bounds.Height));
         Assert.Equal(26, add.GetVisualDescendants().OfType<ToolIcon>().Single().Bounds.Width);
-        Assert.Equal(26, window.FindControl<Button>("ThemeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width);
-        Assert.Equal(3, separators.Count(s => s.IsVisible)); // вид | правка | режимы | сервис (меню — в верхней строке справа)
+        Assert.Equal(26, window.FindControl<Button>("ViewModeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width);
+        Assert.Equal(22, window.FindControl<Button>("ThemeButton")!.GetVisualDescendants().OfType<Panel>().First(p => p.Classes.Contains("toolbarGlyph")).Bounds.Width); // как меню ≡
+        Assert.Equal(3, separators.Count(s => s.IsVisible)); // правка | режимы | сервис | вид (тема и меню — в верхней строке справа)
         Assert.Equal(Avalonia.Media.Brushes.Transparent, add.GetVisualDescendants().OfType<Avalonia.Controls.Presenters.ContentPresenter>().First().Background);
 
         // Тумблер: плашка под выбранным режимом, переезжает при переключении.

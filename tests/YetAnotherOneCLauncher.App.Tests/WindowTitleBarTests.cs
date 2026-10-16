@@ -52,7 +52,7 @@ public class WindowTitleBarTests
             Assert.Equal("HeaderPanel", header.Name);
             Assert.Equal(header.Height, window.ExtendClientAreaTitleBarHeightHint);
             Assert.Equal(WindowDecorationsElementRole.TitleBar, WindowDecorationProperties.GetElementRole(header));
-            foreach (var interactive in new[] { "MenuButton", "SearchBox", "TopToolbarHost", "SideToolbarToggle" })
+            foreach (var interactive in new[] { "MenuButton", "ThemeButton", "SearchBox", "TopToolbarHost", "SideToolbarToggle" })
             {
                 Assert.Equal(WindowDecorationsElementRole.User, WindowDecorationProperties.GetElementRole(window.FindControl<Control>(interactive)!));
             }

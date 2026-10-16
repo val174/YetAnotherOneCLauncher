@@ -245,11 +245,16 @@ public class ListExchangeTests
         Assert.Same(window.FindControl<DockPanel>("HeaderPanel"), menuButton.Parent);
         Assert.Equal(Dock.Right, DockPanel.GetDock(menuButton));
         Assert.DoesNotContain(menuButton, panel.Children);
-        Assert.Equal("ViewModeButton", panel.Children[0].Name);
+        Assert.Equal("AddButton", panel.Children[0].Name);
+        // Тема — тоже в верхней строке, слева от меню; «Настройки» — пункт меню.
+        var theme = window.FindControl<Button>("ThemeButton")!;
+        Assert.Same(menuButton.Parent, theme.Parent);
+        Assert.Equal(Dock.Right, DockPanel.GetDock(theme));
+        Assert.Null(window.FindControl<Button>("SettingsButton"));
 
         var flyout = Assert.IsType<MenuFlyout>(menuButton.Flyout);
         Assert.Equal(
-            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…", "Восстановить список…"],
+            ["Сохранить список в файл JSON…", "Загрузить список из файла JSON…", "Загрузить из файла .v8i…", "Восстановить список…", "Настройки…"],
             flyout.Items.OfType<MenuItem>().Select(i => (string)i.Header!));
         menuButton.Flyout!.ShowAt(menuButton);
         MainWindowTests.Render();
