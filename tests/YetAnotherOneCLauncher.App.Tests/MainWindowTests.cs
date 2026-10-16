@@ -755,11 +755,38 @@ public class MainWindowTests
             Assert.IsType<ToolIcon>(items[header].Icon);
         }
 
-        // Каталоги кэша — одним подменю.
+        // «Перейти»: каталог базы (только у файловых), каталог проекта 1C:EDT (только у проектов), каталоги кэша — подменю «Кэш».
+        var goTo = items["Перейти"];
+        var goToItems = goTo.Items.OfType<MenuItem>().ToDictionary(i => (string)i.Header!);
+        Assert.Equal(new[] { "Каталог базы", "Каталог проекта", "Кэш" }, goToItems.Keys);
         Assert.Equal(
             new[] { "Программный кэш", "Пользовательский кэш" },
-            items["Открыть каталог кэша"].Items.OfType<MenuItem>().Select(i => (string)i.Header!));
-        Assert.DoesNotContain(items.Keys, h => h.StartsWith("Открыть каталог программного", StringComparison.Ordinal));
+            goToItems["Кэш"].Items.OfType<MenuItem>().Select(i => (string)i.Header!));
+        Assert.DoesNotContain(items.Keys, h => h.StartsWith("Открыть каталог", StringComparison.Ordinal));
+        Assert.False(items["Изменить как текст…"].IsVisible); // скрыт, команда осталась
+
+        string[] VisibleGoTo() => [.. goToItems.Values.Where(i => i.IsVisible).Select(i => (string)i.Header!)];
+        vm.IsTreeMode = true;
+        Render();
+        var bases = vm.TreeItems.SelectMany(n => n is FolderNodeViewModel f ? f.Children.Prepend(n) : [n]).ToList();
+        // Привязки пунктов работают у открытого меню.
+        menu.Open(window.GetVisualDescendants().OfType<Panel>().First(p => p.ContextMenu == menu));
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().Single(n => n.Name == "Копия бухгалтерии"); // файловая
+        Render();
+        Assert.True(goTo.IsVisible);
+        Assert.Equal(["Каталог базы", "Кэш"], VisibleGoTo());
+        goTo.Open();
+        Render();
+        Snapshot(window, "58-context-go-to");
+        goTo.Close();
+        vm.SelectedTreeItem = bases.OfType<BaseNodeViewModel>().First(n => !n.Base.IsFileBase); // серверная
+        Render();
+        Assert.True(goTo.IsVisible);
+        Assert.Equal(["Кэш"], VisibleGoTo());
+        vm.SelectedTreeItem = bases.OfType<FolderNodeViewModel>().First(); // папка — переходить некуда
+        Render();
+        Assert.False(goTo.IsVisible);
+        menu.Close();
         window.Close();
     }
 

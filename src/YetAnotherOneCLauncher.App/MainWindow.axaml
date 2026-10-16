@@ -1202,7 +1202,6 @@
               <Image Source="{Binding EdtIcon}" Width="16" Height="16" RenderOptions.BitmapInterpolationMode="HighQuality" />
             </MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Открыть каталог проекта" Command="{Binding OpenEdtWorkspaceFolderCommand}" IsVisible="{Binding IsEdtProjectSelected}" />
           <MenuItem Header="Копировать строку запуска 1C:EDT" Command="{Binding CopyEdtCommandLineCommand}" IsVisible="{Binding IsEdtProjectSelected}" />
           <Separator IsVisible="{Binding ShowOpenInEdtMenu}" />
           <MenuItem Header="1С: Предприятие" Command="{Binding LaunchEnterpriseCommand}" InputGesture="{Binding HotKeys.LaunchEnterprise}">
@@ -1220,7 +1219,8 @@
           <MenuItem Header="Изменить…" Command="{Binding EditCommand}" InputGesture="{Binding HotKeys.Edit}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconSettingsBrush}" Data="{StaticResource EditIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Изменить как текст…" Command="{Binding EditAsTextCommand}" />
+          <!-- Скрыт: правка как текст в этом меню лишняя (команда осталась). -->
+          <MenuItem Header="Изменить как текст…" Command="{Binding EditAsTextCommand}" IsVisible="False" />
           <MenuItem Header="Удалить" Command="{Binding DeleteCommand}" InputGesture="{Binding HotKeys.Delete}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource DeleteIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
@@ -1272,17 +1272,32 @@
           <MenuItem Header="Копировать строку подключения" Command="{Binding CopyConnectionStringCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconCopyBrush}" Data="{StaticResource CopyIconGeometry}" /></MenuItem.Icon>
           </MenuItem>
-          <MenuItem Header="Открыть каталог базы" Command="{Binding OpenBaseFolderCommand}">
-            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+          <!-- «Перейти»: каталоги базы, проекта 1C:EDT и кэша; нечего показать (папка) — пункта нет. -->
+          <MenuItem x:Name="GoToMenu" Header="Перейти">
+            <MenuItem.IsVisible>
+              <MultiBinding Converter="{x:Static BoolConverters.Or}">
+                <Binding Path="IsEdtProjectSelected" />
+                <Binding Path="SelectedInfoBase" Converter="{x:Static ObjectConverters.IsNotNull}" />
+              </MultiBinding>
+            </MenuItem.IsVisible>
+            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconViewBrush}" Data="M 2,8 L 13,8 M 9,4 L 13,8 L 9,12" /></MenuItem.Icon>
+            <MenuItem x:Name="GoToBaseFolderMenuItem" Header="Каталог базы" Command="{Binding OpenBaseFolderCommand}"
+                      IsVisible="{Binding SelectedInfoBase.IsFileBase, FallbackValue=False}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <MenuItem x:Name="GoToProjectFolderMenuItem" Header="Каталог проекта" Command="{Binding OpenEdtWorkspaceFolderCommand}"
+                      IsVisible="{Binding IsEdtProjectSelected}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+            </MenuItem>
+            <!-- Каталоги кэша — подменю; недоступно, если у базы кэша нет. -->
+            <MenuItem x:Name="OpenCacheMenu" Header="Кэш" IsVisible="{Binding SelectedInfoBase, Converter={x:Static ObjectConverters.IsNotNull}}" IsEnabled="{Binding SelectedInfoBase.HasCache, FallbackValue=False}">
+              <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
+              <MenuItem Header="Программный кэш" Command="{Binding OpenLocalCacheCommand}" />
+              <MenuItem Header="Пользовательский кэш" Command="{Binding OpenRoamingCacheCommand}" />
+            </MenuItem>
           </MenuItem>
           <MenuItem Header="Очистить кэш" Command="{Binding ClearCacheCommand}">
             <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconDeleteBrush}" Data="{StaticResource CacheIconGeometry}" /></MenuItem.Icon>
-          </MenuItem>
-          <!-- Каталоги кэша — подменю; недоступно, если у базы кэша нет. -->
-          <MenuItem x:Name="OpenCacheMenu" Header="Открыть каталог кэша" IsEnabled="{Binding SelectedInfoBase.HasCache, FallbackValue=False}">
-            <MenuItem.Icon><c:ToolIcon Classes="menuIcon" Brush="{DynamicResource IconFolderBrush}" Data="{StaticResource FolderIconGeometry}" /></MenuItem.Icon>
-            <MenuItem Header="Программный кэш" Command="{Binding OpenLocalCacheCommand}" />
-            <MenuItem Header="Пользовательский кэш" Command="{Binding OpenRoamingCacheCommand}" />
           </MenuItem>
           <MenuItem Header="Сохранить ссылку в файл…" Command="{Binding ExportCommand}" />
           <MenuItem x:Name="ExportSelectionJsonMenuItem" Header="Сохранить в файл JSON…" Command="{Binding ExportSelectionJsonCommand}">
