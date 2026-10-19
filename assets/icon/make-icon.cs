@@ -23,9 +23,15 @@ void Draw(SKCanvas canvas)
     using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
     using var stroke = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke };
 
-    // Фон: графитовый скруглённый квадрат.
+    // Фон: графитовый скруглённый квадрат до самых краёв — без полей значок на панели задач не мельче соседних.
     fill.Color = graphite;
-    canvas.DrawRoundRect(new SKRoundRect(new SKRect(8, 8, 248, 248), 52), fill);
+    canvas.DrawRoundRect(new SKRoundRect(new SKRect(0, 0, 256, 256), 44), fill);
+
+    // Рисунок крупнее на 20%: база и кнопка занимают почти весь квадрат.
+    canvas.Save();
+    canvas.Translate(128, 124);
+    canvas.Scale(1.2f);
+    canvas.Translate(-130, -128);
 
     // База: красный цилиндр, крышка светлее, шов посередине.
     fill.Color = red;
@@ -52,6 +58,7 @@ void Draw(SKCanvas canvas)
     fill.Color = graphite;
     using var play = SKPath.ParseSvgPathData("M166 150 L208 176 L166 202 Z");
     canvas.DrawPath(play, fill);
+    canvas.Restore();
 }
 
 SKBitmap Render(int px)
