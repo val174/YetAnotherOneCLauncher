@@ -21,6 +21,8 @@ public sealed class AdminToolIconView : Panel
         Width = 20;
         Height = 20;
         var image = new Image { Stretch = Stretch.Uniform };
+        // Значки — картинки до 256 px в ячейке 20 px: уменьшать качественно, иначе размыто и рябит.
+        RenderOptions.SetBitmapInterpolationMode(image, Avalonia.Media.Imaging.BitmapInterpolationMode.HighQuality);
         image.Bind(Image.SourceProperty, new Binding(nameof(AdminToolIconViewModel.Image)));
         var badge = new Border
         {
