@@ -1,0 +1,12 @@
+<!-- Значок приложения (задача #34): база данных и кнопка запуска. Файлы значка собирает make-icon.cs. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <!-- Квадрат до краёв, рисунок крупнее на 20%: на панели задач значок не мельче соседних. -->
+  <rect x="0" y="0" width="256" height="256" rx="44" fill="#262A31"/>
+  <g transform="translate(128 124) scale(1.2) translate(-130 -128)">
+    <path d="M54 70 v108 c0 18 34 30 74 30 s74 -12 74 -30 v-108 Z" fill="#E0353B"/>
+    <ellipse cx="128" cy="70" rx="74" ry="28" fill="#F25A5F"/>
+    <path d="M54 116 c0 18 34 30 74 30 s74 -12 74 -30" fill="none" stroke="#262A31" stroke-opacity="0.35" stroke-width="6"/>
+    <circle cx="182" cy="176" r="48" fill="#F7B500" stroke="#262A31" stroke-width="10"/>
+    <path d="M166 150 L208 176 L166 202 Z" fill="#262A31"/>
+  </g>
+</svg>

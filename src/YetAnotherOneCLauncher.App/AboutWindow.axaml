@@ -9,7 +9,7 @@
         WindowStartupLocation="CenterOwner">
   <StackPanel Margin="20" Spacing="14">
     <StackPanel Orientation="Horizontal" Spacing="14">
-      <Image Source="/Assets/app.png" Width="56" Height="56" VerticalAlignment="Top" />
+      <Image Source="/Assets/app.png" Width="56" Height="56" VerticalAlignment="Top" RenderOptions.BitmapInterpolationMode="HighQuality" />
       <StackPanel Spacing="2" VerticalAlignment="Center">
         <TextBlock x:Name="ProductText" Text="{Binding Product}" FontSize="{StaticResource TitleFontSize}" FontWeight="SemiBold" />
         <SelectableTextBlock x:Name="VersionText" Text="{Binding VersionText}" Opacity="0.75" />

@@ -362,6 +362,8 @@ public sealed class LauncherSettings
     /// <summary>Метки баз: каталог (имя, цвет) — в порядке создания.</summary>
     public List<TagDefinition> Tags { get; set; } = [];
 
+    public bool HasCustomTagOrder { get; set; }
+
     /// <summary>Какие метки у каких баз.</summary>
     public List<InfoBaseTagSet> InfoBaseTags { get; set; } = [];
 

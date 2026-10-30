@@ -46,6 +46,21 @@ public class TagsTests
     }
 
     [Fact]
+    public async Task Reordering_tag_bar_preserves_filters_and_assignments()
+    {
+        using var fixture = await TaggedAsync();
+        var vm = fixture.ViewModel;
+        var source = vm.TagFilters[0];
+        var target = vm.TagFilters[^1];
+        vm.ToggleTagFilterCommand.Execute(source);
+        var before = ListNames(vm);
+        vm.MoveTag(source.Name, target.Name, true);
+        Assert.Equal(source.Name, vm.TagFilters[^1].Name);
+        Assert.True(vm.TagFilters[^1].IsSelected);
+        Assert.Equal(before, ListNames(vm));
+    }
+
+    [Fact]
     public async Task Context_menu_creates_and_toggles_tag_on_base()
     {
         using var fixture = new ViewModelFixture();
@@ -266,13 +281,13 @@ public class TagsTests
 
         await vm.ManageTagsCommand.ExecuteAsync(null);
 
-        Assert.Equal(["боевые", "бух"], fixture.Base(Buh).AssignedTags);
+        Assert.Equal(["бух", "боевые"], fixture.Base(Buh).AssignedTags);
         Assert.Equal(["боевые"], fixture.Base(Buh).RowTags.Select(t => t.Name)); // «бух» не показывается в строке
         Assert.Equal(TagColor.Blue, fixture.Base(Zup).Tags.Single().Color);
         Assert.Equal(["бух"], fixture.Base(Copy).AssignedTags);
         Assert.Null(fixture.Settings.UserData.Tag("тест"));
         Assert.NotNull(fixture.Settings.UserData.Tag("Новая метка"));
-        Assert.Equal(["боевые · 2", "бух · 2"], vm.TagFilters.Select(t => t.Text));
+        Assert.Equal(["бух · 2", "боевые · 2"], vm.TagFilters.Select(t => t.Text));
     }
 
     [Fact]
@@ -299,8 +314,8 @@ public class TagsTests
 
         await vm.ManageTagsCommand.ExecuteAsync(null);
 
-        // Имена поменялись местами, а не слились.
-        Assert.Equal(["бух", "прод"], fixture.Base(Buh).AssignedTags);
+        // Имена поменялись местами; позиции меток сохранены.
+        Assert.Equal(["прод", "бух"], fixture.Base(Buh).AssignedTags);
         Assert.Equal(["бух"], fixture.Base(Zup).AssignedTags);
         Assert.Equal(["прод", "тест"], fixture.Base(Copy).AssignedTags);
     }

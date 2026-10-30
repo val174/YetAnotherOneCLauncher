@@ -22,6 +22,12 @@ public partial class TagsWindow : Window
         InitializeComponent();
         WindowTitleBar.Apply(this);
         DataContext = editor;
+        TagReordering.Attach<TagRowViewModel>(TagsList, false, (source, target, after) =>
+        {
+            var index = editor.Rows.IndexOf(target) + (after ? 1 : 0);
+            if (editor.Rows.IndexOf(source) < index) index--;
+            editor.MoveRow(source, index);
+        });
 
         OkButton.Click += (_, _) =>
         {
