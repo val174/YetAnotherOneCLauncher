@@ -179,7 +179,24 @@ public sealed class LauncherUserData
 
     /// <summary>Каталог меток по наименованию.</summary>
     public IReadOnlyList<TagDefinition> TagCatalog() =>
-        [.. Settings.Tags.OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)];
+        Settings.HasCustomTagOrder ? [.. Settings.Tags] : [.. Settings.Tags.OrderBy(t => t.Name, StringComparer.CurrentCultureIgnoreCase)];
+
+    public void ReorderTags(IEnumerable<string> names)
+    {
+        ArgumentNullException.ThrowIfNull(names);
+        var remaining = TagCatalog().ToList();
+        var ordered = new List<TagDefinition>();
+        foreach (var name in names)
+        {
+            var index = remaining.FindIndex(t => TagNames.Same(t.Name, name));
+            if (index < 0) continue;
+            ordered.Add(remaining[index]);
+            remaining.RemoveAt(index);
+        }
+        ordered.AddRange(remaining);
+        Settings.Tags = ordered;
+        Settings.HasCustomTagOrder = true;
+    }
 
     /// <summary>Метки базы в порядке каталога (по наименованию); имена — как в каталоге.</summary>
     public IReadOnlyList<string> TagsOf(InfoBase infoBase)

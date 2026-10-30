@@ -6,7 +6,7 @@
         x:Class="YetAnotherOneCLauncher.App.TagsWindow"
         x:DataType="vm:TagsEditorViewModel"
         Title="Метки"
-        Width="620" Height="420" MinWidth="520" MinHeight="320"
+        Width="720" Height="520" MinWidth="640" MinHeight="460"
         ShowInTaskbar="False"
         WindowStartupLocation="CenterOwner">
   <DockPanel Margin="16">
@@ -20,10 +20,28 @@
     </DockPanel>
 
     <!-- Справа — выбранная метка: наименование, цвет, показ в строках; кнопки «Создать», «Удалить». -->
-    <StackPanel DockPanel.Dock="Right" Width="200" Margin="12,0,0,0" Spacing="8">
+    <ScrollViewer DockPanel.Dock="Right" Width="240" Margin="12,0,0,0" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+    <StackPanel Spacing="8">
       <StackPanel Orientation="Horizontal" Spacing="8">
         <Button x:Name="CreateButton" Content="Создать" Command="{Binding CreateCommand}" />
         <Button x:Name="DeleteButton" Content="Удалить" Command="{Binding DeleteCommand}" />
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Spacing="6">
+        <Button Content="↑" ToolTip.Tip="Вверх" Command="{Binding MoveUpCommand}" />
+        <Button Content="↓" ToolTip.Tip="Вниз" Command="{Binding MoveDownCommand}" />
+        <Button x:Name="SortAlphabeticallyButton" ToolTip.Tip="По алфавиту"
+                AutomationProperties.Name="Сортировать метки по алфавиту"
+                Command="{Binding SortAlphabeticallyCommand}">
+          <Grid ColumnDefinitions="Auto,Auto">
+            <StackPanel Spacing="0">
+              <TextBlock Text="А" FontSize="10" LineHeight="10" />
+              <TextBlock Text="Я" FontSize="10" LineHeight="10" />
+            </StackPanel>
+            <Path Grid.Column="1" Margin="4,0,0,0" Width="8" Height="18" Stretch="Fill"
+                  Stroke="{Binding $parent[Button].Foreground}" StrokeThickness="1.5"
+                  Data="M 4,0 L 4,16 M 0,12 L 4,16 L 8,12" />
+          </Grid>
+        </Button>
       </StackPanel>
       <StackPanel Spacing="8" IsVisible="{Binding HasSelection}">
         <TextBlock Text="Наименование" Margin="0,8,0,0" />
@@ -55,6 +73,7 @@
                    Text="Без этого флажка метка видна только в свойствах базы и в строке отбора." />
       </StackPanel>
     </StackPanel>
+    </ScrollViewer>
 
     <Border BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" CornerRadius="4">
       <Panel>

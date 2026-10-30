@@ -12,6 +12,18 @@ namespace YetAnotherOneCLauncher.App.ViewModels;
 /// </summary>
 public sealed partial class MainWindowViewModel
 {
+    public void MoveTag(string source, string target, bool after)
+    {
+        var names = _settings.UserData.TagCatalog().Select(t => t.Name).ToList();
+        if (TagNames.Same(source, target) || !names.Remove(source)) return;
+        var index = names.FindIndex(n => TagNames.Same(n, target));
+        if (index < 0) return;
+        names.Insert(index + (after ? 1 : 0), source);
+        _settings.UserData.ReorderTags(names);
+        foreach (var infoBase in _bases) infoBase.RefreshTags();
+        AfterTagsChanged();
+    }
+
     private const string TagsTitle = "Метки";
 
     /// <summary>Выбранные в строке отбора метки: база должна иметь все (условие «И»).</summary>

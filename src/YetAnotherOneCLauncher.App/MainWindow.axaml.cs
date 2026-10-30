@@ -77,6 +77,10 @@ public partial class MainWindow : Window
         }
 
         // Перетаскивание в дереве: папки и базы личного списка — в папку или перед базой; базу — в «Избранное».
+        TagReordering.Attach<TagFilterViewModel>(TagFilterList, true, (source, target, after) =>
+        {
+            if (DataContext is MainWindowViewModel vm) vm.MoveTag(source.Name, target.Name, after);
+        });
         CatalogTree.AddHandler(PointerPressedEvent, OnTreePointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         CatalogTree.AddHandler(PointerMovedEvent, OnTreePointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         CatalogTree.AddHandler(PointerReleasedEvent, (_, _) => _dragStart = null, RoutingStrategies.Tunnel, handledEventsToo: true);
