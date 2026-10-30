@@ -63,6 +63,7 @@ public sealed partial class TagsEditorViewModel : ObservableObject
             Rows.Add(new TagRowViewModel(tag.Name, tag.Name, tag.Color, tag.ShowInRow, counts.GetValueOrDefault(tag.Name)));
         }
 
+        Rows.CollectionChanged += (_, _) => NotifyMoveCommands();
         SelectedRow = Rows.Count > 0 ? Rows[0] : null;
     }
 
@@ -75,6 +76,40 @@ public sealed partial class TagsEditorViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(HasSelection))]
     [NotifyCanExecuteChangedFor(nameof(DeleteCommand))]
     public partial TagRowViewModel? SelectedRow { get; set; }
+
+    partial void OnSelectedRowChanged(TagRowViewModel? value) => NotifyMoveCommands();
+
+    private void NotifyMoveCommands()
+    {
+        MoveUpCommand.NotifyCanExecuteChanged();
+        MoveDownCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanMoveUp => SelectedRow is not null && Rows.IndexOf(SelectedRow) > 0;
+    private bool CanMoveDown => SelectedRow is not null && Rows.IndexOf(SelectedRow) < Rows.Count - 1;
+
+    [RelayCommand(CanExecute = nameof(CanMoveUp))]
+    private void MoveUp() => MoveRow(SelectedRow!, Rows.IndexOf(SelectedRow!) - 1);
+
+    [RelayCommand(CanExecute = nameof(CanMoveDown))]
+    private void MoveDown() => MoveRow(SelectedRow!, Rows.IndexOf(SelectedRow!) + 1);
+
+    public void MoveRow(TagRowViewModel row, int index)
+    {
+        var old = Rows.IndexOf(row);
+        if (old < 0 || index < 0 || index >= Rows.Count) return;
+        Rows.Move(old, index);
+        SelectedRow = row;
+    }
+
+    [RelayCommand]
+    private void SortAlphabetically()
+    {
+        var selected = SelectedRow;
+        var sorted = Rows.OrderBy(r => r.Name, StringComparer.CurrentCultureIgnoreCase).ToArray();
+        for (var i = 0; i < sorted.Length; i++) Rows.Move(Rows.IndexOf(sorted[i]), i);
+        SelectedRow = selected;
+    }
 
     public bool HasSelection => SelectedRow is not null;
 
@@ -185,5 +220,6 @@ public sealed partial class TagsEditorViewModel : ObservableObject
 
             userData.SetTagAppearance(name, row.Color, row.ShowInRow);
         }
+        userData.ReorderTags(Rows.Select(r => r.Name));
     }
 }
