@@ -2,76 +2,73 @@
 #:property ManagePackageVersionsCentrally=false
 #:property TreatWarningsAsErrors=false
 #:property AnalysisLevel=none
-// Сборка иконки приложения из картинки: вырезает красный скруглённый квадрат, делает фон прозрачным
-// и пишет app.ico (16–256, PNG внутри) и app.png (256) в src/YetAnotherOneCLauncher.App/Assets.
+// Значок приложения (задача #34): база данных и кнопка запуска на графитовом скруглённом квадрате.
+// Рисуется вектором в каждом размере (без уменьшения картинки) и пишется в src/YetAnotherOneCLauncher.App/Assets:
+// app.ico (16–256) и app.png (256). Тот же рисунок — app-icon.svg рядом.
 //   dotnet run assets/icon/make-icon.cs
 using SkiaSharp;
 
 var root = Path.GetFullPath(Path.Combine(AppContext.GetData("EntryPointFileDirectoryPath") as string ?? ".", "..", ".."));
-var source = Path.Combine(root, "assets", "icon", "app-icon-source.jpg");
 var output = Path.Combine(root, "src", "YetAnotherOneCLauncher.App", "Assets");
 Directory.CreateDirectory(output);
 
-using var image = SKBitmap.Decode(source) ?? throw new InvalidOperationException("Не удалось прочитать " + source);
+var graphite = SKColor.Parse("#262A31");
+var red = SKColor.Parse("#E0353B");
+var redTop = SKColor.Parse("#F25A5F");
+var yellow = SKColor.Parse("#F7B500");
 
-// Красный фон значка: R высокий, G и B низкие.
-static bool IsRed(SKColor c) => c.Red > 150 && c.Green < 100 && c.Blue < 100;
-
-int left = image.Width, top = image.Height, right = -1, bottom = -1;
-for (var y = 0; y < image.Height; y++)
+// Рисунок в координатах 256×256 (как в app-icon.svg).
+void Draw(SKCanvas canvas)
 {
-    for (var x = 0; x < image.Width; x++)
+    using var fill = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Fill };
+    using var stroke = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke };
+
+    // Фон: графитовый скруглённый квадрат до самых краёв — без полей значок на панели задач не мельче соседних.
+    fill.Color = graphite;
+    canvas.DrawRoundRect(new SKRoundRect(new SKRect(0, 0, 256, 256), 44), fill);
+
+    // Рисунок крупнее на 20%: база и кнопка занимают почти весь квадрат.
+    canvas.Save();
+    canvas.Translate(128, 124);
+    canvas.Scale(1.2f);
+    canvas.Translate(-130, -128);
+
+    // База: красный цилиндр, крышка светлее, шов посередине.
+    fill.Color = red;
+    using (var body = SKPath.ParseSvgPathData("M54 70 v108 c0 18 34 30 74 30 s74 -12 74 -30 v-108 Z"))
     {
-        if (IsRed(image.GetPixel(x, y)))
-        {
-            left = Math.Min(left, x);
-            right = Math.Max(right, x);
-            top = Math.Min(top, y);
-            bottom = Math.Max(bottom, y);
-        }
+        canvas.DrawPath(body, fill);
     }
+
+    fill.Color = redTop;
+    canvas.DrawOval(new SKRect(54, 42, 202, 98), fill);
+    stroke.Color = graphite.WithAlpha(90);
+    stroke.StrokeWidth = 6;
+    using (var seam = SKPath.ParseSvgPathData("M54 116 c0 18 34 30 74 30 s74 -12 74 -30"))
+    {
+        canvas.DrawPath(seam, stroke);
+    }
+
+    // Запуск: жёлтый круг с графитовой обводкой и треугольником.
+    fill.Color = yellow;
+    canvas.DrawCircle(182, 176, 48, fill);
+    stroke.Color = graphite;
+    stroke.StrokeWidth = 10;
+    canvas.DrawCircle(182, 176, 48, stroke);
+    fill.Color = graphite;
+    using var play = SKPath.ParseSvgPathData("M166 150 L208 176 L166 202 Z");
+    canvas.DrawPath(play, fill);
+    canvas.Restore();
 }
 
-if (right < 0)
-{
-    throw new InvalidOperationException("Красный квадрат не найден.");
-}
-
-// Радиус скругления: на строке чуть ниже верхнего края красное начинается на расстоянии ≈ радиуса от левого края.
-var probeRow = top + 2;
-var firstRed = Enumerable.Range(left, right - left).First(x => IsRed(image.GetPixel(x, probeRow)));
-var width = right - left + 1;
-var height = bottom - top + 1;
-var size = Math.Max(width, height);
-var radiusRatio = Math.Clamp((firstRed - left) / (double)size * 1.15, 0.12, 0.3);
-Console.WriteLine($"Значок: {left},{top} — {right},{bottom} ({width}×{height} px), скругление {radiusRatio:P0}");
-
-// Основа 512×512: сам значок без фона, края сглажены.
-const int master = 512;
-using var masterBitmap = new SKBitmap(master, master, SKColorType.Rgba8888, SKAlphaType.Premul);
-using (var canvas = new SKCanvas(masterBitmap))
-{
-    canvas.Clear(SKColors.Transparent);
-    var inset = 2f; // на краю JPEG светлая кайма — отрезаем
-    var rect = new SKRect(inset, inset, master - inset, master - inset);
-    canvas.ClipRoundRect(new SKRoundRect(rect, (float)(master * radiusRatio)), SKClipOperation.Intersect, antialias: true);
-    using var cropped = new SKBitmap();
-    // Точно по красной области: картинка может быть чуть не квадратной (708×682) — лёгкое растяжение незаметно,
-    // а квадратная вырезка захватила бы светлый фон.
-    image.ExtractSubset(cropped, new SKRectI(left, top, left + width, top + height));
-    using var croppedImage = SKImage.FromBitmap(cropped);
-    canvas.DrawImage(croppedImage, new SKRect(0, 0, master, master), new SKSamplingOptions(SKCubicResampler.Mitchell));
-}
-
-using var masterImage = SKImage.FromBitmap(masterBitmap);
 SKBitmap Render(int px)
 {
     // Без предумножения альфы: так цвета пишутся и в PNG, и в BMP значка.
     var target = new SKBitmap(px, px, SKColorType.Bgra8888, SKAlphaType.Unpremul);
     using var canvas = new SKCanvas(target);
     canvas.Clear(SKColors.Transparent);
-    // Мип-карты: при сильном уменьшении (512 → 16) без них мелкие детали рябят.
-    canvas.DrawImage(masterImage, new SKRect(0, 0, px, px), new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.Linear));
+    canvas.Scale(px / 256f);
+    Draw(canvas);
     return target;
 }
 

@@ -4,6 +4,7 @@ using Avalonia.Controls.Chrome;
 using Avalonia.Input;
 using Avalonia.Data;
 using Avalonia.Layout;
+using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
 
@@ -90,7 +91,7 @@ public static class WindowTitleBar
                 Margin = new Thickness(10, 0, 0, 0),
                 VerticalAlignment = VerticalAlignment.Center,
                 IsHitTestVisible = false,
-                Children = { new Image { Source = Icon, Width = 18, Height = 18 }, title },
+                Children = { TitleIcon(), title },
             },
         };
         bar.Bind(Layoutable.HeightProperty, new Binding("WindowDecorationMargin.Top") { Source = window });
@@ -130,6 +131,14 @@ public static class WindowTitleBar
             }
         };
         window.Content = frame;
+    }
+
+    /// <summary>Значок 256 px в заголовке 18 px — с качественным уменьшением (иначе размыт).</summary>
+    private static Image TitleIcon()
+    {
+        var image = new Image { Source = Icon, Width = 18, Height = 18 };
+        RenderOptions.SetBitmapInterpolationMode(image, BitmapInterpolationMode.HighQuality);
+        return image;
     }
 
     private static Bitmap Icon => _icon ??= new Bitmap(AssetLoader.Open(new Uri("avares://YetAnotherOneCLauncher/Assets/app.png")));
